@@ -165,15 +165,20 @@ pub fn restore<R: Runtime>(app: &tauri::AppHandle<R>) {
         Err(_) => WindowGeometry::default(),
     };
 
-    let Some(window) = app.get_webview_window("main") else {
-        return;
-    };
-
-    let _ = window.set_size(LogicalSize::new(geometry.width, geometry.height));
-    if let (Some(x), Some(y)) = (geometry.x, geometry.y) {
-        let _ = window.set_position(LogicalPosition::new(x, y));
+    match app.get_webview_window("main") {
+        Some(window) => {
+            let _ = window.set_size(LogicalSize::new(geometry.width, geometry.height));
+            if let (Some(x), Some(y)) = (geometry.x, geometry.y) {
+                let _ = window.set_position(LogicalPosition::new(x, y));
+            }
+            let _ = window.show();
+        }
+        None => {
+            for (_, window) in app.webview_windows() {
+                let _ = window.show();
+            }
+        }
     }
-    let _ = window.show();
 }
 
 #[cfg(test)]
