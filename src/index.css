@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+@theme {
+  /* --- Debate side colors -------------------------------------------- */
+  /* Aff (Affirmative) - blue family */
+  --color-aff-soft:   #dbeafe; /* bg tint, badges, highlights */
+  --color-aff:        #3b82f6; /* primary aff accent */
+  --color-aff-strong: #1d4ed8; /* headers, borders, interactive */
+
+  /* Neg (Negative) - red family */
+  --color-neg-soft:   #fee2e2; /* bg tint, badges, highlights */
+  --color-neg:        #ef4444; /* primary neg accent */
+  --color-neg-strong: #b91c1c; /* headers, borders, interactive */
+
+  /* --- Shell surface colors ------------------------------------------ */
+  --color-shell-bg:      #f1f5f9; /* page/app background */
+  --color-shell-surface: #ffffff; /* cards, panels */
+  --color-shell-border:  #cbd5e1; /* dividers, outlines */
+  --color-shell-text:    #0f172a; /* primary body copy */
+  --color-shell-muted:   #64748b; /* secondary / hint text */
+
+  /* --- Spacing tokens ------------------------------------------------ */
+  --spacing-card:    1.5rem;  /* inner card padding */
+  --spacing-section: 2rem;    /* gap between major sections */
+
+  /* --- Typography ---------------------------------------------------- */
+  --font-family-base: ui-sans-serif, system-ui, sans-serif;
+}

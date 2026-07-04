@@ -5,13 +5,13 @@
  */
 export default function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 text-slate-100">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-shell-bg text-shell-text">
       <div className="flex flex-col items-center gap-3 px-6 text-center">
-        <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-medium uppercase tracking-widest text-slate-400">
+        <span className="rounded-full border border-shell-border px-3 py-1 text-xs font-medium uppercase tracking-widest text-shell-muted">
           Desktop preview
         </span>
         <h1 className="text-4xl font-semibold tracking-tight">Fulcrum Debate</h1>
-        <p className="max-w-md text-balance text-slate-400">
+        <p className="max-w-md text-balance text-shell-muted">
           A local-first workspace for flowing rounds, cutting evidence, and
           building speeches. The shell is ready - features land next.
         </p>

@@ -27,6 +27,48 @@ The app is strictly **local-first**: nothing in the boot/render path may await a
 - **App icons:** `src-tauri/app-icon.svg` is the source of truth. Regenerate the desktop icon set with `npm run tauri icon src-tauri/app-icon.svg` (or a 1024x1024 PNG). The generator also emits iOS/Android/Windows-Store assets; this is a desktop-only app, so keep only `src-tauri/icons/{32x32,64x64,128x128,128x128@2x}.png`, `icon.icns`, `icon.ico`, `icon.png`.
 - **CSP:** `tauri.conf.json` enforces `default-src 'self'`. Inline scripts and styles are blocked, and all external resource loads are blocked. Any future feature that loads fonts, external images, or eval-based code must add an explicit CSP directive rather than loosening the policy wholesale.
 
+## Design tokens
+
+All tokens are defined in `src/index.css` inside the Tailwind v4 `@theme` block.
+Use these named tokens instead of raw Tailwind palette utilities.
+
+### Debate side colors
+
+| Token | Value | Usage |
+|---|---|---|
+| `aff-soft` | #dbeafe | Aff bg tints, badges |
+| `aff` | #3b82f6 | Aff primary accent |
+| `aff-strong` | #1d4ed8 | Aff headers, borders, interactive |
+| `neg-soft` | #fee2e2 | Neg bg tints, badges |
+| `neg` | #ef4444 | Neg primary accent |
+| `neg-strong` | #b91c1c | Neg headers, borders, interactive |
+
+Apply as Tailwind utilities: `bg-aff-soft`, `text-neg`, `border-aff-strong`, etc.
+
+### Shell surface colors
+
+| Token | Value | Usage |
+|---|---|---|
+| `shell-bg` | #f1f5f9 | App/page background |
+| `shell-surface` | #ffffff | Cards, panels |
+| `shell-border` | #cbd5e1 | Dividers, outlines |
+| `shell-text` | #0f172a | Primary body copy |
+| `shell-muted` | #64748b | Secondary/hint text |
+
+### Spacing tokens
+
+| Token | Value | Usage |
+|---|---|---|
+| `spacing-card` | 1.5rem | Inner card/panel padding |
+| `spacing-section` | 2rem | Gap between major sections |
+
+Apply as: `p-card`, `gap-section`, etc. (Tailwind v4 maps `--spacing-*` to spacing utilities).
+
+### Typography
+
+No custom type scale; use Tailwind's built-in `text-xs` through `text-4xl` with the system sans-serif stack.
+Standard choices: `text-4xl font-semibold` for page titles, `text-sm` for labels, `text-xs uppercase tracking-widest` for chips.
+
 ## CI
 
 `.github/workflows/ci.yml` runs lint + Vitest on pull requests and on pushes to `main` (Node only). Packaging the Tauri bundle is intentionally excluded from CI.
