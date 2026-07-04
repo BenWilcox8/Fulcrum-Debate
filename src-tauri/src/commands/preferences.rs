@@ -82,7 +82,7 @@ fn save_to_dir(config_dir: &Path, prefs: &Preferences) -> Result<(), String> {
         .map_err(|e| format!("failed to serialize preferences: {e}"))?;
     let nonce = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.subsec_nanos())
+        .map(|d| d.as_nanos())
         .unwrap_or(0);
     let tmp_path = config_dir.join(format!(".preferences.tmp.{}", nonce));
     fs::write(&tmp_path, &json).map_err(|e| format!("failed to write preferences: {e}"))?;
