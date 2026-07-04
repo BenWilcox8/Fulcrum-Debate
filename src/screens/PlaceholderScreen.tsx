@@ -16,11 +16,11 @@ export default function PlaceholderScreen({
     >
       <h2
         id="screen-heading"
-        className="text-2xl font-semibold tracking-tight text-slate-100"
+        className="text-2xl font-semibold tracking-tight text-shell-text"
       >
         {title}
       </h2>
-      <p className="max-w-prose text-sm text-slate-400">{blurb}</p>
+      <p className="max-w-prose text-sm text-shell-muted">{blurb}</p>
     </section>
   );
 }

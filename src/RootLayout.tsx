@@ -11,8 +11,8 @@ function navLinkClass({ isActive }: { isActive: boolean }): string {
   const base =
     "rounded-md px-3 py-1.5 text-sm font-medium transition-colors";
   return isActive
-    ? `${base} bg-slate-800 text-slate-100`
-    : `${base} text-slate-400 hover:bg-slate-800/60 hover:text-slate-200`;
+    ? `${base} bg-shell-surface border border-shell-border text-shell-text`
+    : `${base} text-shell-muted hover:bg-shell-surface hover:text-shell-text`;
 }
 
 /**
@@ -22,8 +22,8 @@ function navLinkClass({ isActive }: { isActive: boolean }): string {
  */
 export default function RootLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800">
+    <div className="flex min-h-screen flex-col bg-shell-bg text-shell-text">
+      <header className="border-b border-shell-border">
         <div className="flex items-center gap-6 px-6 py-3">
           <span className="text-sm font-semibold tracking-tight">
             Fulcrum Debate
