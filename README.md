@@ -48,6 +48,8 @@ npm install
 │   ├── index.css           Tailwind entry point and design token definitions (@theme)
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
 │   ├── preferences/        PreferencesProvider and usePreferences hook (persisted app settings)
+│   ├── documents/          Local document layer (Yjs + IndexedDB)
+│   │   └── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
