@@ -29,4 +29,8 @@ The app is strictly **local-first**: nothing in the boot/render path may await a
 
 ## CI
 
-`.github/workflows/ci.yml` runs lint + Vitest on pull requests and on pushes to `main` (Node only). Packaging the Tauri bundle is intentionally excluded from CI.
+`.github/workflows/ci.yml` runs two parallel jobs on pull requests and pushes to `main`:
+- **lint-and-test** - ESLint + Vitest on `ubuntu-latest` (Node only, fast).
+- **tauri-build** - `npm run tauri build` on `macos-latest` (smoke-tests the full desktop bundle compile).
+  Uses `dtolnay/rust-toolchain@stable` + `swatinem/rust-cache` (keyed to `src-tauri`) and `setup-node` npm cache.
+  No code signing or artifact publishing; build failure fails CI.
