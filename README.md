@@ -39,6 +39,7 @@ npm install
 .
 ├── src/            React + TypeScript front end
 │   ├── App.tsx     The application shell
+│   ├── index.css   Tailwind entry point and design token definitions (@theme)
 │   └── test/       Test setup (Vitest + Testing Library)
 ├── src-tauri/      Rust desktop shell (Tauri v2)
 └── .github/        CI workflows (lint, tests, and Tauri desktop build)
