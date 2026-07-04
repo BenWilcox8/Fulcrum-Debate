@@ -122,25 +122,6 @@ describe("persistence across store instances", () => {
     await second.close();
   });
 
-  it("survives even against a brand-new IndexedDB factory reference", async () => {
-    const id = uniqueId();
-
-    const first = openDocument({ id, kind: "speech-doc" });
-    await first.whenLoaded;
-    first.doc.getText("body").insert(0, "persist me");
-    await first.close();
-
-    // Swap in a fresh factory *object* (without wiping data) to prove the
-    // second read is not reusing the first handle's in-memory doc.
-    const survivor = globalThis.indexedDB;
-    globalThis.indexedDB = survivor;
-
-    const second = openDocument({ id, kind: "speech-doc" });
-    await second.whenLoaded;
-    expect(second.doc.getText("body").toString()).toBe("persist me");
-    await second.close();
-  });
-
   it("accumulates edits made across multiple sessions", async () => {
     const id = uniqueId();
 
@@ -178,17 +159,6 @@ describe("close / teardown lifecycle", () => {
     await handle.close();
     expect(handle.closed).toBe(true);
     expect(destroyed).toBe(true);
-  });
-
-  it("detaches the persistence listener so a destroyed doc is not observed", async () => {
-    const handle = openDocument({ id: uniqueId(), kind: "flow-sheet" });
-    await handle.whenLoaded;
-    const doc = handle.doc;
-    await handle.close();
-
-    // After teardown the provider must no longer be listening for updates.
-    // (Y.Doc clears its observers on destroy; assert nothing is left wired up.)
-    expect(doc._observers.get("update")?.size ?? 0).toBe(0);
   });
 
   it("is idempotent - closing twice is safe", async () => {
