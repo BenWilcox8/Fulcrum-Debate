@@ -47,6 +47,7 @@ npm install
 │   │   └── RoundsScreen.tsx
 │   ├── index.css           Tailwind entry point and design token definitions (@theme)
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
+│   ├── preferences/        PreferencesProvider and usePreferences hook (persisted app settings)
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
