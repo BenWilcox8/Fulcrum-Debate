@@ -1,21 +1,15 @@
+import { HashRouter } from "react-router-dom";
+import AppRoutes from "./AppRoutes";
+
 /**
- * The application shell. Later features (flowing, evidence, speeches) mount
- * inside this frame - for now it is a minimal, self-contained placeholder that
+ * The application shell. A HashRouter drives client-side navigation, which
+ * works under Tauri's file:// context (no server to resolve real paths) and
  * renders entirely offline with no network dependency.
  */
 export default function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-shell-bg text-shell-text">
-      <div className="flex flex-col items-center gap-3 px-6 text-center">
-        <span className="rounded-full border border-shell-border px-3 py-1 text-xs font-medium uppercase tracking-widest text-shell-muted">
-          Desktop preview
-        </span>
-        <h1 className="text-4xl font-semibold tracking-tight">Fulcrum Debate</h1>
-        <p className="max-w-md text-balance text-shell-muted">
-          A local-first workspace for flowing rounds, cutting evidence, and
-          building speeches. The shell is ready - features land next.
-        </p>
-      </div>
-    </main>
+    <HashRouter>
+      <AppRoutes />
+    </HashRouter>
   );
 }

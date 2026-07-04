@@ -7,6 +7,7 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 - **Tauri v2** - native desktop shell (Rust), config in `src-tauri/`.
 - **React + TypeScript + Vite** - front end in `src/`.
 - **Tailwind CSS v4** - via the `@tailwindcss/vite` plugin; global styles are `@import "tailwindcss";` in `src/index.css` (no `tailwind.config.js`, no PostCSS config).
+- **react-router-dom v7** - client-side routing for the app frame. Uses `HashRouter` (see `src/App.tsx`) because the app is served from a `file://` context under Tauri with no server to resolve real paths.
 - Planned but **not yet added**: Tiptap, Yjs, XYFlow. Do not introduce them until their own tasks land.
 
 The app is strictly **local-first**: nothing in the boot/render path may await a network resource.
