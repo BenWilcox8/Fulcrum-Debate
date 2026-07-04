@@ -59,3 +59,37 @@ export function saveWindowGeometry(geometry: WindowGeometry): Promise<void> {
 export function loadWindowGeometry(): Promise<WindowGeometry> {
   return invoke<WindowGeometry>("load_window_geometry");
 }
+
+/** Visual theme preference; mirrors the Rust `Theme` enum (lowercase). */
+export type Theme = "light" | "dark";
+
+/**
+ * The full set of persisted application preferences; mirrors the Rust
+ * `Preferences` struct. Keep the two in sync when either changes.
+ */
+export interface Preferences {
+  theme: Theme;
+}
+
+/**
+ * Typed defaults used before the persisted store has loaded, and as the
+ * canonical fallback shape. Mirrors `Preferences::default` on the Rust side so
+ * both halves of the seam agree on the starting state without a network or
+ * disk round trip.
+ */
+export const DEFAULT_PREFERENCES: Preferences = { theme: "light" };
+
+/**
+ * Reads the persisted preferences from the Rust-owned store.
+ *
+ * A missing or corrupt store resolves to typed defaults on the Rust side, so
+ * this never rejects for those cases.
+ */
+export function getPreferences(): Promise<Preferences> {
+  return invoke<Preferences>("get_preferences");
+}
+
+/** Persists `preferences` to the store and resolves with what was saved. */
+export function setPreferences(preferences: Preferences): Promise<Preferences> {
+  return invoke<Preferences>("set_preferences", { preferences });
+}

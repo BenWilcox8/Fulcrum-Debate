@@ -13,6 +13,9 @@ import {
   appVersion,
   saveWindowGeometry,
   loadWindowGeometry,
+  getPreferences,
+  setPreferences,
+  DEFAULT_PREFERENCES,
 } from "./index";
 
 describe("ipc bridge", () => {
@@ -55,5 +58,29 @@ describe("ipc bridge", () => {
 
     expect(invoke).toHaveBeenCalledWith("load_window_geometry");
     expect(result).toEqual(geometry);
+  });
+
+  it("DEFAULT_PREFERENCES seeds the light theme", () => {
+    expect(DEFAULT_PREFERENCES).toEqual({ theme: "light" });
+  });
+
+  it("getPreferences reads through the get_preferences command", async () => {
+    invoke.mockResolvedValue({ theme: "dark" });
+
+    const result = await getPreferences();
+
+    expect(invoke).toHaveBeenCalledWith("get_preferences");
+    expect(result).toEqual({ theme: "dark" });
+  });
+
+  it("setPreferences forwards the preferences and returns what was saved", async () => {
+    invoke.mockResolvedValue({ theme: "dark" });
+
+    const result = await setPreferences({ theme: "dark" });
+
+    expect(invoke).toHaveBeenCalledWith("set_preferences", {
+      preferences: { theme: "dark" },
+    });
+    expect(result).toEqual({ theme: "dark" });
   });
 });
