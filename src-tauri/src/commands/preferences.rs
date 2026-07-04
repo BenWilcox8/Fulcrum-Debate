@@ -15,6 +15,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
@@ -79,7 +80,14 @@ fn save_to_dir(config_dir: &Path, prefs: &Preferences) -> Result<(), String> {
         .map_err(|e| format!("failed to create config directory: {e}"))?;
     let json = serde_json::to_string_pretty(prefs)
         .map_err(|e| format!("failed to serialize preferences: {e}"))?;
-    fs::write(store_path(config_dir), json).map_err(|e| format!("failed to write preferences: {e}"))
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.subsec_nanos())
+        .unwrap_or(0);
+    let tmp_path = config_dir.join(format!(".preferences.tmp.{}", nonce));
+    fs::write(&tmp_path, &json).map_err(|e| format!("failed to write preferences: {e}"))?;
+    fs::rename(&tmp_path, store_path(config_dir))
+        .map_err(|e| format!("failed to commit preferences: {e}"))
 }
 
 /// Resolves the platform app config directory for this application.
@@ -163,5 +171,25 @@ mod tests {
     fn theme_serializes_to_lowercase() {
         let json = serde_json::to_string(&Preferences { theme: Theme::Dark }).unwrap();
         assert_eq!(json, r#"{"theme":"dark"}"#);
+    }
+
+    #[test]
+    fn save_leaves_no_tmp_file_after_success() {
+        let dir = tempdir().unwrap();
+        let prefs = Preferences { theme: Theme::Dark };
+
+        save_to_dir(dir.path(), &prefs).unwrap();
+
+        let leftover: Vec<_> = fs::read_dir(dir.path())
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .filter(|e| {
+                e.file_name()
+                    .to_string_lossy()
+                    .starts_with(".preferences.tmp.")
+            })
+            .collect();
+        assert!(leftover.is_empty(), "orphaned tmp file(s) found: {:?}", leftover);
+        assert_eq!(load_from_dir(dir.path()), prefs);
     }
 }
