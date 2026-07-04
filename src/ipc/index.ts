@@ -31,3 +31,31 @@ export function ping(message: string): Promise<Pong> {
 export function appVersion(): Promise<string> {
   return invoke<string>("app_version");
 }
+
+/**
+ * Persisted geometry of the main window; mirrors the Rust `WindowGeometry`
+ * struct. Coordinates are logical (device-independent) pixels; `x`/`y` are
+ * `null` when the window manager should choose placement.
+ */
+export interface WindowGeometry {
+  width: number;
+  height: number;
+  x: number | null;
+  y: number | null;
+}
+
+/**
+ * Persists the main window's geometry via the Rust side.
+ *
+ * Called on a debounced resize/move rather than only on exit, so the last
+ * geometry survives a force-quit. See `saveWindowGeometry` usage in
+ * `src/ipc/window-geometry.ts`.
+ */
+export function saveWindowGeometry(geometry: WindowGeometry): Promise<void> {
+  return invoke<void>("save_window_geometry", { geometry });
+}
+
+/** Returns the persisted window geometry, or the Rust-side defaults. */
+export function loadWindowGeometry(): Promise<WindowGeometry> {
+  return invoke<WindowGeometry>("load_window_geometry");
+}
