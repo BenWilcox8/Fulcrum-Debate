@@ -1,0 +1,23 @@
+[package]
+name = "fulcrum-debate"
+version = "0.1.0"
+description = "Fulcrum Debate - a local-first desktop tool for competitive debaters."
+authors = ["Fulcrum Debate"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary to make the lib name
+# unique and wouldn't conflict with the bin name. This is due to Cargo's default
+# behaviour of naming the lib target after the package name.
+name = "fulcrum_debate_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
