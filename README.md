@@ -40,8 +40,11 @@ npm install
 ├── src/            React + TypeScript front end
 │   ├── App.tsx     The application shell
 │   ├── index.css   Tailwind entry point and design token definitions (@theme)
+│   ├── ipc/        Typed IPC bridge to the Rust backend (one wrapper per command)
 │   └── test/       Test setup (Vitest + Testing Library)
 ├── src-tauri/      Rust desktop shell (Tauri v2)
+│   └── src/
+│       └── commands/  Tauri command handlers (Rust half of the IPC seam)
 └── .github/        CI workflows (lint, tests, and Tauri desktop build)
 ```
 
