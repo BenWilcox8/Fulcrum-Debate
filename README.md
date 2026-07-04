@@ -46,5 +46,5 @@ npm install
 
 ## Continuous integration
 
-Pull requests run lint and the unit test suite via GitHub Actions (`.github/workflows/ci.yml`).
+Pull requests and pushes to `main` run lint and the unit test suite via GitHub Actions (`.github/workflows/ci.yml`).
 Packaging the native Tauri bundle is intentionally out of scope for CI.
