@@ -118,8 +118,8 @@ fn save_to_path(path: &Path, geometry: &WindowGeometry) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    let json = serde_json::to_string_pretty(geometry)
-        .expect("WindowGeometry always serializes to JSON");
+    let json =
+        serde_json::to_string_pretty(geometry).expect("WindowGeometry always serializes to JSON");
     std::fs::write(path, json)
 }
 
