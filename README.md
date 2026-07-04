@@ -2,7 +2,7 @@
 
 A local-first desktop tool for competitive debaters - flowing rounds, cutting evidence, and building speeches.
 
-The app is a [Tauri v2](https://v2.tauri.app/) desktop shell wrapping a React + TypeScript front end built with [Vite](https://vite.dev/) and styled with [Tailwind CSS](https://tailwindcss.com/).
+The app is a [Tauri v2](https://v2.tauri.app/) desktop shell wrapping a React + TypeScript front end built with [Vite](https://vite.dev/), styled with [Tailwind CSS](https://tailwindcss.com/), and navigated with [react-router-dom v7](https://reactrouter.com/) in `HashRouter` mode (required for Tauri's `file://` context).
 It is strictly local-first: it boots and renders with zero network dependency.
 
 ## Prerequisites
@@ -37,15 +37,21 @@ npm install
 
 ```
 .
-├── src/            React + TypeScript front end
-│   ├── App.tsx     The application shell
-│   ├── index.css   Tailwind entry point and design token definitions (@theme)
-│   ├── ipc/        Typed IPC bridge to the Rust backend (one wrapper per command)
-│   └── test/       Test setup (Vitest + Testing Library)
-├── src-tauri/      Rust desktop shell (Tauri v2)
+├── src/                    React + TypeScript front end
+│   ├── App.tsx             Router provider (HashRouter) - top of the React tree
+│   ├── AppRoutes.tsx       Route table - kept separate so tests can use MemoryRouter
+│   ├── RootLayout.tsx      Persistent app frame: nav chrome + routed <Outlet>
+│   ├── screens/            Placeholder screens for each primary area
+│   │   ├── DashboardScreen.tsx
+│   │   ├── BlockFileScreen.tsx
+│   │   └── RoundsScreen.tsx
+│   ├── index.css           Tailwind entry point and design token definitions (@theme)
+│   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
+│   └── test/               Test setup (Vitest + Testing Library)
+├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
-│       └── commands/  Tauri command handlers (Rust half of the IPC seam)
-└── .github/        CI workflows (lint, tests, and Tauri desktop build)
+│       └── commands/       Tauri command handlers (Rust half of the IPC seam)
+└── .github/                CI workflows (lint, tests, and Tauri desktop build)
 ```
 
 ## Continuous integration
