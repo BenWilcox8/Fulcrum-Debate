@@ -8,7 +8,12 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 // Imported after the mock is registered so the module binds to the mock.
-import { ping, appVersion } from "./index";
+import {
+  ping,
+  appVersion,
+  saveWindowGeometry,
+  loadWindowGeometry,
+} from "./index";
 
 describe("ipc bridge", () => {
   beforeEach(() => {
@@ -31,5 +36,24 @@ describe("ipc bridge", () => {
 
     expect(invoke).toHaveBeenCalledWith("app_version");
     expect(result).toBe("0.1.0");
+  });
+
+  it("saveWindowGeometry forwards the geometry payload", async () => {
+    invoke.mockResolvedValue(undefined);
+    const geometry = { width: 1000, height: 700, x: 40, y: 25 };
+
+    await saveWindowGeometry(geometry);
+
+    expect(invoke).toHaveBeenCalledWith("save_window_geometry", { geometry });
+  });
+
+  it("loadWindowGeometry returns the typed geometry", async () => {
+    const geometry = { width: 1200, height: 800, x: null, y: null };
+    invoke.mockResolvedValue(geometry);
+
+    const result = await loadWindowGeometry();
+
+    expect(invoke).toHaveBeenCalledWith("load_window_geometry");
+    expect(result).toEqual(geometry);
   });
 });

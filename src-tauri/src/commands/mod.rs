@@ -10,6 +10,8 @@
 //! plugin/core commands need capability permission entries - so adding a new
 //! `#[tauri::command]` here requires no change to `capabilities/default.json`.
 
+pub mod window_state;
+
 use serde::Serialize;
 
 /// Reply returned by [`ping`].
