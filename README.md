@@ -41,10 +41,12 @@ npm install
 │   ├── App.tsx     The application shell
 │   └── test/       Test setup (Vitest + Testing Library)
 ├── src-tauri/      Rust desktop shell (Tauri v2)
-└── .github/        CI workflow (lint + tests on pull requests)
+└── .github/        CI workflows (lint, tests, and Tauri desktop build)
 ```
 
 ## Continuous integration
 
-Pull requests and pushes to `main` run lint and the unit test suite via GitHub Actions (`.github/workflows/ci.yml`).
-Packaging the native Tauri bundle is intentionally out of scope for CI.
+Pull requests and pushes to `main` run two parallel jobs via GitHub Actions (`.github/workflows/ci.yml`):
+
+- **lint-and-test** - ESLint + Vitest on `ubuntu-latest` (Node only, fast).
+- **tauri-build** - `npm run tauri build` on `macos-latest` (smoke-tests the full desktop bundle compile). No code signing or artifact publishing; build failure fails CI.
