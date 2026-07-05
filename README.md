@@ -54,7 +54,7 @@ npm install
 │   │   └── service/        Document service - single lifecycle seam (create/open/list/rename/delete)
 │   ├── editor/
 │   │   ├── core/           Headless Tiptap editor factory with Yjs fragment binding (createEditor)
-│   │   └── marks/          Shared text marks: BoldMark (emphasis) and HighlightMark (read-aloud)
+│   │   └── marks/          Addressable editor marks: BoldMark, HighlightMark, and font-size scale + helpers
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/

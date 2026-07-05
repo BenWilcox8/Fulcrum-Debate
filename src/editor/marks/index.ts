@@ -1,17 +1,29 @@
 /**
- * The shared text marks for the Fulcrum Debate editor core.
+ * Public surface of the editor's addressable marks.
  *
- * These layer on top of the {@link ../core | editor core}: pass them via
- * `createEditor({ ..., extensions: [BoldMark, HighlightMark] })`. Each is a
- * thin wrap of a Tiptap first-party extension that pins configuration and
- * documents its stable document-JSON schema.
+ * Marks here are real, queryable document marks (never bare inline styles) so the
+ * product's formatting tools can address and cycle them programmatically. See the
+ * individual modules for design notes.
  *
- * - {@link ./bold.BoldMark | BoldMark} - visual emphasis, JSON `{ type: "bold" }`.
- * - {@link ./highlight.HighlightMark | HighlightMark} - "read this aloud",
- *   single-color, JSON `{ type: "highlight" }`.
- *
- * The two are independent marks (separate names, distinct rendering) and compose
- * on the same text run.
+ * Bold and highlight wrap first-party Tiptap extensions and layer on the editor
+ * core via `createEditor({ ..., extensions: [BoldMark, HighlightMark] })`.
+ * Font size builds on the `textStyle` carrier so the three marks compose cleanly.
  */
 export { BoldMark, BOLD_MARK_NAME } from "./bold";
 export { HighlightMark, HIGHLIGHT_MARK_NAME } from "./highlight";
+export {
+  FONT_SIZE_SCALE,
+  DEFAULT_FONT_SIZE,
+  UNSET_FONT_SIZE,
+  fontSizeExtensions,
+  setFontSize,
+  unsetFontSize,
+  readFontSizes,
+  stepFontSizes,
+  increaseFontSize,
+  decreaseFontSize,
+  cycleFontSize,
+  type FontSize,
+  type FontSizeValue,
+  type FontSizeStep,
+} from "./font-size";
