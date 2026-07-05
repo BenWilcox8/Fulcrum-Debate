@@ -60,7 +60,7 @@ npm install
 │   │   ├── preset.ts       Canonical shared extension preset (editorPreset) - feature editors start here
 │   │   └── react/          DocumentEditor component and useDocumentEditor hook
 │   ├── flow/               Flow-sheet layer: speech-column model, helpers, and XYFlow canvas
-│   │   └── canvas/         FlowCanvas, SpeechColumnNode, column-nodes mapping, and useColumnNodes hook
+│   │   └── canvas/         FlowSheetPanel (editable), FlowCanvas (render-only), ColumnControls, SpeechColumnNode, column-nodes mapping, useColumnNodes and useColumns hooks
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
