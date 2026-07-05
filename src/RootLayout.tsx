@@ -42,7 +42,7 @@ export default function RootLayout() {
           </nav>
         </div>
       </header>
-      <main className="flex-1 px-6 py-8">
+      <main className="flex flex-1 flex-col min-h-0 px-6 py-8">
         <Outlet />
       </main>
     </div>

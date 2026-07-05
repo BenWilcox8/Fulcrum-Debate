@@ -41,10 +41,12 @@ npm install
 │   ├── App.tsx             Router provider (HashRouter) - top of the React tree
 │   ├── AppRoutes.tsx       Route table - kept separate so tests can use MemoryRouter
 │   ├── RootLayout.tsx      Persistent app frame: nav chrome + routed <Outlet>
-│   ├── screens/            Placeholder screens for each primary area
+│   ├── screens/            Feature screens (one per primary area)
 │   │   ├── DashboardScreen.tsx
 │   │   ├── BlockFileScreen.tsx
-│   │   └── RoundsScreen.tsx
+│   │   ├── RoundsScreen.tsx    Round index: list + "New round" button
+│   │   └── RoundScreen.tsx     Single round's flow-sheet canvas
+│   ├── rounds/             Round lifecycle seam (useRounds, ROUND_KIND, defaultRoundTitle)
 │   ├── index.css           Tailwind entry point and design token definitions (@theme)
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
 │   ├── preferences/        PreferencesProvider and usePreferences hook (persisted app settings)

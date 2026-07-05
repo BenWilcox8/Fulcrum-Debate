@@ -3,6 +3,7 @@ import RootLayout from "./RootLayout";
 import DashboardScreen from "./screens/DashboardScreen";
 import BlockFileScreen from "./screens/BlockFileScreen";
 import RoundsScreen from "./screens/RoundsScreen";
+import RoundScreen from "./screens/RoundScreen";
 
 /**
  * The application's route table: the persistent RootLayout wraps every area,
@@ -17,6 +18,7 @@ export default function AppRoutes() {
         <Route index element={<DashboardScreen />} />
         <Route path="blocks" element={<BlockFileScreen />} />
         <Route path="rounds" element={<RoundsScreen />} />
+        <Route path="rounds/:roundId" element={<RoundScreen />} />
       </Route>
     </Routes>
   );

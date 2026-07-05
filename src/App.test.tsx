@@ -1,7 +1,19 @@
+// The rounds area consumes the document service, so the routed sub-tree tests
+// mount it inside the real DocumentsProvider - which needs IndexedDB (jsdom has
+// none, so install the in-memory fake, per the document-layer test pattern).
+import "fake-indexeddb/auto";
+import { IDBFactory } from "fake-indexeddb";
+import { beforeEach, describe, expect, it } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 import AppRoutes from "./AppRoutes";
+import { DocumentsProvider } from "./documents/react";
+
+// A fresh IndexedDB backend per test so nothing leaks between tests.
+beforeEach(() => {
+  globalThis.indexedDB = new IDBFactory();
+});
 
 describe("App shell", () => {
   it("mounts with the navigation chrome and the default Dashboard region", () => {
@@ -19,9 +31,11 @@ describe("App shell", () => {
 describe("frame navigation", () => {
   function renderAt(initialPath: string) {
     return render(
-      <MemoryRouter initialEntries={[initialPath]}>
-        <AppRoutes />
-      </MemoryRouter>,
+      <DocumentsProvider>
+        <MemoryRouter initialEntries={[initialPath]}>
+          <AppRoutes />
+        </MemoryRouter>
+      </DocumentsProvider>,
     );
   }
 
