@@ -12,3 +12,5 @@ export {
   type DocumentService,
   type CreateDocumentInput,
 } from "./service";
+export { type RegistryEntry } from "../registry";
+export { type DocumentKind } from "../core";
