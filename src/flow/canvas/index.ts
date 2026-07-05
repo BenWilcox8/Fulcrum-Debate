@@ -10,6 +10,13 @@
  * PRDs: the pure column -> node mapping ({@link columnsToNodes} and layout
  * constants), the live hooks ({@link useColumnNodes}, {@link useColumns}), and
  * the custom column node ({@link SpeechColumnNode}).
+ *
+ * The **node-container contract** - how a registered flow-node kind is hosted
+ * inside a column - is the {@link ./node-host} surface: register kinds via
+ * {@link FlowCanvas}'s `flowNodeTypes` prop, whose definitions
+ * ({@link FlowNodeTypeDefinition}) name a `kind` and its component. The pure
+ * host mapping ({@link flowNodesToNodes}) and the live hook
+ * ({@link useFlowNodes}) are the substrate behind that prop.
  */
 export { FlowCanvas, type FlowCanvasProps } from "./FlowCanvas";
 export {
@@ -35,3 +42,20 @@ export {
   type SpeechColumnNodeData,
   type ColumnLayoutOptions,
 } from "./column-nodes";
+export { useFlowNodes } from "./useFlowNodes";
+export {
+  flowNodesToNodes,
+  flowNodeY,
+  registryToNodeTypes,
+  FLOW_NODE_INSET_X,
+  FLOW_NODE_WIDTH,
+  FLOW_NODE_TOP_INSET,
+  FLOW_NODE_HEIGHT,
+  FLOW_NODE_GAP,
+  type FlowNodeData,
+  type FlowNodeComponent,
+  type FlowNodeTypeDefinition,
+  type FlowNodeRegistry,
+  type HostedFlowNode,
+  type ColumnFlowNodes,
+} from "./node-host";

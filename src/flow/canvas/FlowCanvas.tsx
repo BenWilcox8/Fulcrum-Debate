@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   PanOnScrollMode,
@@ -10,11 +10,22 @@ import type { DocumentHandle } from "../../documents/core";
 import { SpeechColumnNode } from "./SpeechColumnNode";
 import { SPEECH_COLUMN_NODE_TYPE } from "./column-nodes";
 import { useColumnNodes } from "./useColumnNodes";
+import { useFlowNodes } from "./useFlowNodes";
+import {
+  registryToNodeTypes,
+  type FlowNodeRegistry,
+} from "./node-host";
 
-/** Node-type registry: the canvas renders one custom node, the speech column. */
-const NODE_TYPES: NodeTypes = {
+/**
+ * The built-in node types the canvas always renders. Registered flow-node kinds
+ * (via `flowNodeTypes`) are merged on top of this.
+ */
+const BASE_NODE_TYPES: NodeTypes = {
   [SPEECH_COLUMN_NODE_TYPE]: SpeechColumnNode,
 };
+
+/** A stable empty registry so omitting `flowNodeTypes` never re-renders. */
+const EMPTY_REGISTRY: FlowNodeRegistry = [];
 
 /**
  * No edges are ever drawn on the flow sheet. A stable empty array keeps XYFlow
@@ -41,6 +52,14 @@ export interface FlowCanvasProps {
    * once the handle's local load resolves and the observer fires.
    */
   handle: DocumentHandle | null;
+  /**
+   * The flow-node kinds this canvas can host inside its columns. Each definition
+   * registers a `kind` and the component that renders it; the canvas builds its
+   * XYFlow node types and child-node layout from this registry, so a later PRD
+   * adds a node kind purely by passing it here - no canvas edits. Omitted means
+   * columns only (the render-only default).
+   */
+  flowNodeTypes?: FlowNodeRegistry;
   /** Class applied to the canvas's sizing wrapper. */
   className?: string;
 }
@@ -59,7 +78,11 @@ export interface FlowCanvasProps {
  * the observer once IndexedDB has loaded into the doc, so nothing here awaits a
  * network resource - the offline-boot rule holds.
  */
-export function FlowCanvas({ handle, className }: FlowCanvasProps) {
+export function FlowCanvas({
+  handle,
+  flowNodeTypes = EMPTY_REGISTRY,
+  className,
+}: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | undefined>(undefined);
 
@@ -76,7 +99,20 @@ export function FlowCanvas({ handle, className }: FlowCanvasProps) {
     return () => observer.disconnect();
   }, []);
 
-  const nodes = useColumnNodes(handle, height);
+  const columnNodes = useColumnNodes(handle, height);
+  const flowNodes = useFlowNodes(handle, flowNodeTypes);
+
+  // Parents must precede their children in the node array (XYFlow requirement),
+  // so column nodes come first, then the flow nodes hosted inside them.
+  const nodes = useMemo(
+    () => [...columnNodes, ...flowNodes],
+    [columnNodes, flowNodes],
+  );
+
+  const nodeTypes = useMemo(
+    () => ({ ...BASE_NODE_TYPES, ...registryToNodeTypes(flowNodeTypes) }),
+    [flowNodeTypes],
+  );
 
   return (
     <div
@@ -87,7 +123,7 @@ export function FlowCanvas({ handle, className }: FlowCanvasProps) {
       <ReactFlow
         nodes={nodes}
         edges={NO_EDGES}
-        nodeTypes={NODE_TYPES}
+        nodeTypes={nodeTypes}
         // Horizontal-only navigation: scroll pans sideways, vertical is pinned
         // so full-height columns stay fully in view.
         panOnScroll
