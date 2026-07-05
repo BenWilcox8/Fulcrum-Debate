@@ -8,7 +8,9 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 - **React + TypeScript + Vite** - front end in `src/`.
 - **Tailwind CSS v4** - via the `@tailwindcss/vite` plugin; global styles are `@import "tailwindcss";` in `src/index.css` (no `tailwind.config.js`, no PostCSS config).
 - **react-router-dom v7** - client-side routing for the app frame. Uses `HashRouter` (see `src/App.tsx`) because the app is served from a `file://` context under Tauri with no server to resolve real paths.
-- Planned but **not yet added**: Tiptap, Yjs, XYFlow. Do not introduce them until their own tasks land.
+- **Tiptap v3** - rich-text editor core in `src/editor/core/` (headless factory + Yjs binding). React component and marks are follow-up tasks.
+- **Yjs + y-indexeddb** - shared data types and local persistence, used by the document and editor layers.
+- Planned but **not yet added**: XYFlow. Do not introduce it until its own task lands.
 
 The app is strictly **local-first**: nothing in the boot/render path may await a network resource.
 
