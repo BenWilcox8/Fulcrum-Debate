@@ -51,10 +51,14 @@ npm install
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
 │   │   ├── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
-│   │   └── service/        Document service - single lifecycle seam (create/open/list/rename/delete)
+│   │   ├── service/        Document service - single lifecycle seam (create/open/list/rename/delete)
+│   │   └── react/          DocumentsProvider, useDocuments, useDocument, useDocumentService hooks
 │   ├── editor/
 │   │   ├── core/           Headless Tiptap editor factory with Yjs fragment binding (createEditor)
-│   │   └── marks/          Addressable editor marks: BoldMark, HighlightMark, and font-size scale + helpers
+│   │   ├── marks/          Addressable editor marks: BoldMark, HighlightMark, and font-size scale + helpers
+│   │   ├── headings/       Heading node (levels 1-6) and outline query (getOutline, observeOutline)
+│   │   ├── preset.ts       Canonical shared extension preset (editorPreset) - feature editors start here
+│   │   └── react/          DocumentEditor component and useDocumentEditor hook
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
