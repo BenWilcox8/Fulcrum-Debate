@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { startWindowGeometryPersistence } from "./ipc/window-geometry";
 import { PreferencesProvider } from "./preferences";
+import { DocumentsProvider } from "./documents/react";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
@@ -13,7 +14,9 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <PreferencesProvider>
-      <App />
+      <DocumentsProvider>
+        <App />
+      </DocumentsProvider>
     </PreferencesProvider>
   </StrictMode>,
 );

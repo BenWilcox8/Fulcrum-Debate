@@ -66,7 +66,7 @@ This is hand-rolled through the IPC seam (not `tauri-plugin-window-state`) becau
 
 Every artifact a debater creates - flow sheet, speech doc, block file - is a Yjs `Y.Doc` persisted locally to IndexedDB via `y-indexeddb`.
 `src/documents/core/` is the foundation layer only: a document handle, its persistence binding, a local load signal, and teardown.
-The registry (metadata index) lives in `src/documents/registry/`; the service API lives in `src/documents/service/`; React hooks are a separate follow-up task and do not live here.
+The registry (metadata index) lives in `src/documents/registry/`; the service API lives in `src/documents/service/`; React integration lives in `src/documents/react/`.
 
 - **The handle:** `openDocument({ id, kind })` in `src/documents/core/document-handle.ts` wraps a fresh `Y.Doc` plus an `IndexeddbPersistence` provider keyed to the id, and returns a `DocumentHandle` carrying `id`, `kind`, `doc`, `dbName`, `whenLoaded`, `loaded`, `closed`, and `close()`. Import from `src/documents/core`.
 - **Kinds:** `DocumentKind` is a minimal string-literal union (`flow-sheet` | `speech-doc` | `block-file`) in `kind.ts`, with `DOCUMENT_KINDS` and an `isDocumentKind` guard. Add a kind only when a genuinely new artifact type needs its own document.
@@ -80,7 +80,7 @@ The registry (metadata index) lives in `src/documents/registry/`; the service AP
 
 The registry is the sibling index to the document core: one locally-persisted store holding *metadata* (never content) for every document - `id`, `kind`, `title`, `createdAt`, `lastEditedAt`.
 `src/documents/registry/` is the registry primitive only.
-The service API (create/open/list/rename/delete orchestration) lives in `src/documents/service/` and drives these primitives; React hooks are a separate follow-up task. Cross-layer orchestration (e.g. also deleting a document's content database on `remove`) belongs to the service, not here.
+The service API (create/open/list/rename/delete orchestration) lives in `src/documents/service/` and drives these primitives; React integration lives in `src/documents/react/`. Cross-layer orchestration (e.g. also deleting a document's content database on `remove`) belongs to the service, not here.
 
 - **The handle:** `openRegistry()` in `src/documents/registry/registry.ts` returns a `DocumentRegistry` with `whenLoaded`/`loaded`/`closed`, reads (`get(id)`, `list()`), writes (`add`, `updateTitle`, `touch`, `remove`), `track(handle)`, `subscribe(listener)`, and `close()`. Import from `src/documents/registry`.
 - **Persistence - same binding, well-known store, no `openDocument`:** the registry is *not* a debate artifact, so it does not go through `openDocument` (which is artifact-shaped and demands a `DocumentKind`). It owns one well-known Y.Doc under a sibling namespace `REGISTRY_DB_NAME` (`"fulcrum:registry"`, a sibling of the core's `fulcrum:doc:<id>`), bound by the same `IndexeddbPersistence` provider the core uses - reusing the core's binding, not new machinery. `whenLoaded` reflects local IndexedDB read completion alone; nothing awaits the network.
@@ -92,7 +92,7 @@ The service API (create/open/list/rename/delete orchestration) lives in `src/doc
 ## Document service (create/open/list/rename/delete)
 
 The service is the single seam every feature consumes for document lifecycle; it composes the core (content) and the registry (metadata) so feature code never touches Yjs / y-indexeddb / the core or registry primitives directly.
-`src/documents/service/` is the service module only - no React integration and no editor UI (hooks are a separate follow-up task).
+`src/documents/service/` is the service module only - no React integration and no editor UI.
 
 - **The handle:** `openDocumentService()` in `src/documents/service/service.ts` returns a `DocumentService` with `whenReady`, `create({kind,title})`, `open(id)`, `list()`, `rename(id,title)`, `remove(id)`, and `close()`. Import from `src/documents/service`.
 - **Owns the registry, one handle per id:** the service owns a single `openRegistry()` instance for its lifetime and a `Map<id, {handle, untrack}>` of open documents. `create` mints an id (`crypto.randomUUID`), `registry.add`s the entry, `openDocument`s the content, and `registry.track`s it; `open` returns the *same cached handle* on repeated calls (this is where handle deduplication lives - the core deliberately hands back an independent handle every call). `open` throws for an unregistered id.
@@ -100,6 +100,18 @@ The service is the single seam every feature consumes for document lifecycle; it
 - **Readiness + lifecycle:** every method `await`s `registry.whenLoaded` (exposed as `whenReady`) so listings and duplicate checks see persisted state; nothing awaits the network. Methods throw after `close()`. `close()` untracks+closes every open handle then closes the registry, and is idempotent.
 - **No new primitives:** the service composes the existing core/registry public APIs unchanged - `rename` is `registry.updateTitle` (which bumps `lastEditedAt`), edit-driven last-edited bumps come from `registry.track`.
 - **Tests:** `service.test.ts` follows the established pattern - `fake-indexeddb/auto` + fresh `IDBFactory()` per test, behavioral. Key cases: create->edit->reload through a fresh service returns the same content and list; `remove` wipes both the entry and the content database (asserted via `indexedDB.databases()`); reopening a removed id sees empty content.
+- **Service exposes `subscribe` + `closed`:** beyond create/open/list/rename/remove, the service also has `subscribe(listener)` (delegates to `registry.subscribe`, so React observes the document set through the seam, never the registry directly) and a `closed` getter (mirrors the handle/registry flag, used by the React provider to detect a StrictMode-closed service and recreate it).
+
+## Document service React integration (provider + hooks)
+
+`src/documents/react/` is the only React seam onto the document service; it follows the preferences provider/hook split (context, provider, hooks in separate files for the react-refresh `only-export-components` lint) and composes the service - React never touches the core/registry primitives, Yjs, or y-indexeddb.
+
+- **The provider:** `DocumentsProvider` (`DocumentsProvider.tsx`) owns one `openDocumentService()` for the app: created synchronously in a `useState` initializer (opening awaits no network - it only binds the local registry), closed on unmount. It renders children immediately with no gate, so the local-first boot rule holds. Mounted in `src/main.tsx` inside `PreferencesProvider`. It is deliberately *not* mounted inside `App`, so `App.offline-boot.test.tsx` (which renders `App` without providers and has no IndexedDB) never constructs a service.
+- **StrictMode safety:** the mount effect closes the service on cleanup; because `close()` is idempotent and the service exposes `closed`, the effect detects a service closed by a prior StrictMode cleanup and mints a fresh one (`if (service.closed) setService(openDocumentService())`). Production mounts create exactly one service.
+- **`useDocuments`:** returns the live `documents` listing (recency-ordered), a `loading` flag, and the `create`/`rename`/`remove` mutations as stable callbacks. It reads once on `service.whenReady`, then stays subscribed via `service.subscribe`, so the listing re-renders on any create/rename/touch/remove - including edit-driven `lastEditedAt` bumps from tracked documents.
+- **`useDocument(id)`:** opens the id through the service and exposes `{ handle, loaded, version }`; `version` increments on every local `doc.on("update")` so the component re-renders on content edits. Nullish id yields a null handle (safe to call unconditionally). Crucially it does **not** close the handle on unmount/id-change - the service owns and caches one handle per id (shared across consumers); the hook only detaches its own update listener. Closing is the service's job (`remove`/`close`).
+- **`useDocumentService`:** low-level accessor (throws outside a provider) for the raw service; prefer the two higher-level hooks.
+- **Tests:** `react.test.tsx` drives the real service under `fake-indexeddb/auto` (no mocks) via Testing Library: children render synchronously, the listing live-updates through create/rename/remove, a content edit re-renders `useDocument`, the provider closes its service on unmount, and an id-change does not close the service-owned handle.
 
 ## Document model contract (shared-type conventions)
 
