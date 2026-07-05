@@ -14,9 +14,14 @@
  * - The **addressing helpers** ({@link getSideRegions} & friends) - locate each
  *   side's content region, the seam section tools, a ToC sidebar, and card tools
  *   build on.
+ * - The **argument-section query** ({@link getSideSections} & friends) - the
+ *   ordered argument-type sections (`AT: Gold`, `AT: Fusion`, ...) within one
+ *   side, derived from the shared heading layer and scoped per side.
  *
  * See {@link ./schema} for the design (why two enforced section nodes in one
- * fragment) and {@link ./sections} for the position semantics of the helpers.
+ * fragment), {@link ./sections} for the position semantics of the region
+ * helpers, and {@link ./argument-sections} for the heading-level contract behind
+ * the section query.
  */
 export { type BlockSide, BLOCK_SIDES, isBlockSide } from "./side";
 export {
@@ -36,3 +41,10 @@ export {
   getSideRegion,
   focusSide,
 } from "./sections";
+export {
+  type BlockSection,
+  BLOCK_SECTION_HEADING_LEVEL,
+  sideSectionsFromDoc,
+  getSideSections,
+  observeSideSections,
+} from "./argument-sections";
