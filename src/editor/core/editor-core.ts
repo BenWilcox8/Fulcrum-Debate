@@ -118,6 +118,10 @@ export function createEditor(options: CreateEditorOptions): Editor {
     throw new Error("createEditor: fragment must be a non-empty string");
   }
 
+  if (handle.closed) {
+    throw new Error("createEditor: handle is already closed");
+  }
+
   // Bind to the named top-level XmlFragment. Yjs fixes this name's type on first
   // access, which is exactly the fragment-ownership guarantee the document model
   // contract relies on.
