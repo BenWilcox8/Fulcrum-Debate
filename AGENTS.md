@@ -152,6 +152,7 @@ Each editor/feature PRD fills in its kind's rows as it lands.
 |---|---|---|---|
 | `flow-sheet` | `columns` | `Y.Array<Y.Map>` | Ordered speech columns; each map is one `SpeechColumn` (`id`, `label`, `side`). See [Column model](#column-model-the-spine). |
 | `flow-sheet` | `nodes` | `Y.Map<Y.Map>` | Flow nodes keyed by id; each map records `columnId` (membership), `kind`, and `order` (vertical). See [Node-container contract](#node-container-contract-membership--vertical-order). |
+| `block-file` | `body` | `Y.XmlFragment` | The one continuous rich-text surface, whose top-level content is exactly two enforced side sections (aff then neg). `BLOCK_FILE_FRAGMENT` in `src/blockfile`. See [Block file (the contract)](#block-file-the-contract). |
 
 ### Registry schema (metadata index)
 
@@ -332,6 +333,88 @@ Every test follows the established pattern - `fake-indexeddb/auto` + a fresh `ID
 - **Canvas:** the pure mappings (`column-nodes.test.ts`, `node-host.test.ts`), the node component (`SpeechColumnNode.test.tsx`, side-token classes), and `canvas.test.tsx` / `node-host.integration.test.tsx` (which drive `useColumnNodes` / `useFlowNodes` and a rendered `FlowCanvas` over a *real* handle, with an inline **stub node kind** for the hosting seam - `parentId` == `columnId`, live reaction, unregistered kinds skipped). The write strip is `column-controls.test.tsx`.
 - **Rounds:** `rounds.test.tsx` drives the round lifecycle through the routed shell and the real service - starting a round opens a fresh empty canvas, a round's columns restore through a completely fresh provider (simulated restart), two rounds are isolated, and an unknown id shows the not-found state.
 - **Whole-stack E2E:** `src/flow/flow-sheet.e2e.test.tsx` is the top-to-bottom proof that the composed layers hold together. It creates a round through the round seam, adds/relabels/reorders columns and places a stub node on the round's real handle, throws that service instance away, then reopens the same IndexedDB backend through a **completely fresh** service and asserts full restoration - columns in order, their labels and sides, and the node still in its column - both at the model level (`listColumns`/`listColumnNodes`) and rendered through the real `FlowCanvas` with the stub kind registered.
+
+## Block file (the contract)
+
+A **block file** is a debater's evidence store: one large, continuously-scrollable document split by which side of the debate the evidence supports.
+The side division (affirmative / negative) is **first-class enforced structure in the ProseMirror schema**, not a heading convention - ordinary editing cannot destroy it.
+`src/blockfile/` is the complete module; import everything from `src/blockfile` (the public index).
+
+### The block-file document (fragment schema)
+
+A block file is one `block-file` [document](#document-model-contract-shared-type-conventions): a `Y.Doc` persisted per-id to IndexedDB, reached through `openDocumentService()` like any other document.
+All of its rich text lives under one reserved top-level fragment:
+
+| Fragment | Yjs type | Constant | Holds |
+|---|---|---|---|
+| `body` | `Y.XmlFragment` | `BLOCK_FILE_FRAGMENT` | The one continuous editing surface - aff region first, neg region second, both enforced by the schema. |
+
+A later PRD that needs to store block-file data outside the prose (e.g. per-card metadata) claims a **new** fragment; it never repurposes `body`.
+
+### Schema design (two enforced section nodes)
+
+The side division is expressed in the ProseMirror schema, not by plugin or convention:
+
+- Two dedicated container node types - `affSection` (`AFF_SECTION_NODE_NAME`) and `negSection` (`NEG_SECTION_NODE_NAME`) - each hold ordinary `block+` content.
+- The top-level `doc` node is overridden (`blockDocument`) so its content expression is exactly `"affSection negSection"` - one aff region, then one neg region, and nothing else.
+
+Because the invariant lives in the schema, ProseMirror enforces it on every transaction for free - no plugin needed.
+These behaviours are guaranteed by the schema and covered by `schema.test.ts`:
+
+- **Select-all + delete** leaves both sections in place (each backfilled with an empty paragraph) rather than emptying the document.
+- **Deleting across the aff/neg boundary** cannot merge the two regions: both section nodes are `isolating`, so a selection or join is not allowed to cross a section boundary.
+- **Pasting or replacing** the whole document still resolves to a valid two-section document; `defining: true` keeps a section as the surrounding context rather than letting a paste dissolve it.
+
+**Why two distinct node types instead of one node with a `side` attribute:** encoding the side in the node type (not an attribute) lets the single `doc` content expression `"affSection negSection"` pin down identity, order, and cardinality in one place.
+A one-node-with-attribute design (`sideSection{2}`) could not tell ProseMirror that the first must be aff and the second neg.
+
+**Why sections are not in the `block` group:** keeping them out of `block` makes it structurally impossible for a section to nest inside another section's `block+` content.
+
+### Installing the schema
+
+Layer `blockFileExtensions` onto the shared preset's feature-extension seam - it is not a fork of the editor core:
+
+```ts
+const editor = createEditor({
+  binding: { handle, fragment: BLOCK_FILE_FRAGMENT },
+  extensions: editorPreset({ extensions: blockFileExtensions }),
+});
+// or in React:
+// <DocumentEditor handle={handle} fragment={BLOCK_FILE_FRAGMENT}
+//   preset={{ extensions: blockFileExtensions }} />
+```
+
+`blockFileExtensions` is `[blockDocument, affSection, negSection]`.
+`blockDocument` overrides the baseline `doc` node; because feature extensions are layered after the editor-core baseline by the preset, the override wins.
+Tiptap logs a one-line "Duplicate extension names" warning for the shadowed baseline `doc` - that is expected and harmless.
+The Yjs undo rule is untouched: `blockFileExtensions` contributes only schema nodes, no `History` extension.
+
+### Side type
+
+`BlockSide` (`"aff" | "neg"`) is the block-file module's own type for the two sides - independent of the flow module's `FlowSide` even though both use the same vocabulary.
+`BLOCK_SIDES` (`["aff", "neg"] as const`) is the canonical document order (aff first, then neg), and `isBlockSide` is the guard.
+`SIDE_SECTION_NODE_NAME` maps each side to its node-type name string.
+
+### Addressing helpers
+
+`src/blockfile/sections.ts` is the stable query layer that locates each side's content region so later tooling can act on it.
+All helpers are pure derivations of ProseMirror state (no plugin, no cache) - the same snapshot discipline as the [outline query](#editor-headings--outline-toc-seam).
+
+- **`BlockSideRegion`** - the located region for one side: `{ side, node, pos, contentStart, contentEnd }`.
+  `pos` is the ProseMirror position immediately before the section node; `contentStart = pos + 1` is the first position inside the section's content; `contentEnd = contentStart + node.content.size` is just past the last child.
+  Positions are valid only against the document version they were read from - re-derive after edits.
+- **`sideRegionsFromDoc(doc)`** - walks a block-file document node and returns both regions as `Record<BlockSide, BlockSideRegion>`.
+  Throws if either section is missing (that would be a schema violation, a bug).
+- **`getSideRegions(editor)`** - the editor convenience form; equivalent to `sideRegionsFromDoc(editor.state.doc)`.
+- **`getSideRegion(editor, side)`** - single-side convenience.
+- **`focusSide(editor, side)`** - moves the selection to the start of a side's content and focuses the editor; the "jump to this side" gesture a ToC or navigation control drives. Returns the editor for chaining.
+
+### Tests
+
+Every test follows the established pattern - `fake-indexeddb/auto` + a fresh `IDBFactory()` per test, behavioral assertions, never ProseMirror internals or pixels.
+
+- **`schema.test.ts`** - proves the enforced structure: select-all-delete, cross-boundary delete, and paste/replace all preserve both sections; the schema serializes and reloads correctly through a fresh handle+editor; marks and headings from the shared preset compose on section content.
+- **`sections.test.ts`** - proves the addressing helpers: `getSideRegions` returns correct positions for both sides; `contentStart`/`contentEnd` bound the right content; `focusSide` moves the selection to the correct side; `sideRegionsFromDoc` throws on a non-block-file document.
 
 ## Sharp edges
 
