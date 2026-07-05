@@ -54,7 +54,7 @@
  *
  * This module is marks + helpers only: no toolbar, no React, no Shrink logic.
  */
-import { TextStyle, FontSize } from "@tiptap/extension-text-style";
+import { TextStyle, FontSize as FontSizeExtension } from "@tiptap/extension-text-style";
 import type { Editor, Extensions } from "@tiptap/core";
 import type { EditorState } from "@tiptap/pm/state";
 
@@ -107,7 +107,7 @@ export type FontSizeStep = "increase" | "decrease";
  * `setFontSize` / `unsetFontSize` commands onto it. Order matters - the
  * attribute extension needs the mark it decorates to be registered first.
  */
-export const fontSizeExtensions: Extensions = [TextStyle, FontSize];
+export const fontSizeExtensions: Extensions = [TextStyle, FontSizeExtension];
 
 const isFontSize = (value: string): value is FontSize =>
   (FONT_SIZE_SCALE as readonly string[]).includes(value);
@@ -301,7 +301,9 @@ export function stepFontSizes(
   const { state } = editor;
 
   if (state.selection.empty) {
-    const target = steppedSize(cursorSize(state), direction, wrap);
+    const current = cursorSize(state);
+    const target = steppedSize(current, direction, wrap);
+    if (target === current) return false;
     return setFontSize(editor, target);
   }
 
