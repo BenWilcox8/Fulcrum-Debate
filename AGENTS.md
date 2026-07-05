@@ -72,7 +72,7 @@ The registry (metadata index) lives in `src/documents/registry/`; the service AP
 - **Kinds:** `DocumentKind` is a minimal string-literal union (`flow-sheet` | `speech-doc` | `block-file`) in `kind.ts`, with `DOCUMENT_KINDS` and an `isDocumentKind` guard. Add a kind only when a genuinely new artifact type needs its own document.
 - **Per-id database:** each document lives in its own IndexedDB database named `fulcrum:doc:<id>` (`DOCUMENT_DB_PREFIX` + id, via `documentDbName`). Opening the same id twice yields two independent handles on the same store - deduplication is the service's job, not this layer's.
 - **Local load signal:** `whenLoaded` resolves (and `loaded` flips to `true`) from the provider's local `whenSynced` alone - purely local IndexedDB read completion, never any network. Treat local-persistence success as a first-class, network-independent state. Edit shared types (`doc.getText`, `doc.getMap`, ...) only after awaiting `whenLoaded`: y-indexeddb drops updates until its `db` is set, which coincides with the synced signal.
-- **No imposed schema:** this layer stores no shared-type layout. Callers read/mutate shared types directly off `handle.doc`; the concrete per-kind layout is deferred to the feature tasks and a later AGENTS.md conventions pass.
+- **No imposed schema:** this layer stores no shared-type layout. Callers read/mutate shared types directly off `handle.doc`; the concrete per-kind layout is deferred to the feature tasks. The conventions that govern that layout are the [Document model contract](#document-model-contract-shared-type-conventions) below.
 - **Teardown:** `close()` is idempotent - it `await`s `provider.destroy()` (detaches listeners, `db.close()` which still commits in-flight writes) then `doc.destroy()`. A closed handle can be reopened by the same id with identical content.
 - **Tests:** `document-handle.test.ts` imports `fake-indexeddb/auto` (jsdom has no IndexedDB) and resets `globalThis.indexedDB = new IDBFactory()` per test. Assertions are behavioral - content survives a brand-new handle/provider - never IndexedDB internals.
 
@@ -100,6 +100,70 @@ The service is the single seam every feature consumes for document lifecycle; it
 - **Readiness + lifecycle:** every method `await`s `registry.whenLoaded` (exposed as `whenReady`) so listings and duplicate checks see persisted state; nothing awaits the network. Methods throw after `close()`. `close()` untracks+closes every open handle then closes the registry, and is idempotent.
 - **No new primitives:** the service composes the existing core/registry public APIs unchanged - `rename` is `registry.updateTitle` (which bumps `lastEditedAt`), edit-driven last-edited bumps come from `registry.track`.
 - **Tests:** `service.test.ts` follows the established pattern - `fake-indexeddb/auto` + fresh `IDBFactory()` per test, behavioral. Key cases: create->edit->reload through a fresh service returns the same content and list; `remove` wipes both the entry and the content database (asserted via `indexedDB.databases()`); reopening a removed id sees empty content.
+
+## Document model contract (shared-type conventions)
+
+This is the canonical contract every later editor PRD (flow sheet, speech doc, block file) builds on.
+The three modules above - core (`src/documents/core`), registry (`src/documents/registry`), service (`src/documents/service`) - are the implementation; this section is the agreement between them and the feature code that consumes them.
+When the contract and an implementation note disagree, the contract is the intent and the code is a bug.
+
+### Document kinds
+
+`DocumentKind` (`src/documents/core/kind.ts`) is a closed string-literal union; every persisted document declares exactly one.
+
+| Kind | Artifact | What it is |
+|---|---|---|
+| `flow-sheet` | Flow sheet | Arguments tracked across the speeches of a round. |
+| `speech-doc` | Speech doc | The text a debater reads or drafts. |
+| `block-file` | Block file | Reusable prewritten arguments / evidence. |
+
+`DOCUMENT_KINDS` is the runtime list and `isDocumentKind` the guard.
+Keep the union minimal - add a kind only when a genuinely new top-level artifact type needs its own document, and in the same change give it a row here and a fragment reservation (below).
+
+### Where a kind's content lives (fragment convention)
+
+The core imposes no schema: a document's content is whatever Yjs shared types a caller instantiates by name off `handle.doc` (`doc.getText(name)`, `doc.getMap(name)`, `doc.getArray(name)`, `doc.getXmlFragment(name)`).
+The concrete per-kind layouts are deliberately deferred to each kind's feature PRD, so what is fixed *now* is the convention that keeps those independently-authored layouts from colliding - not the layouts themselves.
+
+- **A top-level shared-type name is a "fragment", and the fragment is the unit of ownership.** Each named top-level type (`body`, `meta`, `columns`, ...) is an independent slice of the document; features coordinate at fragment granularity.
+- **The namespace is per kind.** Different kinds live in different documents (separate `fulcrum:doc:<id>` databases), so a name can never collide *across* kinds. The only real collision risk is two features writing the same name on the *same* kind, so reservations are scoped per kind.
+- **Exactly one PRD owns a kind's layout.** The feature PRD that ships a kind's editor defines that kind's fragments. A later feature that needs to store something new on an existing kind claims a *new* fragment name; it never repurposes an existing one.
+- **A PRD claims a fragment by registering it.** When a PRD lands it adds its kind's fragments to the reservation table below (name, Yjs type, meaning) as part of that change. A fragment that is not in the table is unclaimed and must not be written by shipping code.
+- **A name's Yjs type is fixed for the life of the document.** Yjs binds a top-level name to the first accessor used on it; reading that name later through a different accessor is a bug. Once a fragment ships as, say, `getText("body")` it is a text fragment forever - migrating means a new name, not a re-typed one. For the same reason, never rename a shipped fragment: the old name still addresses the persisted data.
+- **Naming:** lowerCamelCase, short, kind-local. Tests use ad-hoc placeholder names (`body`, `meta`, `cards`) to exercise the plumbing; those carry no schema guarantee until a PRD reserves them.
+
+No fragments are reserved yet - each editor PRD fills in its kind's rows as it lands.
+
+| Kind | Fragment | Yjs type | Meaning |
+|---|---|---|---|
+| _(none reserved yet)_ | | | |
+
+### Registry schema (metadata index)
+
+The registry stores *metadata about* documents, never content. One `RegistryEntry` (`src/documents/registry/entry.ts`) per document; all five fields are required and persisted.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `id` | string | Stable id, identical to the one passed to `openDocument` and the suffix of the content database `fulcrum:doc:<id>`. |
+| `kind` | `DocumentKind` | The artifact kind. |
+| `title` | string | Human-facing title shown in listings. |
+| `createdAt` | number | Creation time, epoch ms. Immutable after `add`. |
+| `lastEditedAt` | number | Last-edited time, epoch ms. Drives recency ordering. |
+
+Edit-tracking contract:
+
+- **`touch(id, at?)`** is the low-level "bump `lastEditedAt`" primitive.
+- **`track(handle)`** is the ergonomic form: it subscribes to a document's own update stream and calls `touch` on genuine local edits, returning an unsubscribe. Updates y-indexeddb replays while *loading* a document are ignored, so merely opening a document is not an edit. No `Y.Doc` or provider crosses this seam - callers pass a handle.
+- **Rename bumps recency.** `updateTitle` sets `lastEditedAt` too - a rename is a user-visible change, so a renamed document rises to the top of the listing.
+- **Listing order** (`list()`): `lastEditedAt` descending, ties broken by `createdAt` descending then `id` - a stable, total order.
+
+### The service is the only entry point
+
+Feature code consumes the document layer exclusively through `openDocumentService()` (`src/documents/service`). It must not import the core or registry primitives, `openDocument`, `openRegistry`, Yjs, or y-indexeddb directly.
+
+- `create` / `open` / `list` / `rename` / `remove` / `close` are the whole surface; `open` returns one cached handle per id (deduplication lives here, not in the core).
+- Features read and mutate content through Yjs shared types on the returned `handle.doc`, following the fragment convention above; everything about *which* documents exist and their metadata flows through the service.
+- Every method awaits the registry's local load (`whenReady`) and nothing awaits the network - the layer is local-first end to end. An unclean shutdown is recoverable: `src/documents/crash-reopen.test.ts` abandons a service and its handles without `close()`, then proves a completely fresh service over the same store restores the latest content and the full, recency-ordered registry listing.
 
 ## Sharp edges
 
