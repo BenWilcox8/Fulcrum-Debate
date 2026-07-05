@@ -1,4 +1,4 @@
-import { useEffect, useState, type DependencyList } from "react";
+import { useEffect, useRef, useState, type DependencyList } from "react";
 import type { Editor } from "@tiptap/core";
 
 import type { DocumentHandle } from "../../documents/core";
@@ -43,15 +43,68 @@ export interface UseDocumentEditorOptions {
  * Recreation follows the `@tiptap/react` `useEditor(options, deps)` idiom: the
  * editor is rebuilt whenever `handle` or `fragment` changes, or any value in the
  * caller-supplied `deps` changes. Because `preset` is not deep-compared, pass a
- * stable `preset` (module-level or memoised) and list anything that should force
- * a rebuild in `deps`. The editor is always destroyed on cleanup, detaching its
- * ProseMirror plugins from the shared doc.
+ * **stable** `preset` reference and list anything that should force a rebuild in
+ * `deps`. The editor is always destroyed on cleanup, detaching its ProseMirror
+ * plugins from the shared doc.
+ *
+ * **Stable preset - patterns:**
+ *
+ * WRONG - new object every render, editor never rebuilds to pick up changes:
+ * ```tsx
+ * // Inside a render function / component body:
+ * useDocumentEditor({ handle, fragment, preset: { extensions: [Foo] } });
+ * ```
+ *
+ * RIGHT - module-level constant (simplest):
+ * ```ts
+ * const MY_PRESET: EditorPresetOptions = { extensions: [Foo] };
+ * // ...inside component:
+ * useDocumentEditor({ handle, fragment, preset: MY_PRESET });
+ * ```
+ *
+ * RIGHT - memoised when the config depends on props/state:
+ * ```tsx
+ * const preset = useMemo(() => ({ extensions: [Foo], headingLevels: [1, 2] }), []);
+ * useDocumentEditor({ handle, fragment, preset });
+ * ```
+ *
+ * RIGHT - force a rebuild by listing the changing input in deps:
+ * ```tsx
+ * useDocumentEditor({ handle, fragment, preset: { headingLevels: levels } }, [levels]);
+ * ```
  */
 export function useDocumentEditor(
   { handle, fragment, preset }: UseDocumentEditorOptions,
   deps: DependencyList = [],
 ): Editor | null {
   const [editor, setEditor] = useState<Editor | null>(null);
+
+  // Dev-mode: warn when preset reference changes without a deps change, which
+  // would silently leave the active editor using the stale preset config.
+  const prevPresetRef = useRef<EditorPresetOptions | undefined>(preset);
+  const prevDepsRef = useRef<DependencyList>(deps);
+  const mountedRef = useRef(false);
+
+  if (import.meta.env.DEV && mountedRef.current) {
+    const presetChanged = !Object.is(preset, prevPresetRef.current);
+    const depsChanged =
+      deps.length !== prevDepsRef.current.length ||
+      deps.some((d, i) => !Object.is(d, prevDepsRef.current[i]));
+
+    if (presetChanged && !depsChanged) {
+      console.warn(
+        "[useDocumentEditor] The `preset` reference changed between renders " +
+          "without a corresponding change in `deps`. The editor will NOT be " +
+          "recreated — the active editor keeps its original preset (stale). " +
+          "Pass a stable/memoised preset object, or list the changing input " +
+          "in the `deps` array to force a rebuild. See the JSDoc for examples.",
+      );
+    }
+  }
+
+  mountedRef.current = true;
+  prevPresetRef.current = preset;
+  prevDepsRef.current = deps;
 
   useEffect(() => {
     if (!handle || handle.closed) {

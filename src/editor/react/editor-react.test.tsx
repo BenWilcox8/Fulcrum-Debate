@@ -6,8 +6,9 @@
 // pixels (contentEditable is inert under jsdom).
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, waitFor, act } from "@testing-library/react";
+import { useState } from "react";
 import { EditorContent } from "@tiptap/react";
 import type { Editor, JSONContent } from "@tiptap/core";
 
@@ -77,6 +78,69 @@ describe("DocumentEditor", () => {
       ).not.toBeNull();
     });
 
+    await handle.close();
+  });
+});
+
+describe("dev-mode stale-preset warning", () => {
+  it("warns when preset reference changes between renders without a deps change", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const handle = openDocument({ id: uniqueId(), kind: "speech-doc" });
+
+    // A component that passes a new preset object on every render.
+    let rerender: (() => void) | undefined;
+    function UnstablePreset() {
+      const [tick, setTick] = useState(0);
+      rerender = () => setTick((t) => t + 1);
+      // New object literal each render - the unstable-preset footgun.
+      const editor = useDocumentEditor({
+        handle,
+        fragment: "body",
+        preset: { extensions: [] },
+      });
+      return <EditorContent editor={editor} />;
+    }
+
+    render(<UnstablePreset />);
+
+    // First render: no previous value, no warning expected.
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    // Second render with a new preset object but no deps change: warning fires.
+    act(() => rerender!());
+    expect(warnSpy).toHaveBeenCalledOnce();
+    expect(warnSpy.mock.calls[0][0]).toContain("[useDocumentEditor]");
+    expect(warnSpy.mock.calls[0][0]).toContain("preset");
+
+    warnSpy.mockRestore();
+    await handle.close();
+  });
+
+  it("does not warn when preset reference is stable across renders", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const handle = openDocument({ id: uniqueId(), kind: "speech-doc" });
+    const stablePreset = { extensions: [] };
+
+    let rerender: (() => void) | undefined;
+    function StablePreset() {
+      const [tick, setTick] = useState(0);
+      rerender = () => setTick((t) => t + 1);
+      const editor = useDocumentEditor({
+        handle,
+        fragment: "body",
+        preset: stablePreset,
+      });
+      return <EditorContent editor={editor} />;
+    }
+
+    render(<StablePreset />);
+    act(() => rerender!());
+
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
     await handle.close();
   });
 });
