@@ -75,6 +75,9 @@ export interface DocumentService {
    */
   readonly whenReady: Promise<void>;
 
+  /** Whether {@link close} has been called. Mirrors the handle/registry flag. */
+  readonly closed: boolean;
+
   /**
    * Creates a new document: mints a stable unique id, registers its metadata,
    * opens its content document, and attaches edit-tracking. Returns the open
@@ -96,6 +99,14 @@ export interface DocumentService {
 
   /** Renames a document. Throws if `id` is not registered. */
   rename(id: string, title: string): Promise<RegistryEntry>;
+
+  /**
+   * Subscribes `listener` to any change in the document set (create / rename /
+   * touch / remove), so callers can re-read {@link list} on updates. Fires after
+   * the change is applied; returns an unsubscribe function. This is the seam
+   * React consumers observe rather than reaching into the registry directly.
+   */
+  subscribe(listener: () => void): () => void;
 
   /**
    * Deletes a document completely: closes any open handle for it, removes its
@@ -167,6 +178,9 @@ export function openDocumentService(): DocumentService {
 
   const service: DocumentService = {
     whenReady: ensureReady,
+    get closed() {
+      return closed;
+    },
 
     async create(input) {
       assertOpen();
@@ -199,6 +213,11 @@ export function openDocumentService(): DocumentService {
       assertOpen();
       await ensureReady;
       return registry.updateTitle(id, title);
+    },
+
+    subscribe(listener) {
+      assertOpen();
+      return registry.subscribe(listener);
     },
 
     async remove(id) {
