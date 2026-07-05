@@ -66,7 +66,7 @@ This is hand-rolled through the IPC seam (not `tauri-plugin-window-state`) becau
 
 Every artifact a debater creates - flow sheet, speech doc, block file - is a Yjs `Y.Doc` persisted locally to IndexedDB via `y-indexeddb`.
 `src/documents/core/` is the foundation layer only: a document handle, its persistence binding, a local load signal, and teardown.
-The registry (metadata index) lives in `src/documents/registry/`; the service API lives in `src/documents/service/`; React hooks are a separate follow-up task and do not live here.
+The registry (metadata index) lives in `src/documents/registry/`; the service API lives in `src/documents/service/`; React integration lives in `src/documents/react/`.
 
 - **The handle:** `openDocument({ id, kind })` in `src/documents/core/document-handle.ts` wraps a fresh `Y.Doc` plus an `IndexeddbPersistence` provider keyed to the id, and returns a `DocumentHandle` carrying `id`, `kind`, `doc`, `dbName`, `whenLoaded`, `loaded`, `closed`, and `close()`. Import from `src/documents/core`.
 - **Kinds:** `DocumentKind` is a minimal string-literal union (`flow-sheet` | `speech-doc` | `block-file`) in `kind.ts`, with `DOCUMENT_KINDS` and an `isDocumentKind` guard. Add a kind only when a genuinely new artifact type needs its own document.
@@ -80,7 +80,7 @@ The registry (metadata index) lives in `src/documents/registry/`; the service AP
 
 The registry is the sibling index to the document core: one locally-persisted store holding *metadata* (never content) for every document - `id`, `kind`, `title`, `createdAt`, `lastEditedAt`.
 `src/documents/registry/` is the registry primitive only.
-The service API (create/open/list/rename/delete orchestration) lives in `src/documents/service/` and drives these primitives; React hooks are a separate follow-up task. Cross-layer orchestration (e.g. also deleting a document's content database on `remove`) belongs to the service, not here.
+The service API (create/open/list/rename/delete orchestration) lives in `src/documents/service/` and drives these primitives; React integration lives in `src/documents/react/`. Cross-layer orchestration (e.g. also deleting a document's content database on `remove`) belongs to the service, not here.
 
 - **The handle:** `openRegistry()` in `src/documents/registry/registry.ts` returns a `DocumentRegistry` with `whenLoaded`/`loaded`/`closed`, reads (`get(id)`, `list()`), writes (`add`, `updateTitle`, `touch`, `remove`), `track(handle)`, `subscribe(listener)`, and `close()`. Import from `src/documents/registry`.
 - **Persistence - same binding, well-known store, no `openDocument`:** the registry is *not* a debate artifact, so it does not go through `openDocument` (which is artifact-shaped and demands a `DocumentKind`). It owns one well-known Y.Doc under a sibling namespace `REGISTRY_DB_NAME` (`"fulcrum:registry"`, a sibling of the core's `fulcrum:doc:<id>`), bound by the same `IndexeddbPersistence` provider the core uses - reusing the core's binding, not new machinery. `whenLoaded` reflects local IndexedDB read completion alone; nothing awaits the network.
@@ -92,7 +92,7 @@ The service API (create/open/list/rename/delete orchestration) lives in `src/doc
 ## Document service (create/open/list/rename/delete)
 
 The service is the single seam every feature consumes for document lifecycle; it composes the core (content) and the registry (metadata) so feature code never touches Yjs / y-indexeddb / the core or registry primitives directly.
-`src/documents/service/` is the service module only - no React integration and no editor UI (hooks are a separate follow-up task).
+`src/documents/service/` is the service module only - no React integration and no editor UI.
 
 - **The handle:** `openDocumentService()` in `src/documents/service/service.ts` returns a `DocumentService` with `whenReady`, `create({kind,title})`, `open(id)`, `list()`, `rename(id,title)`, `remove(id)`, and `close()`. Import from `src/documents/service`.
 - **Owns the registry, one handle per id:** the service owns a single `openRegistry()` instance for its lifetime and a `Map<id, {handle, untrack}>` of open documents. `create` mints an id (`crypto.randomUUID`), `registry.add`s the entry, `openDocument`s the content, and `registry.track`s it; `open` returns the *same cached handle* on repeated calls (this is where handle deduplication lives - the core deliberately hands back an independent handle every call). `open` throws for an unregistered id.
