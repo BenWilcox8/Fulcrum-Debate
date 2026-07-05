@@ -119,7 +119,7 @@ describe("dev-mode stale-preset warning", () => {
 
     let rerender: (() => void) | undefined;
     function UnstablePreset() {
-      const [tick, setTick] = useState(0);
+      const [, setTick] = useState(0);
       rerender = () => setTick((t) => t + 1);
       // New object literal each render - the unstable-preset footgun.
       const editor = useDocumentEditor({
@@ -157,7 +157,7 @@ describe("dev-mode stale-preset warning", () => {
 
     let rerender: (() => void) | undefined;
     function StablePreset() {
-      const [tick, setTick] = useState(0);
+      const [, setTick] = useState(0);
       rerender = () => setTick((t) => t + 1);
       const editor = useDocumentEditor({
         handle,
