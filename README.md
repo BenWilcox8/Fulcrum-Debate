@@ -50,7 +50,8 @@ npm install
 │   ├── preferences/        PreferencesProvider and usePreferences hook (persisted app settings)
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
-│   │   └── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
+│   │   ├── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
+│   │   └── service/        Document service - single lifecycle seam (create/open/list/rename/delete)
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
