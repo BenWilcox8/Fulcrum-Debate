@@ -10,8 +10,17 @@
  * ({@link SpeechColumnNode}).
  */
 export { FlowCanvas, type FlowCanvasProps } from "./FlowCanvas";
+export {
+  FlowSheetPanel,
+  type FlowSheetPanelProps,
+} from "./FlowSheetPanel";
+export {
+  ColumnControls,
+  type ColumnControlsProps,
+} from "./ColumnControls";
 export { SpeechColumnNode } from "./SpeechColumnNode";
 export { useColumnNodes } from "./useColumnNodes";
+export { useColumns } from "./useColumns";
 export {
   columnsToNodes,
   columnX,
