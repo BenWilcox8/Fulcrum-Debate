@@ -432,7 +432,20 @@ Deeper headings (subpoints, card tags, analytics) nest *within* the section they
   Returns an unsubscribe function.
   This is the API a per-side ToC consumes.
 
-**Scope:** query seam only - no section add/rename/reorder maintenance ops (a separate task owns those) and no UI/React/ToC rendering.
+**Scope:** query seam only - no section add/rename/reorder maintenance ops (those live in [Section maintenance operations](#section-maintenance-operations) below) and no UI/React/ToC rendering.
+
+### Section maintenance operations
+
+`src/blockfile/section-ops.ts` is the write counterpart to the read-only argument-section query: the side-scoped operations a debater performs on argument sections - **add**, **rename**, **reorder**.
+Every operation is expressed through the shared editor's command API, so it is one ProseMirror transaction on the Yjs-bound editor: it persists through the document layer for free and is one Yjs undo step (the no-`History` undo rule - this module adds no history stack).
+
+- **The section content-block boundary (the contract these ops move):** a section is a level-`BLOCK_SECTION_HEADING_LEVEL` heading that is a direct child of a side region (the [query contract](#argument-section-query)); its **content block** is that header *plus every direct child under it* up to, but not including, the next section header in the same side, or the side's end. Reorder moves this whole block, never just the header. Content before a side's first header is **preamble** (e.g. the schema-backfilled empty paragraph) and stays at the top of the side across every reorder. `getSectionRange(editor, side, index)` / `sectionRangeFromDoc(doc, side, index)` expose this `[from, to)` boundary as document positions.
+- **Sections are addressed by index within the side** - the 0-based position in `getSideSections` order, a snapshot identifier valid against the document just read (same discipline as a `BlockSection.pos`).
+- **Helpers (import from `src/blockfile`):**
+  - `addSection(editor, side, label, placement?)` - inserts a new level-1 section header. `SectionPlacement` is `"start" | "end" (default) | { before: index } | { after: index }`; `after` lands past the referenced section's *whole block*. Throws if a `before`/`after` index is out of range.
+  - `renameSection(editor, side, index, label)` - replaces only the header's inline text, so the heading node (and the section) survives; body content is untouched. Throws on an out-of-range index.
+  - `moveSection(editor, side, fromIndex, toIndex)` - reorders a section within its side, carrying its entire content block. Rebuilds the side's content from the same child nodes in a new order inside one `command`/`replaceWith` transaction (identity and rich content preserved, not re-created). Clamps `toIndex`, no-ops if unchanged, throws on out-of-range `fromIndex`.
+- **Cross-side integrity is structural:** every op works entirely inside one side's region (`getSideRegion`), and a reorder replaces only the *content* range of a single section node - so it can never cross the `isolating` aff/neg boundary or disturb the `affSection negSection` doc shape.
 
 ### Tests
 
@@ -441,6 +454,7 @@ Every test follows the established pattern - `fake-indexeddb/auto` + a fresh `ID
 - **`schema.test.ts`** - proves the enforced structure: select-all-delete, cross-boundary delete, and paste/replace all preserve both sections; the schema serializes and reloads correctly through a fresh handle+editor; marks and headings from the shared preset compose on section content.
 - **`sections.test.ts`** - proves the addressing helpers: `getSideRegions` returns correct positions for both sides; `contentStart`/`contentEnd` bound the right content; `focusSide` moves the selection to the correct side; `sideRegionsFromDoc` throws on a non-block-file document.
 - **`argument-sections.test.ts`** - proves the argument-section query seam: empty side returns no sections; level-1 headings that are direct children of a side are found with correct label/level/pos; deeper headings are not counted; sections from one side do not appear in the other; `pos + 1` selects inside the heading (end-to-end through a fresh handle+editor); `observeSideSections` fires immediately, reflects add/edit/remove, ignores selection-only changes, and stops after unsubscribe.
+- **`section-ops.test.ts`** - proves the maintenance operations: add at start/end/before/after (with `after` landing past a section's body); rename persists and keeps the heading + body; reorder moves the full content block (a section's body paragraphs travel with its header, preamble stays on top); cross-side integrity (no aff/neg leak, `affSection negSection` shape preserved); operations persist through a fresh handle+editor reload; and reorder/rename are undoable via the Yjs history (`editor.commands.undo()`, with a `stopCapturing` boundary isolating the tested op).
 
 ## Sharp edges
 

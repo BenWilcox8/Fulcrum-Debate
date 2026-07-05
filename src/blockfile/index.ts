@@ -17,6 +17,10 @@
  * - The **argument-section query** ({@link getSideSections} & friends) - the
  *   ordered argument-type sections (`AT: Gold`, `AT: Fusion`, ...) within one
  *   side, derived from the shared heading layer and scoped per side.
+ * - The **section maintenance operations** ({@link addSection},
+ *   {@link renameSection}, {@link moveSection}) - add, rename, and reorder those
+ *   argument sections within a side, moving a section's whole content block and
+ *   persisting/undoing through the shared editor.
  *
  * See {@link ./schema} for the design (why two enforced section nodes in one
  * fragment), {@link ./sections} for the position semantics of the region
@@ -48,3 +52,11 @@ export {
   getSideSections,
   observeSideSections,
 } from "./argument-sections";
+export {
+  type SectionPlacement,
+  addSection,
+  renameSection,
+  moveSection,
+  getSectionRange,
+  sectionRangeFromDoc,
+} from "./section-ops";
