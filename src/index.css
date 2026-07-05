@@ -26,3 +26,44 @@
   /* --- Typography ---------------------------------------------------- */
   --font-family-sans: ui-sans-serif, system-ui, sans-serif;
 }
+
+/* --- Block file side regions ----------------------------------------- */
+/*
+ * The block-file editor renders its two enforced side regions as
+ * `<section data-side="aff|neg">` (see src/blockfile/schema.ts). Give each a
+ * light, token-keyed accent and a small side label so the Affirmative /
+ * Negative division is legible without dominating the editing surface. Colours
+ * come only from the aff/neg design tokens, never raw hex.
+ */
+.block-file-editor section[data-side] {
+  border-left: 3px solid;
+  padding-left: 1rem;
+  margin-bottom: var(--spacing-section);
+}
+
+.block-file-editor section[data-side]::before {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.block-file-editor section[data-side="aff"] {
+  border-color: var(--color-aff-strong);
+}
+
+.block-file-editor section[data-side="aff"]::before {
+  content: "Affirmative";
+  color: var(--color-aff-strong);
+}
+
+.block-file-editor section[data-side="neg"] {
+  border-color: var(--color-neg-strong);
+}
+
+.block-file-editor section[data-side="neg"]::before {
+  content: "Negative";
+  color: var(--color-neg-strong);
+}
