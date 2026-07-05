@@ -79,32 +79,28 @@ export function useDocumentEditor(
 ): Editor | null {
   const [editor, setEditor] = useState<Editor | null>(null);
 
-  // Dev-mode: warn when preset reference changes without a deps change, which
-  // would silently leave the active editor using the stale preset config.
-  const prevPresetRef = useRef<EditorPresetOptions | undefined>(preset);
-  const prevDepsRef = useRef<DependencyList>(deps);
-  const mountedRef = useRef(false);
+  const prevPresetRef = useRef<EditorPresetOptions | undefined>(undefined);
+  const prevDepsRef = useRef<DependencyList | undefined>(undefined);
 
-  if (import.meta.env.DEV && mountedRef.current) {
-    const presetChanged = !Object.is(preset, prevPresetRef.current);
-    const depsChanged =
-      deps.length !== prevDepsRef.current.length ||
-      deps.some((d, i) => !Object.is(d, prevDepsRef.current[i]));
-
-    if (presetChanged && !depsChanged) {
-      console.warn(
-        "[useDocumentEditor] The `preset` reference changed between renders " +
-          "without a corresponding change in `deps`. The editor will NOT be " +
-          "recreated — the active editor keeps its original preset (stale). " +
-          "Pass a stable/memoised preset object, or list the changing input " +
-          "in the `deps` array to force a rebuild. See the JSDoc for examples.",
-      );
+  useEffect(() => {
+    if (import.meta.env.DEV && prevDepsRef.current !== undefined) {
+      const presetChanged = !Object.is(preset, prevPresetRef.current);
+      const depsChanged =
+        deps.length !== prevDepsRef.current.length ||
+        deps.some((d, i) => !Object.is(d, prevDepsRef.current![i]));
+      if (presetChanged && !depsChanged) {
+        console.warn(
+          "[useDocumentEditor] The `preset` reference changed between renders " +
+            "without a corresponding change in `deps`. The editor will NOT be " +
+            "recreated - the active editor keeps its original preset (stale). " +
+            "Pass a stable/memoised preset object, or list the changing input " +
+            "in the `deps` array to force a rebuild. See the JSDoc for examples.",
+        );
+      }
     }
-  }
-
-  mountedRef.current = true;
-  prevPresetRef.current = preset;
-  prevDepsRef.current = deps;
+    prevPresetRef.current = preset;
+    prevDepsRef.current = deps;
+  });
 
   useEffect(() => {
     if (!handle || handle.closed) {

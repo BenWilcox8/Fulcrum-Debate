@@ -8,7 +8,7 @@ import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, waitFor, act } from "@testing-library/react";
-import { useState } from "react";
+import { useState, StrictMode } from "react";
 import { EditorContent } from "@tiptap/react";
 import type { Editor, JSONContent } from "@tiptap/core";
 
@@ -83,12 +83,40 @@ describe("DocumentEditor", () => {
 });
 
 describe("dev-mode stale-preset warning", () => {
+  it("does not warn on initial mount even under StrictMode", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const handle = openDocument({ id: uniqueId(), kind: "speech-doc" });
+
+    function UnstablePreset() {
+      const editor = useDocumentEditor({
+        handle,
+        fragment: "body",
+        preset: { extensions: [] },
+      });
+      return <EditorContent editor={editor} />;
+    }
+
+    // StrictMode double-invokes render and effects; no warning should fire on
+    // initial mount even though the inline object literal has a new identity
+    // on each render invocation.
+    render(
+      <StrictMode>
+        <UnstablePreset />
+      </StrictMode>,
+    );
+
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    warnSpy.mockRestore();
+    await handle.close();
+  });
+
   it("warns when preset reference changes between renders without a deps change", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const handle = openDocument({ id: uniqueId(), kind: "speech-doc" });
 
-    // A component that passes a new preset object on every render.
     let rerender: (() => void) | undefined;
     function UnstablePreset() {
       const [tick, setTick] = useState(0);
@@ -102,12 +130,16 @@ describe("dev-mode stale-preset warning", () => {
       return <EditorContent editor={editor} />;
     }
 
-    render(<UnstablePreset />);
+    render(
+      <StrictMode>
+        <UnstablePreset />
+      </StrictMode>,
+    );
 
-    // First render: no previous value, no warning expected.
+    // Initial mount (including StrictMode double-invoke): no warning.
     expect(warnSpy).not.toHaveBeenCalled();
 
-    // Second render with a new preset object but no deps change: warning fires.
+    // A genuine re-render with a new preset object but no deps change warns.
     act(() => rerender!());
     expect(warnSpy).toHaveBeenCalledOnce();
     expect(warnSpy.mock.calls[0][0]).toContain("[useDocumentEditor]");
@@ -135,7 +167,11 @@ describe("dev-mode stale-preset warning", () => {
       return <EditorContent editor={editor} />;
     }
 
-    render(<StablePreset />);
+    render(
+      <StrictMode>
+        <StablePreset />
+      </StrictMode>,
+    );
     act(() => rerender!());
 
     expect(warnSpy).not.toHaveBeenCalled();
