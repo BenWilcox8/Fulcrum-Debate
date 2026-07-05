@@ -49,7 +49,8 @@ npm install
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
 │   ├── preferences/        PreferencesProvider and usePreferences hook (persisted app settings)
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
-│   │   └── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
+│   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
+│   │   └── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
