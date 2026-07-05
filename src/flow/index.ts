@@ -2,9 +2,11 @@
  * Public surface of the flow-sheet data layer.
  *
  * The flow sheet's spine is an ordered list of speech columns stored on a
- * `flow-sheet` document. This module is that model and its helpers only - no UI,
- * no React, no flow-node content (all later PRDs). See {@link ./columns} for the
- * full design notes and the fragment convention it follows.
+ * `flow-sheet` document; flow nodes then live inside those columns. This module
+ * is those two models and their helpers only - no UI, no React. See
+ * {@link ./columns} for the column model and its fragment convention, and
+ * {@link ./nodes} for the node-container contract (membership + vertical order)
+ * that later flow-node PRDs build on.
  */
 export {
   FLOW_COLUMNS_FRAGMENT,
@@ -21,3 +23,15 @@ export {
   type SpeechColumn,
   type AddColumnInput,
 } from "./columns";
+export {
+  FLOW_NODES_FRAGMENT,
+  listNodes,
+  listColumnNodes,
+  getNode,
+  addNode,
+  moveNode,
+  removeNode,
+  observeNodes,
+  type FlowNode,
+  type AddNodeInput,
+} from "./nodes";
