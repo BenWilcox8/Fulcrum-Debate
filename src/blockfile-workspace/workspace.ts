@@ -78,6 +78,10 @@ export interface UseBlockFileResult extends UseDocumentResult {
    * {@link useDocument} contract as the content loads.
    */
   resolving: boolean;
+  /** Set when `ensureBlockFile` fails for a reason other than service closure. */
+  error: Error | null;
+  /** Increment the internal retry counter so the effect re-runs `ensureBlockFile`. */
+  retry: () => void;
 }
 
 /**
@@ -93,26 +97,34 @@ export function useBlockFile(): UseBlockFileResult {
   const service = useDocumentService();
   const [id, setId] = useState<string | null>(null);
   const [resolving, setResolving] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let active = true;
     setResolving(true);
+    setError(null);
     ensureBlockFile(service)
       .then((resolvedId) => {
         if (!active) return;
         setId(resolvedId);
         setResolving(false);
       })
-      .catch(() => {
-        // The service was closed mid-flight (e.g. a StrictMode remount); a fresh
-        // service will re-run this effect. Leave `resolving` true so the screen
-        // keeps its loading state rather than flashing an error.
+      .catch((err: unknown) => {
+        if (!active) return;
+        if (service.closed) {
+          // The service was closed mid-flight (e.g. a StrictMode remount); a
+          // fresh service will re-run this effect via the `service` dep change.
+          return;
+        }
+        setResolving(false);
+        setError(err instanceof Error ? err : new Error(String(err)));
       });
     return () => {
       active = false;
     };
-  }, [service]);
+  }, [service, retryCount]);
 
   const document = useDocument(id);
-  return { ...document, resolving };
+  return { ...document, resolving, error, retry: () => setRetryCount((n) => n + 1) };
 }

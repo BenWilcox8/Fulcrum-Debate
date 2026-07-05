@@ -7,14 +7,15 @@
 // contentEditable is inert under jsdom.
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
-import { beforeEach, describe, expect, it } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { JSONContent } from "@tiptap/core";
 
 import AppRoutes from "../AppRoutes";
 import { DocumentsProvider } from "../documents/react";
-import { openDocumentService } from "../documents/service";
+import { DocumentsContext } from "../documents/react/DocumentsContext";
+import { openDocumentService, type DocumentService } from "../documents/service";
 import { createEditor } from "../editor/core";
 import { editorPreset } from "../editor/preset";
 import { BLOCK_FILE_FRAGMENT, blockFileExtensions } from "../blockfile";
@@ -146,6 +147,60 @@ describe("ensureBlockFile", () => {
       (entry) => entry.kind === BLOCK_FILE_KIND,
     );
     expect(blockFiles).toHaveLength(1);
+    await service.close();
+  });
+});
+
+describe("useBlockFile error and retry", () => {
+  /** Wraps BlockFileScreen in a DocumentsContext that uses the given service. */
+  function renderScreenWithService(service: DocumentService) {
+    return render(
+      <DocumentsContext.Provider value={{ service }}>
+        <MemoryRouter initialEntries={["/blocks"]}>
+          <AppRoutes />
+        </MemoryRouter>
+      </DocumentsContext.Provider>,
+    );
+  }
+
+  it("shows an error message and Retry button when ensureBlockFile rejects", async () => {
+    const service = openDocumentService();
+    vi.spyOn(service, "list").mockRejectedValue(new Error("IndexedDB failure"));
+
+    renderScreenWithService(service);
+
+    await waitFor(() => {
+      expect(screen.getByText(/could not open block file/i)).toBeInTheDocument();
+    });
+    expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+
+    vi.restoreAllMocks();
+    await service.close();
+  });
+
+  it("retries and recovers after a transient failure", async () => {
+    const service = openDocumentService();
+    const realList = service.list.bind(service);
+    let calls = 0;
+    vi.spyOn(service, "list").mockImplementation(() => {
+      calls++;
+      if (calls === 1) return Promise.reject(new Error("transient"));
+      return realList();
+    });
+
+    renderScreenWithService(service);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /retry/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: /retry/i })).toBeNull();
+    });
+
+    vi.restoreAllMocks();
     await service.close();
   });
 });

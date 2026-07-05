@@ -30,7 +30,7 @@ const BLOCK_FILE_PRESET: EditorPresetOptions = { extensions: blockFileExtensions
  * covers the moment before the document is resolved and its content read.
  */
 export default function BlockFileScreen() {
-  const { handle, loaded, resolving } = useBlockFile();
+  const { handle, loaded, resolving, error, retry } = useBlockFile();
   const ready = !resolving && loaded;
 
   return (
@@ -52,15 +52,31 @@ export default function BlockFileScreen() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card">
-        {!ready && (
-          <p className="text-sm text-shell-muted">Opening block file…</p>
+        {error ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-shell-muted">
+              Could not open block file. {error.message}
+            </p>
+            <button
+              onClick={retry}
+              className="self-start rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm text-shell-text hover:bg-shell-bg"
+            >
+              Retry
+            </button>
+          </div>
+        ) : (
+          <>
+            {!ready && (
+              <p className="text-sm text-shell-muted">Opening block file…</p>
+            )}
+            <DocumentEditor
+              handle={handle}
+              fragment={BLOCK_FILE_FRAGMENT}
+              preset={BLOCK_FILE_PRESET}
+              className="block-file-editor"
+            />
+          </>
         )}
-        <DocumentEditor
-          handle={handle}
-          fragment={BLOCK_FILE_FRAGMENT}
-          preset={BLOCK_FILE_PRESET}
-          className="block-file-editor"
-        />
       </div>
     </section>
   );
