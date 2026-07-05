@@ -250,6 +250,7 @@ export function openRegistry(): DocumentRegistry {
 
     track(handle) {
       const onUpdate = (_update: Uint8Array, origin: unknown) => {
+        if (closed) return;
         // y-indexeddb applies stored updates with the provider as the update
         // origin while loading; skip those so opening a document is not an edit.
         if (origin instanceof IndexeddbPersistence) return;
