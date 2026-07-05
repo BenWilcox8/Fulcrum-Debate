@@ -409,12 +409,38 @@ All helpers are pure derivations of ProseMirror state (no plugin, no cache) - th
 - **`getSideRegion(editor, side)`** - single-side convenience.
 - **`focusSide(editor, side)`** - moves the selection to the start of a side's content and focuses the editor; the "jump to this side" gesture a ToC or navigation control drives. Returns the editor for chaining.
 
+### Argument-section query
+
+`src/blockfile/argument-sections.ts` is the per-side query seam that locates argument-type sections within a side.
+A debater groups evidence under **argument-type headers** like `AT: Gold` or `AT: Fusion` inside a side's region.
+These headers are **ordinary shared headings** - not new schema nodes - because argument sections come and go as cards are cut, whereas the aff/neg side division is structurally enforced and permanent.
+
+**The contract:** a **level-`BLOCK_SECTION_HEADING_LEVEL` (1) heading that is a direct child of a side region** is an argument-type section.
+Deeper headings (subpoints, card tags, analytics) nest *within* the section they fall under and are not counted.
+`BLOCK_SECTION_HEADING_LEVEL` is a stable contract the ToC, speech-doc pipeline, and navigation read - never repoint it without a coordinated migration.
+
+- **`BlockSection`** - the snapshot for one argument section: `{ side, label, level, pos }`.
+  `label` is the heading's plain text (inline marks flattened).
+  `pos` is the ProseMirror position immediately before the heading node - same snapshot semantics as `OutlineHeading` and `BlockSideRegion`; `pos + 1` addresses a selection inside the heading.
+  Valid only against the document version it was read from; re-derive after edits.
+- **`sideSectionsFromDoc(doc, side)`** - the shared walker: takes a ProseMirror doc node, walks only the direct children of the given side's region, and returns `BlockSection[]` in document order.
+  Throws (via `sideRegionsFromDoc`) if the document is not block-file shaped.
+  For callers that already hold a doc node (e.g. one parsed from persisted JSON).
+- **`getSideSections(editor, side)`** - the editor convenience form; equivalent to `sideSectionsFromDoc(editor.state.doc, side)`.
+  Pure over the editor's current state.
+- **`observeSideSections(editor, side, listener)`** - subscribes to one side's sections: fires `listener` immediately with the current list and again after every `docChanged` transaction (selection-only moves do not refire), mirroring `observeOutline`.
+  Returns an unsubscribe function.
+  This is the API a per-side ToC consumes.
+
+**Scope:** query seam only - no section add/rename/reorder maintenance ops (a separate task owns those) and no UI/React/ToC rendering.
+
 ### Tests
 
 Every test follows the established pattern - `fake-indexeddb/auto` + a fresh `IDBFactory()` per test, behavioral assertions, never ProseMirror internals or pixels.
 
 - **`schema.test.ts`** - proves the enforced structure: select-all-delete, cross-boundary delete, and paste/replace all preserve both sections; the schema serializes and reloads correctly through a fresh handle+editor; marks and headings from the shared preset compose on section content.
 - **`sections.test.ts`** - proves the addressing helpers: `getSideRegions` returns correct positions for both sides; `contentStart`/`contentEnd` bound the right content; `focusSide` moves the selection to the correct side; `sideRegionsFromDoc` throws on a non-block-file document.
+- **`argument-sections.test.ts`** - proves the argument-section query seam: empty side returns no sections; level-1 headings that are direct children of a side are found with correct label/level/pos; deeper headings are not counted; sections from one side do not appear in the other; `pos + 1` selects inside the heading (end-to-end through a fresh handle+editor); `observeSideSections` fires immediately, reflects add/edit/remove, ignores selection-only changes, and stops after unsubscribe.
 
 ## Sharp edges
 
