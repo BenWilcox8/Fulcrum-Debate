@@ -59,7 +59,8 @@ npm install
 │   │   ├── headings/       Heading node (levels 1-6) and outline query (getOutline, observeOutline)
 │   │   ├── preset.ts       Canonical shared extension preset (editorPreset) - feature editors start here
 │   │   └── react/          DocumentEditor component and useDocumentEditor hook
-│   ├── flow/               Flow-sheet data layer: speech-column model and helpers (no UI)
+│   ├── flow/               Flow-sheet layer: speech-column model, helpers, and XYFlow canvas
+│   │   └── canvas/         FlowCanvas, SpeechColumnNode, column-nodes mapping, and useColumnNodes hook
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
