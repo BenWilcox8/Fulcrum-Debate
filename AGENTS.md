@@ -66,7 +66,7 @@ This is hand-rolled through the IPC seam (not `tauri-plugin-window-state`) becau
 
 Every artifact a debater creates - flow sheet, speech doc, block file - is a Yjs `Y.Doc` persisted locally to IndexedDB via `y-indexeddb`.
 `src/documents/core/` is the foundation layer only: a document handle, its persistence binding, a local load signal, and teardown.
-A registry (dedup by id), a service API, and React hooks are deliberately separate later tasks and do not live here.
+The registry (metadata index) lives in `src/documents/registry/`; a service API and React hooks are separate follow-up tasks and do not live here.
 
 - **The handle:** `openDocument({ id, kind })` in `src/documents/core/document-handle.ts` wraps a fresh `Y.Doc` plus an `IndexeddbPersistence` provider keyed to the id, and returns a `DocumentHandle` carrying `id`, `kind`, `doc`, `dbName`, `whenLoaded`, `loaded`, `closed`, and `close()`. Import from `src/documents/core`.
 - **Kinds:** `DocumentKind` is a minimal string-literal union (`flow-sheet` | `speech-doc` | `block-file`) in `kind.ts`, with `DOCUMENT_KINDS` and an `isDocumentKind` guard. Add a kind only when a genuinely new artifact type needs its own document.
