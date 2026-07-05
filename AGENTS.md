@@ -146,11 +146,11 @@ The concrete per-kind layouts are deliberately deferred to each kind's feature P
 - **A name's Yjs type is fixed for the life of the document.** Yjs binds a top-level name to the first accessor used on it; reading that name later through a different accessor is a bug. Once a fragment ships as, say, `getText("body")` it is a text fragment forever - migrating means a new name, not a re-typed one. For the same reason, never rename a shipped fragment: the old name still addresses the persisted data.
 - **Naming:** lowerCamelCase, short, kind-local. Tests use ad-hoc placeholder names (`body`, `meta`, `cards`) to exercise the plumbing; those carry no schema guarantee until a PRD reserves them.
 
-No fragments are reserved yet - each editor PRD fills in its kind's rows as it lands.
+Each editor/feature PRD fills in its kind's rows as it lands.
 
 | Kind | Fragment | Yjs type | Meaning |
 |---|---|---|---|
-| _(none reserved yet)_ | | | |
+| `flow-sheet` | `columns` | `Y.Array<Y.Map>` | Ordered speech columns; each map is one `SpeechColumn` (`id`, `label`, `side`). See [Flow sheet column model](#flow-sheet-column-model). |
 
 ### Registry schema (metadata index)
 
@@ -240,6 +240,20 @@ This is the schema + query seam only: no ToC UI and no React.
 - **Outline query (`src/editor/headings/outline.ts`):** `getOutline(editor)` returns `OutlineHeading[]` (`{ level, text, pos }`) in document order - a **pure derivation of `editor.state.doc`**, no ProseMirror plugin and no cached/plugin-stateful outline. `text` is `node.textContent` (inline marks flattened to a plain ToC label). `pos` is the ProseMirror position immediately before the heading node, valid only against the document version it was read from (an outline is a snapshot); to act on one, drive the same editor, e.g. `editor.chain().focus().setTextSelection(pos + 1).scrollIntoView().run()` (`pos + 1` lands inside the heading). `outlineFromDoc(node)` is the shared walker for callers already holding a ProseMirror doc node.
 - **Live seam a ToC panel consumes:** `observeOutline(editor, listener)` fires the listener immediately with the current outline and again after every document change (`editor.on("update")` filtered to `transaction.docChanged`, so cursor-only moves do not re-fire), returning an unsubscribe. It re-derives via `getOutline` each time, so the panel never manages invalidation.
 - **Tests:** `outline.test.ts` follows the established pattern (`fake-indexeddb/auto` + fresh `IDBFactory()` per test, behavioral). Key cases: every 1-6 level applies via the API; the JSON heading shape is asserted; the outline is ordered with real ascending positions (and `pos + 1` selects into the heading); marks flatten to plain text; `observeOutline` reflects add/edit/remove and stops after unsubscribe; a selection-only change does not re-fire; the outline survives a reload through a fresh handle.
+
+## Flow sheet column model
+
+The flow sheet is the canvas a debater flows a round on, and its spine is an ordered list of **speech columns** - one per speech.
+`src/flow/` is that data substrate only: the Yjs shared-type layout for the columns plus the CRUD + observe helpers.
+No UI, no React, no XYFlow, and no flow-node content (contentions/subpoints are later PRDs) - just stable columns for those PRDs to attach nodes to.
+
+- **Fragment:** columns live in the `columns` top-level `Y.Array<Y.Map>` on a `flow-sheet` document's `Y.Doc` (`FLOW_COLUMNS_FRAGMENT`), reserved in the fragment table above. Each entry is a nested `Y.Map` with `id`, `label`, `side`. A later flow-node PRD claims a *new* fragment; it never repurposes `columns`, and `columns` is bound to `Y.Array` for the life of the document.
+- **`SpeechColumn` = `{ id, label, side }`** (`src/flow/columns.ts`). `side` is `FlowSide` (`"aff" | "neg"`, guarded by `isFlowSide`, matching the `aff`/`neg` design tokens). The returned columns are plain snapshots, not live Yjs maps.
+- **Column id is the stable foreign key.** `addColumn` mints it with `crypto.randomUUID`; it is immutable for the column's life, preserved across relabel/reorder/reload, and retired permanently on remove. Later flow nodes reference columns by this id, so never reuse or fabricate one outside `addColumn`.
+- **Helpers (the whole surface, import from `src/flow`):** `listColumns(handle)` / `getColumn(handle, id)` read ordered snapshots; `addColumn(handle, {side, label})` appends and returns the new column; `relabelColumn(handle, id, label)` (throws on unknown id); `moveColumn(handle, id, toIndex)` reorders (clamps `toIndex`, throws on unknown id, no-op if already there); `removeColumn(handle, id)` (no-op on unknown id). All take a document-core `DocumentHandle` and mutate shared types on `handle.doc` in one transaction each, so changes persist to IndexedDB and flow through the doc's `update` stream (a registry that `track`s the handle bumps last-edited automatically - this layer never touches the registry).
+- **Yjs cannot re-position an integrated `Y.Map`,** so `moveColumn` rebuilds the moved column (same id/label/side) at the new index inside one transaction rather than moving the map instance.
+- **Observe seam:** `observeColumns(handle, listener)` fires immediately with the current ordered snapshot and again after every column change (add/relabel/reorder/remove), returning an unsubscribe. It mirrors the headings `observeOutline` style - a pure derivation of state (`listColumns`) via `observeDeep` on the `columns` array, so a relabel inside a nested map fires too, and changes to other fragments do not. This is the seam the upcoming canvas consumes.
+- **Tests:** `columns.test.ts` follows the established pattern - `fake-indexeddb/auto` + fresh `IDBFactory()` per test, behavioral assertions on the helpers and persisted state only (never Yjs internals). Key cases: add/relabel/move (forward, backward, clamp, id-preserving)/remove; a full edit sequence persists and reloads through a genuinely fresh handle with stable ids; `observeColumns` fires once per mutation and stops after unsubscribe.
 
 ## Sharp edges
 
