@@ -70,6 +70,23 @@ describe("addNode", () => {
     await handle.close();
   });
 
+  it("appends deterministically after a remove leaves gaps in order values", async () => {
+    const handle = await openFlowSheet();
+    const col = addCol(handle);
+
+    const a = addNode(handle, { columnId: col, kind: "stub" });
+    const b = addNode(handle, { columnId: col, kind: "stub" });
+    const c = addNode(handle, { columnId: col, kind: "stub" });
+
+    removeNode(handle, b.id);
+
+    const d = addNode(handle, { columnId: col, kind: "stub" });
+
+    expect(ids(listColumnNodes(handle, col))).toEqual([a.id, c.id, d.id]);
+
+    await handle.close();
+  });
+
   it("returns undefined from getNode for an unknown id", async () => {
     const handle = await openFlowSheet();
     expect(getNode(handle, "nope")).toBeUndefined();

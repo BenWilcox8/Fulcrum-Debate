@@ -222,9 +222,9 @@ export function addNode(
     kind: input.kind,
   };
   const map = nodesMap(handle.doc);
-  // Append to the bottom: order is the count of the column's current nodes, so
-  // it sorts after every existing sibling.
-  const order = columnNodeMaps(map, input.columnId).length;
+  const siblings = columnNodeMaps(map, input.columnId);
+  const order =
+    siblings.length === 0 ? 0 : readOrder(siblings[siblings.length - 1]) + 1;
   handle.doc.transact(() => {
     const nested = new Y.Map<unknown>();
     nested.set(FIELD.id, node.id);
