@@ -52,6 +52,8 @@ npm install
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
 │   │   ├── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
 │   │   └── service/        Document service - single lifecycle seam (create/open/list/rename/delete)
+│   ├── editor/
+│   │   └── core/           Headless Tiptap editor factory with Yjs fragment binding (createEditor)
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/

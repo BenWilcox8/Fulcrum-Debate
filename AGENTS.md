@@ -8,7 +8,9 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 - **React + TypeScript + Vite** - front end in `src/`.
 - **Tailwind CSS v4** - via the `@tailwindcss/vite` plugin; global styles are `@import "tailwindcss";` in `src/index.css` (no `tailwind.config.js`, no PostCSS config).
 - **react-router-dom v7** - client-side routing for the app frame. Uses `HashRouter` (see `src/App.tsx`) because the app is served from a `file://` context under Tauri with no server to resolve real paths.
-- Planned but **not yet added**: Tiptap, Yjs, XYFlow. Do not introduce them until their own tasks land.
+- **Tiptap v3** - rich-text editor core in `src/editor/core/` (headless factory + Yjs binding). React component and marks are follow-up tasks.
+- **Yjs + y-indexeddb** - shared data types and local persistence, used by the document and editor layers.
+- Planned but **not yet added**: XYFlow. Do not introduce it until its own task lands.
 
 The app is strictly **local-first**: nothing in the boot/render path may await a network resource.
 
@@ -176,6 +178,18 @@ Feature code consumes the document layer exclusively through `openDocumentServic
 - `create` / `open` / `list` / `rename` / `remove` / `close` are the whole surface; `open` returns one cached handle per id (deduplication lives here, not in the core).
 - Features read and mutate content through Yjs shared types on the returned `handle.doc`, following the fragment convention above; everything about *which* documents exist and their metadata flows through the service.
 - Every method awaits the registry's local load (`whenReady`) and nothing awaits the network - the layer is local-first end to end. An unclean shutdown is recoverable: `src/documents/crash-reopen.test.ts` abandons a service and its handles without `close()`, then proves a completely fresh service over the same store restores the latest content and the full, recency-ordered registry listing.
+
+## Editor core (Tiptap + Yjs fragment binding)
+
+The shared rich-text layer every text surface uses (block file, card editor, speech doc) is one Tiptap editor bound to a named `XmlFragment` of a document-core `Y.Doc`.
+`src/editor/core/` is that foundation only: a headless factory plus its baseline schema and Yjs binding.
+Marks (bold / highlight / font-size), headings, the concrete extension preset, and the React editor component are deliberate follow-up tasks and live elsewhere.
+
+- **The factory:** `createEditor({ binding: { handle, fragment }, extensions?, element? })` in `src/editor/core/editor-core.ts` returns a Tiptap `Editor`. Import from `src/editor/core`. `binding.handle` is a document-core `DocumentHandle`; `binding.fragment` is the top-level `XmlFragment` name on `handle.doc` (a non-empty fragment per the [Document model contract](#document-model-contract-shared-type-conventions) - the editor binds to `handle.doc.getXmlFragment(fragment)`, which fixes that name as an `XmlFragment` for the life of the document).
+- **Tiptap v3 + `@tiptap/y-tiptap`:** the collaboration binding is `@tiptap/extension-collaboration`, which wraps `@tiptap/y-tiptap` (Tiptap's maintained fork of `y-prosemirror`, version-matched to `@tiptap/pm`). Chosen over hand-wiring `y-prosemirror` so Tiptap owns the ProseMirror sync/mapping/undo plugin lifecycle. Deps: `@tiptap/core`, `@tiptap/pm`, `@tiptap/extension-{document,paragraph,text,collaboration}`, `@tiptap/y-tiptap`, `y-protocols` (all under `dependencies`).
+- **Baseline extension set (always included):** `Document`, `Paragraph`, `Text`, and `Collaboration.configure({ fragment })`. Caller `extensions` layer on top. **No `History`/StarterKit undo:** the Collaboration extension already installs the Yjs undo plugin, so undo/redo run through the shared Yjs history - a ProseMirror history extension would be a second, conflicting stack. Wiring undo keymaps/UI onto that Yjs history is a later undo task; do not add a `History` extension.
+- **Headless, local-first:** no React component, no UI, no marks beyond the baseline schema, no collaboration provider / cursor / awareness layer (that is a later Sync PRD). Edits flow straight into the bound `XmlFragment`, so the existing document layer persists and reloads them. `createEditor` awaits nothing. A headless editor still needs a DOM element to mount to (Tiptap has no view otherwise): the factory mounts to a detached `document.createElement("div")` when no `element` is passed - enough for the full API under the Tauri webview or jsdom; the future React component passes its own mount. Always `editor.destroy()` when done to detach the ProseMirror plugins from the doc.
+- **Tests:** `editor-core.test.ts` follows the established pattern - `fake-indexeddb/auto` + a fresh `IDBFactory()` per test, behavioral assertions on the editor's public API and resulting document JSON (never ProseMirror plugin internals). Key cases: an edit lands in the bound fragment; edits persist and reload through a genuinely fresh handle+editor; distinct fragment names are independent surfaces; two editors on the same document+fragment converge without any cursor layer. No test-environment shim beyond the existing Vitest+jsdom setup is needed - Tiptap uses only the jsdom DOM.
 
 ## Sharp edges
 
