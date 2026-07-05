@@ -27,6 +27,7 @@ export function DocumentsProvider({ children }: { children: ReactNode }) {
     if (current.closed) {
       current = openDocumentService();
       setService(current);
+      return;
     }
     return () => {
       void current.close();
