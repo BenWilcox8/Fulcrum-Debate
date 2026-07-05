@@ -50,7 +50,8 @@ import { beforeEach, afterEach, describe, expect, it } from "vitest";
 import type { Editor } from "@tiptap/core";
 import type { JSONContent } from "@tiptap/core";
 
-import { openDocument, type DocumentHandle } from "../documents/core";
+import { openDocumentService, type DocumentService } from "../documents/service";
+import type { DocumentHandle } from "../documents/core";
 import { createEditor } from "../editor/core";
 import { editorPreset } from "../editor/preset";
 import type { BlockSide } from "./side";
@@ -71,19 +72,33 @@ const WORDS_PER_PARA = 40;
 
 const WORD = "evidence";
 
-let handles: DocumentHandle[] = [];
+let services: DocumentService[] = [];
 let editors: Editor[] = [];
 
-async function openEditor(id: string): Promise<Editor> {
-  const handle = openDocument({ id, kind: "block-file" });
+async function openServiceAndEditor(): Promise<{ service: DocumentService; handle: DocumentHandle; editor: Editor }> {
+  const service = openDocumentService();
+  services.push(service);
+  await service.whenReady;
+  const { id } = await service.create({ kind: "block-file", title: "Perf Test" });
+  const handle = await service.open(id);
   await handle.whenLoaded;
-  handles.push(handle);
   const editor = createEditor({
     binding: { handle, fragment: BLOCK_FILE_FRAGMENT },
     extensions: editorPreset({ extensions: blockFileExtensions }),
   });
   editors.push(editor);
-  return editor;
+  return { service, handle, editor };
+}
+
+async function reopenEditor(service: DocumentService, id: string): Promise<{ handle: DocumentHandle; editor: Editor }> {
+  const handle = await service.open(id);
+  await handle.whenLoaded;
+  const editor = createEditor({
+    binding: { handle, fragment: BLOCK_FILE_FRAGMENT },
+    extensions: editorPreset({ extensions: blockFileExtensions }),
+  });
+  editors.push(editor);
+  return { handle, editor };
 }
 
 /** A section header + PARAS_PER_SECTION card-sized body paragraphs. */
@@ -133,9 +148,9 @@ beforeEach(() => {
 
 afterEach(async () => {
   for (const editor of editors) editor.destroy();
-  for (const handle of handles) await handle.close();
+  for (const service of services) await service.close();
   editors = [];
-  handles = [];
+  services = [];
 });
 
 describe("block-file long-document responsiveness", () => {
@@ -143,7 +158,8 @@ describe("block-file long-document responsiveness", () => {
     "stays responsive on a season-sized file (build, render, edit, query, reorder)",
     async () => {
       // --- Build + persist a large file --------------------------------------
-      const builder = await openEditor("perf");
+      const { service, handle: builderHandle, editor: builder } = await openServiceAndEditor();
+      const blockFileId = builderHandle.id;
       const buildMs = ms(() => {
         fillSide(builder, "aff");
         fillSide(builder, "neg");
@@ -157,17 +173,12 @@ describe("block-file long-document responsiveness", () => {
       // the real "open the screen" cost.
       builder.destroy();
       editors = editors.filter((e) => e !== builder);
-      const builderHandle = handles.find((h) => h.id === "perf");
-      if (builderHandle) {
-        await builderHandle.close();
-        handles = handles.filter((h) => h !== builderHandle);
-      }
 
       // --- 1. Initial render: parse the persisted doc into a fresh editor ----
       let editor!: Editor;
       const renderMs = await (async () => {
         const t0 = performance.now();
-        editor = await openEditor("perf");
+        ({ editor } = await reopenEditor(service, blockFileId));
         return performance.now() - t0;
       })();
 
@@ -179,7 +190,8 @@ describe("block-file long-document responsiveness", () => {
       const midIndex = Math.floor(SECTIONS_PER_SIDE / 2);
       const editMs = ms(() => {
         const midRange = getSectionRange(editor, "aff", midIndex);
-        // Insert a word at the top of the middle section's body.
+        // midRange.from is immediately before the section heading node; +2 lands
+        // inside the heading's text (the start of that node's inline content).
         editor
           .chain()
           .insertContentAt(midRange.from + 2, { type: "text", text: "typed " })
