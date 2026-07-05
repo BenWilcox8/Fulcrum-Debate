@@ -8,7 +8,7 @@ This file is the project's committed home for project-intrinsic agent knowledge:
 - **React + TypeScript + Vite** - front end in `src/`.
 - **Tailwind CSS v4** - via the `@tailwindcss/vite` plugin; global styles are `@import "tailwindcss";` in `src/index.css` (no `tailwind.config.js`, no PostCSS config).
 - **react-router-dom v7** - client-side routing for the app frame. Uses `HashRouter` (see `src/App.tsx`) because the app is served from a `file://` context under Tauri with no server to resolve real paths.
-- **Tiptap v3** - rich-text editor core in `src/editor/core/` (headless factory + Yjs binding). React component and marks are follow-up tasks.
+- **Tiptap v3** - rich-text editor core in `src/editor/core/` (headless factory + Yjs binding); headings + outline in `src/editor/headings/`. React component and marks are follow-up tasks.
 - **Yjs + y-indexeddb** - shared data types and local persistence, used by the document and editor layers.
 - Planned but **not yet added**: XYFlow. Do not introduce it until its own task lands.
 
@@ -183,7 +183,8 @@ Feature code consumes the document layer exclusively through `openDocumentServic
 
 The shared rich-text layer every text surface uses (block file, card editor, speech doc) is one Tiptap editor bound to a named `XmlFragment` of a document-core `Y.Doc`.
 `src/editor/core/` is that foundation only: a headless factory plus its baseline schema and Yjs binding.
-Marks (bold / highlight / font-size), headings, the concrete extension preset, and the React editor component are deliberate follow-up tasks and live elsewhere.
+Marks (bold / highlight / font-size), the concrete extension preset, and the React editor component are deliberate follow-up tasks and live elsewhere.
+Headings live in `src/editor/headings/` (see below).
 
 - **The factory:** `createEditor({ binding: { handle, fragment }, extensions?, element? })` in `src/editor/core/editor-core.ts` returns a Tiptap `Editor`. Import from `src/editor/core`. `binding.handle` is a document-core `DocumentHandle`; `binding.fragment` is the top-level `XmlFragment` name on `handle.doc` (a non-empty fragment per the [Document model contract](#document-model-contract-shared-type-conventions) - the editor binds to `handle.doc.getXmlFragment(fragment)`, which fixes that name as an `XmlFragment` for the life of the document).
 - **Tiptap v3 + `@tiptap/y-tiptap`:** the collaboration binding is `@tiptap/extension-collaboration`, which wraps `@tiptap/y-tiptap` (Tiptap's maintained fork of `y-prosemirror`, version-matched to `@tiptap/pm`). Chosen over hand-wiring `y-prosemirror` so Tiptap owns the ProseMirror sync/mapping/undo plugin lifecycle. Deps: `@tiptap/core`, `@tiptap/pm`, `@tiptap/extension-{document,paragraph,text,collaboration}`, `@tiptap/y-tiptap`, `y-protocols` (all under `dependencies`).
