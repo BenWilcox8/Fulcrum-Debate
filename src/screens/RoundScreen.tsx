@@ -17,13 +17,29 @@ import { useRounds } from "../rounds";
 export default function RoundScreen() {
   const { roundId } = useParams<{ roundId: string }>();
   const { handle } = useDocument(roundId);
-  const { rounds } = useRounds();
-  const title = rounds.find((round) => round.id === roundId)?.title ?? "Round";
+  const { rounds, loading } = useRounds();
+
+  const round = rounds.find((r) => r.id === roundId);
+  const notFound = !loading && roundId != null && round == null;
+
+  if (notFound) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+        <p className="text-shell-text text-lg font-medium">Round not found</p>
+        <Link
+          to="/rounds"
+          className="text-sm font-medium text-shell-muted hover:text-shell-text"
+        >
+          ← Back to all rounds
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <section
       aria-labelledby="screen-heading"
-      className="flex h-[calc(100vh-9rem)] flex-col gap-4"
+      className="flex flex-1 min-h-0 flex-col gap-4"
     >
       <div className="flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
@@ -37,7 +53,7 @@ export default function RoundScreen() {
             id="screen-heading"
             className="text-2xl font-semibold tracking-tight text-shell-text"
           >
-            {title}
+            {round?.title ?? "Round"}
           </h2>
         </div>
       </div>

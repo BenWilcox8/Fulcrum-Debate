@@ -144,6 +144,15 @@ describe("round lifecycle integration", () => {
     expect(screen.queryByDisplayValue("AFF-ONLY")).toBeNull();
   });
 
+  it("shows a not-found state when navigating to an unrecognised round id", async () => {
+    renderShellAt("/rounds/does-not-exist");
+
+    expect(await screen.findByText(/round not found/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /back to all rounds/i }),
+    ).toBeInTheDocument();
+  });
+
   it("lists created rounds as flow-sheet documents on the rounds index", async () => {
     await withHarness(async ({ createRound }) => {
       await act(async () => {
