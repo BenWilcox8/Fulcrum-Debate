@@ -152,6 +152,7 @@ Each editor/feature PRD fills in its kind's rows as it lands.
 |---|---|---|---|
 | `flow-sheet` | `columns` | `Y.Array<Y.Map>` | Ordered speech columns; each map is one `SpeechColumn` (`id`, `label`, `side`). See [Column model](#column-model-the-spine). |
 | `flow-sheet` | `nodes` | `Y.Map<Y.Map>` | Flow nodes keyed by id; each map records `columnId` (membership), `kind`, and `order` (vertical). See [Node-container contract](#node-container-contract-membership--vertical-order). |
+| `block-file` | `body` | `Y.XmlFragment` | The one continuous rich-text surface, whose top-level content is exactly two enforced side sections (aff then neg). `BLOCK_FILE_FRAGMENT` in `src/blockfile`. The prose schema is code-documented in `src/blockfile/schema.ts`; the AGENTS.md narrative lands in the block-file close-out task. |
 
 ### Registry schema (metadata index)
 
