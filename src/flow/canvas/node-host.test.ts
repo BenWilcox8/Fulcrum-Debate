@@ -113,6 +113,46 @@ describe("flowNodesToNodes", () => {
     expect(nodes.map((n) => n.id)).toEqual(["a"]);
   });
 
+  it("does not leave a phantom gap when a middle node is skipped", () => {
+    const groups: ColumnFlowNodes[] = [
+      {
+        columnId: "col-1",
+        nodes: [
+          node("a", "col-1", "stub"),
+          node("b", "col-1", "unknown"),
+          node("c", "col-1", "stub"),
+        ],
+      },
+    ];
+    const nodes = flowNodesToNodes(groups, registry);
+
+    expect(nodes.map((n) => n.id)).toEqual(["a", "c"]);
+    expect(nodes[0].position.y).toBe(FLOW_NODE_TOP_INSET);
+    expect(nodes[1].position.y).toBe(FLOW_NODE_TOP_INSET + FLOW_NODE_HEIGHT + FLOW_NODE_GAP);
+  });
+
+  it("stacks mixed-height nodes by cumulative height, not uniform slots", () => {
+    const mixedRegistry: FlowNodeRegistry = [
+      { kind: "tall", component: Stub, height: 120 },
+      { kind: "short", component: Stub, height: 40 },
+    ];
+    const groups: ColumnFlowNodes[] = [
+      {
+        columnId: "col-1",
+        nodes: [
+          node("a", "col-1", "tall"),
+          node("b", "col-1", "short"),
+        ],
+      },
+    ];
+    const nodes = flowNodesToNodes(groups, mixedRegistry);
+
+    expect(nodes[0].position.y).toBe(FLOW_NODE_TOP_INSET);
+    expect(nodes[0].height).toBe(120);
+    expect(nodes[1].position.y).toBe(FLOW_NODE_TOP_INSET + 120 + FLOW_NODE_GAP);
+    expect(nodes[1].height).toBe(40);
+  });
+
   it("marks nodes render-only (no drag, no selection)", () => {
     const groups: ColumnFlowNodes[] = [
       { columnId: "col-1", nodes: [node("a", "col-1", "stub")] },

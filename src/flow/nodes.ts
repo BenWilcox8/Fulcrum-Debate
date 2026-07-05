@@ -163,9 +163,9 @@ function columnNodeMaps(
 
 /**
  * Every flow node on a flow-sheet document, as plain snapshots. A pure read of
- * current state, ordered deterministically by column then vertical position then
- * id - a stable total order across the whole document. Safe to call any time
- * after the handle's local load has resolved.
+ * current state, ordered deterministically by column id (lexicographic) then
+ * vertical position then id - a stable total order across the whole document.
+ * Safe to call any time after the handle's local load has resolved.
  */
 export function listNodes(handle: DocumentHandle): FlowNode[] {
   const map = nodesMap(handle.doc);

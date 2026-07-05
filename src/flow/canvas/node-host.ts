@@ -167,9 +167,10 @@ export function flowNodesToNodes(
   const byKind = indexRegistry(registry);
   const out: HostedFlowNode[] = [];
   for (const { columnId, nodes } of groups) {
-    nodes.forEach((node, index) => {
+    let y = FLOW_NODE_TOP_INSET;
+    for (const node of nodes) {
       const def = byKind.get(node.kind);
-      if (!def) return; // No registered renderer for this kind: skip it.
+      if (!def) continue; // No registered renderer for this kind: skip it.
       const height = def.height ?? FLOW_NODE_HEIGHT;
       out.push({
         id: node.id,
@@ -177,14 +178,15 @@ export function flowNodesToNodes(
         parentId: columnId,
         // Clip the node to its column's bounds - membership is visual, too.
         extent: "parent",
-        position: { x: FLOW_NODE_INSET_X, y: flowNodeY(index, height) },
+        position: { x: FLOW_NODE_INSET_X, y },
         width: FLOW_NODE_WIDTH,
         height,
         data: { flowNodeId: node.id, columnId, kind: node.kind },
         draggable: false,
         selectable: false,
       });
-    });
+      y += height + FLOW_NODE_GAP;
+    }
   }
   return out;
 }
