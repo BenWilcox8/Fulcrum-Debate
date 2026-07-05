@@ -5,6 +5,7 @@ import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { describe, it, expect, beforeEach } from "vitest";
 
+import Bold from "@tiptap/extension-bold";
 import { openDocument } from "../../documents/core";
 import { createEditor } from "../core";
 import {
@@ -119,9 +120,14 @@ describe("getOutline", () => {
   });
 
   it("flattens inline marks to plain text in the label", async () => {
-    const { handle, editor } = await openHeadingEditor();
+    const handle = openDocument({ id: uniqueId(), kind: "speech-doc" });
+    await handle.whenLoaded;
+    const editor = createEditor({
+      binding: { handle, fragment: "body" },
+      extensions: [heading, Bold],
+    });
 
-    editor.commands.setContent("<h2>Impact <em>calculus</em></h2>");
+    editor.commands.setContent("<h2>Impact <strong>calculus</strong></h2>");
 
     expect(getOutline(editor)).toEqual([
       expect.objectContaining({ level: 2, text: "Impact calculus" }),
