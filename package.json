@@ -16,8 +16,10 @@
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
     "@tiptap/core": "^3.27.1",
+    "@tiptap/extension-bold": "^3.27.1",
     "@tiptap/extension-collaboration": "^3.27.1",
     "@tiptap/extension-document": "^3.27.1",
+    "@tiptap/extension-highlight": "^3.27.1",
     "@tiptap/extension-paragraph": "^3.27.1",
     "@tiptap/extension-text": "^3.27.1",
     "@tiptap/pm": "^3.27.1",
