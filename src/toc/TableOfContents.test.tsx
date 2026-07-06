@@ -7,7 +7,7 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, screen, act, waitFor } from "@testing-library/react";
+import { render, screen, act, waitFor, fireEvent } from "@testing-library/react";
 import { useState } from "react";
 import type { Editor, JSONContent } from "@tiptap/core";
 
@@ -164,6 +164,37 @@ describe("TableOfContents", () => {
     });
     await waitFor(() => expect(screen.queryByText("Renamed")).toBeNull());
     expect(screen.getByText("First")).toBeInTheDocument();
+
+    editor.destroy();
+  });
+
+  it("scrolls the editor selection into a heading when its row is clicked", async () => {
+    const { editor } = await openBlockEditor();
+    act(() => {
+      editor.commands.setContent(
+        blockDoc([[1, "AT: Gold"]], [[1, "AT: Fusion"]]),
+      );
+    });
+
+    render(<Harness editor={editor} />);
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "AT: Fusion" }),
+      ).toBeInTheDocument(),
+    );
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "AT: Fusion" }));
+    });
+
+    // The selection now sits inside the neg-side heading that was clicked.
+    const { $from } = editor.state.selection;
+    let inHeading: string | null = null;
+    for (let depth = $from.depth; depth > 0; depth--) {
+      const node = $from.node(depth);
+      if (node.type.name === "heading") inHeading = node.textContent;
+    }
+    expect(inHeading).toBe("AT: Fusion");
 
     editor.destroy();
   });

@@ -21,6 +21,13 @@ export interface TocRowProps {
    * carries `aria-current="location"` for assistive tech.
    */
   active?: boolean;
+  /**
+   * Invoked when the reader activates the row (click / keyboard). When provided,
+   * the label renders as a `<button>` so it is a first-class, keyboard-reachable
+   * navigation target; the tree renderer wires this to scroll the editor to this
+   * heading. When omitted, the label is a plain, non-interactive span.
+   */
+  onActivate?: () => void;
 }
 
 /**
@@ -31,8 +38,11 @@ export interface TocRowProps {
  * The nesting of children is the tree renderer's job ({@link TableOfContents}),
  * so this component stays a flat, presentational unit that a future per-row
  * control can slot into without knowing anything about the tree.
+ *
+ * Given an `onActivate`, the label becomes a `<button>` (a keyboard-reachable
+ * navigation target); without one it stays a plain span.
  */
-export function TocRow({ node, leadingControl, active = false }: TocRowProps) {
+export function TocRow({ node, leadingControl, active = false, onActivate }: TocRowProps) {
   return (
     <div
       data-active={active || undefined}
@@ -46,9 +56,20 @@ export function TocRow({ node, leadingControl, active = false }: TocRowProps) {
           {leadingControl}
         </span>
       )}
-      <span className="truncate text-sm text-shell-text" title={node.text}>
-        {node.text}
-      </span>
+      {onActivate ? (
+        <button
+          type="button"
+          onClick={onActivate}
+          className="truncate text-left text-sm text-shell-text hover:text-aff-strong"
+          title={node.text}
+        >
+          {node.text}
+        </button>
+      ) : (
+        <span className="truncate text-sm text-shell-text" title={node.text}>
+          {node.text}
+        </span>
+      )}
     </div>
   );
 }

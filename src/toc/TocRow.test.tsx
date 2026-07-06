@@ -2,8 +2,8 @@
 // renders one heading and reserves a leading-control slot a later feature (per-
 // heading speech-doc checkboxes) fills without rewriting the row. Assertions are
 // behavioral (rendered text / slot presence), never pixels.
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 
 import type { OutlineTreeNode } from "../editor/headings";
 import { TocRow } from "./TocRow";
@@ -53,5 +53,20 @@ describe("TocRow", () => {
     const row = label.closest("[data-active='true']");
     expect(row).not.toBeNull();
     expect(row).toHaveAttribute("aria-current", "location");
+  });
+
+  it("renders the label as a button that fires onActivate when clicked", () => {
+    const onActivate = vi.fn();
+    render(<TocRow node={node({ text: "AT: Fusion" })} onActivate={onActivate} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "AT: Fusion" }));
+
+    expect(onActivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders a plain, non-interactive label when no onActivate is passed", () => {
+    render(<TocRow node={node({ text: "AT: Gold" })} />);
+    expect(screen.queryByRole("button")).toBeNull();
+    expect(screen.getByText("AT: Gold")).toBeInTheDocument();
   });
 });

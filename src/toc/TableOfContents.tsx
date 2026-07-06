@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/core";
 
 import type { OutlineTreeNode } from "../editor/headings";
+import { navigateToHeading } from "./navigateToHeading";
 import { TocRow } from "./TocRow";
 import { useActiveHeading } from "./useActiveHeading";
 import { useOutlineTree } from "./useOutlineTree";
@@ -25,13 +26,18 @@ export interface TableOfContentsProps {
  * Renders a forest of {@link OutlineTreeNode}s as a nested list, each heading a
  * {@link TocRow}. Recurses through `children` so the rendered nesting matches the
  * tree derivation exactly.
+ *
+ * `editor` is threaded through so each row can scroll the editor to its heading
+ * on activation; a nullish editor renders inert rows (no navigation target).
  */
 function TocNodes({
   nodes,
   activePos,
+  editor,
 }: {
   nodes: OutlineTreeNode[];
   activePos: number | null;
+  editor: Editor | null;
 }) {
   return (
     <ul className="flex flex-col">
@@ -39,10 +45,16 @@ function TocNodes({
         // `pos` is unique per heading within a snapshot, and the whole tree is
         // re-derived on every document change, so it is a stable-enough key.
         <li key={node.pos}>
-          <TocRow node={node} active={node.pos === activePos} />
+          <TocRow
+            node={node}
+            active={node.pos === activePos}
+            onActivate={
+              editor ? () => navigateToHeading(editor, node.pos) : undefined
+            }
+          />
           {node.children.length > 0 && (
             <div className="border-l border-shell-border pl-3">
-              <TocNodes nodes={node.children} activePos={activePos} />
+              <TocNodes nodes={node.children} activePos={activePos} editor={editor} />
             </div>
           )}
         </li>
@@ -60,7 +72,8 @@ function TocNodes({
  * document flows through the observer and re-renders the list with no manual
  * refresh. When a `scrollContainer` is provided it also highlights the entry for
  * the section currently in view, tracking the scroll position live
- * ({@link useActiveHeading}); click-to-scroll navigation is a separate follow-up.
+ * ({@link useActiveHeading}). Clicking a row scrolls the editor to that heading
+ * (via {@link navigateToHeading}).
  *
  * The sidebar renders its chrome synchronously (heading + region) even with no
  * editor or no headings, so it is a stable layout region rather than a toggled
@@ -84,7 +97,7 @@ export function TableOfContents({
       {tree.length === 0 ? (
         <p className="text-sm text-shell-muted">No headings yet</p>
       ) : (
-        <TocNodes nodes={tree} activePos={activePos} />
+        <TocNodes nodes={tree} activePos={activePos} editor={editor} />
       )}
     </nav>
   );

@@ -11,9 +11,8 @@
  * - {@link useOutlineTree} is the underlying hook: observe outline + build tree.
  * - {@link useActiveHeading} tracks the scroll position against heading offsets
  *   so the sidebar highlights the section currently in view.
- *
- * Click-to-scroll navigation is deliberately out of scope here (a separate
- * follow-up issue).
+ * - {@link navigateToHeading} is the click-to-scroll gesture a row drives:
+ *   select + scroll the editor to a heading, guarding against a stale position.
  */
 export {
   TableOfContents,
@@ -27,3 +26,4 @@ export {
   ACTIVE_HEADING_TOLERANCE,
   type HeadingOffset,
 } from "./active-heading";
+export { navigateToHeading } from "./navigateToHeading";
