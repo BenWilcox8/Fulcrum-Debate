@@ -1,8 +1,25 @@
-import { useEffect, useReducer } from "react";
+import { Fragment, type ReactNode, useEffect, useReducer } from "react";
 import type { Editor } from "@tiptap/core";
 
 import { getSelectedCard } from "../../blockfile";
 import type { RegisteredCardTool } from "../registry";
+
+/**
+ * A registered card tool as the toolbar renders it. Most tools transform the
+ * selection in place and render as a plain apply-button. A tool that needs richer
+ * interaction (e.g. Send to Block File's destination picker) may supply
+ * {@link renderControl} - the toolbar then renders that control in the tool's slot
+ * instead of the default button. The field is optional, so the plain
+ * {@link RegisteredCardTool} the registry returns is a valid `ToolbarTool`.
+ */
+export interface ToolbarTool extends RegisteredCardTool {
+  /**
+   * An optional custom toolbar control. Receives the live editor and whether a
+   * card is addressable at the selection (the same gate the default button uses),
+   * and returns the control to render in this tool's toolbar slot.
+   */
+  renderControl?: (props: { editor: Editor | null; enabled: boolean }) => ReactNode;
+}
 
 /** Props for {@link CardToolbar}. */
 export interface CardToolbarProps {
@@ -12,7 +29,7 @@ export interface CardToolbarProps {
    */
   editor: Editor | null;
   /** The registered card tools to render, in registration order. */
-  tools: RegisteredCardTool[];
+  tools: ToolbarTool[];
 }
 
 /**
@@ -71,19 +88,23 @@ export function CardToolbar({ editor, tools }: CardToolbarProps) {
       {tools.map((tool) => {
         // Baseline card gate, narrowed by the tool's own precondition (if any).
         const enabled = cardSelected && tool.isEnabled(editor!);
-        return (
-        <button
-          key={tool.id}
-          type="button"
-          disabled={!enabled}
-          aria-disabled={!enabled}
-          onClick={() => {
-            if (enabled) tool.apply(editor!);
-          }}
-          className="rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm font-medium text-shell-text hover:bg-shell-bg disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {tool.label}
-        </button>
+        return tool.renderControl ? (
+          <Fragment key={tool.id}>
+            {tool.renderControl({ editor, enabled })}
+          </Fragment>
+        ) : (
+          <button
+            key={tool.id}
+            type="button"
+            disabled={!enabled}
+            aria-disabled={!enabled}
+            onClick={() => {
+              if (enabled) tool.apply(editor!);
+            }}
+            className="rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm font-medium text-shell-text hover:bg-shell-bg disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {tool.label}
+          </button>
         );
       })}
     </div>

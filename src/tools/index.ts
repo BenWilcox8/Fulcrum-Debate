@@ -51,3 +51,14 @@ export {
   EXTRACT_HIGHLIGHT_TOOL_LABEL,
   type ExtractHighlightToolSettings,
 } from "./extract/extractHighlightTool";
+export {
+  type SendMode,
+  type SendTarget,
+  type SendDestination,
+  type SendResult,
+  type SendToolSettings,
+  SEND_TOOL_ID,
+  sendToBlockFileTool,
+  listSendDestinations,
+  sendSelectedCard,
+} from "./send";
