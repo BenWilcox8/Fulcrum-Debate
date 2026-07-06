@@ -11,8 +11,10 @@
 export {
   createCardToolRegistry,
   toolSectionId,
+  toolSectionDefinition,
   TOOL_SECTION_ID_PREFIX,
   type CardToolDefinition,
   type RegisteredCardTool,
   type CardToolRegistry,
 } from "./registry";
+export { CARD_TOOL_DEFINITIONS } from "./cardTools";

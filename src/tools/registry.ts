@@ -165,11 +165,11 @@ export function createCardToolRegistry(
       }
       // The store enforces settings-schema equality: an idempotent re-register
       // for a matching schema, or a throw naming the section for a mismatch.
-      store.registerSection(sectionOf(definition));
+      store.registerSection(toolSectionDefinition(definition));
       return existing as RegisteredCardTool<S>;
     }
 
-    const settings = store.registerSection(sectionOf(definition));
+    const settings = store.registerSection(toolSectionDefinition(definition));
     const registered: RegisteredCardTool<S> = {
       id: definition.id,
       label: definition.label,
@@ -194,8 +194,14 @@ export function createCardToolRegistry(
   return { register, get, list };
 }
 
-/** Builds the store section a tool's settings register under. */
-function sectionOf<S extends SectionSchema>(
+/**
+ * Builds the store {@link SectionDefinition} a tool's settings register under -
+ * the single source of truth for a tool's section shape (namespaced id, label as
+ * title, its settings schema as the fields). The registry registers this on the
+ * store; the Settings side reuses it to contribute the tool's section without
+ * duplicating the mapping.
+ */
+export function toolSectionDefinition<S extends SectionSchema>(
   definition: CardToolDefinition<S>,
 ): SectionDefinition<S> {
   return {
