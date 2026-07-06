@@ -141,10 +141,11 @@ beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
 });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   for (const editor of editors) editor.destroy();
   editors = [];
+  for (const handle of handles) await handle.close();
   handles = [];
 });
 
