@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { EditorContent } from "@tiptap/react";
 import type { NodeProps } from "@xyflow/react";
 
 import type { DocumentHandle } from "../../documents/core";
@@ -6,9 +7,12 @@ import type { FlowSide } from "../columns";
 import { getColumn, observeColumns } from "../columns";
 import { observeNodes } from "../nodes";
 import { contentionContentFragment, listContentions } from "../contention";
-import { DocumentEditor } from "../../editor/react";
+import { listSubpoints, observeSubpoints, type FlowSubpoint } from "../subpoint";
+import { useDocumentEditor } from "../../editor/react";
 import type { HostedFlowNode } from "./node-host";
 import { useFlowSheet } from "./flow-sheet-context";
+import { useSubpointTrigger } from "./useSubpointTrigger";
+import { SubpointNode } from "./SubpointNode";
 
 /**
  * Per-side design-token classes for the contention container, mirroring the
@@ -69,6 +73,30 @@ function useContentionHeader(
 }
 
 /**
+ * The live list of subpoints nested under a contention, observed so a subpoint
+ * added by the S# trigger appears immediately. A pure derivation of the flow doc
+ * ({@link listSubpoints}), so the component never manages invalidation.
+ */
+function useContentionSubpoints(
+  handle: DocumentHandle | null,
+  contentionId: string,
+): FlowSubpoint[] {
+  const [subpoints, setSubpoints] = useState<FlowSubpoint[]>([]);
+
+  useEffect(() => {
+    if (!handle || handle.closed) {
+      setSubpoints([]);
+      return;
+    }
+    return observeSubpoints(handle, () => {
+      setSubpoints(listSubpoints(handle, contentionId));
+    });
+  }, [handle, contentionId]);
+
+  return subpoints;
+}
+
+/**
  * The custom XYFlow node for one Contention container.
  *
  * A contention is a large, rounded, side-coloured panel with a `C#` header and
@@ -79,9 +107,12 @@ function useContentionHeader(
  * provider the node still renders its chrome and simply omits the editor rather
  * than throwing.
  *
- * The body is deliberately a distinct region ({@link contention-body}): the next
- * slice nests subpoints inside a contention, and this container leaves that room
- * without this slice implementing it.
+ * The body region hosts, below the argument text, the contention's nested
+ * {@link ./SubpointNode | subpoints}. A debater nests one by typing an `S#`
+ * trigger inside this contention's editor - wired here via
+ * {@link ./useSubpointTrigger}, which needs the raw editor instance (hence
+ * {@link useDocumentEditor} + {@link EditorContent} rather than the
+ * {@link DocumentEditor} component the contention used before subpoints landed).
  */
 export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
   const context = useFlowSheet();
@@ -90,6 +121,16 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
 
   const { label, side } = useContentionHeader(handle, columnId, flowNodeId);
   const classes = SIDE_CLASSES[side];
+
+  // The raw editor is needed so the S# subpoint trigger can intercept keystrokes
+  // and strip the typed token; the surface itself renders via EditorContent.
+  const editor = useDocumentEditor({
+    handle,
+    fragment: contentionContentFragment(flowNodeId),
+  });
+  useSubpointTrigger(handle, flowNodeId, editor);
+
+  const subpoints = useContentionSubpoints(handle, flowNodeId);
 
   return (
     <div
@@ -104,15 +145,25 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
       >
         {label}
       </div>
-      {/* Seam: the next slice nests subpoints in this body region. */}
-      <div data-contention-body data-testid="contention-body" className="min-h-0 flex-1">
+      {/* The argument text, then the nested subpoints below it. */}
+      <div
+        data-contention-body
+        data-testid="contention-body"
+        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
+      >
         {handle && (
-          <DocumentEditor
-            handle={handle}
-            fragment={contentionContentFragment(flowNodeId)}
-            className="h-full text-sm text-shell-text"
+          <EditorContent
+            editor={editor}
+            className="text-sm text-shell-text"
           />
         )}
+        {subpoints.map((subpoint) => (
+          <SubpointNode
+            key={subpoint.id}
+            contentionId={flowNodeId}
+            subpointId={subpoint.id}
+          />
+        ))}
       </div>
     </div>
   );

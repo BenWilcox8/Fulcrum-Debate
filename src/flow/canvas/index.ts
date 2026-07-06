@@ -44,6 +44,12 @@ export {
 } from "./column-nodes";
 export { useFlowNodes } from "./useFlowNodes";
 export { ContentionNode } from "./ContentionNode";
+export { SubpointNode, type SubpointNodeProps } from "./SubpointNode";
+export { useSubpointTrigger } from "./useSubpointTrigger";
+export {
+  stepSubpointTrigger,
+  type SubpointTriggerStep,
+} from "./subpoint-trigger";
 export {
   CONTENTION_FLOW_NODE_TYPE,
   CONTENTION_FLOW_NODE_REGISTRY,
