@@ -13,6 +13,7 @@ import {
 import { useBlockFile } from "../blockfile-workspace";
 import { TableOfContents } from "../toc";
 import { CardFormattingStyles } from "../formatting/react";
+import { CardToolbar, useCardTools } from "../tools/react";
 
 /**
  * The block-file schema plus the card node model and its quick-create keyboard
@@ -73,6 +74,10 @@ export default function BlockFileScreen() {
     null,
   );
 
+  // The registered card-cutting tools the toolbar renders. Provider-tolerant,
+  // so a bare subtree still paints the toolbar.
+  const tools = useCardTools();
+
   return (
     <section
       aria-labelledby="screen-heading"
@@ -112,30 +117,37 @@ export default function BlockFileScreen() {
       <div className="flex min-h-0 flex-1 gap-4">
         <TableOfContents editor={editor} scrollContainer={scrollContainer} />
 
-        <div
-          ref={setScrollContainer}
-          className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card"
-        >
-          {error ? (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-shell-muted">
-                Could not open block file. {error.message}
-              </p>
-              <button
-                onClick={retry}
-                className="self-start rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm text-shell-text hover:bg-shell-bg"
-              >
-                Retry
-              </button>
-            </div>
-          ) : (
-            <>
-              {!ready && (
-                <p className="text-sm text-shell-muted">Opening block file…</p>
-              )}
-              <EditorContent editor={editor} className="block-file-editor" />
-            </>
-          )}
+        {/* The editor column: the card-cutting toolbar sits at the top of the
+            editing surface (right of the ToC, above the scroll region) so it
+            never crowds the sidebar or the document. */}
+        <div className="flex min-h-0 flex-1 flex-col gap-2">
+          <CardToolbar editor={editor} tools={tools} />
+
+          <div
+            ref={setScrollContainer}
+            className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card"
+          >
+            {error ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-sm text-shell-muted">
+                  Could not open block file. {error.message}
+                </p>
+                <button
+                  onClick={retry}
+                  className="self-start rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm text-shell-text hover:bg-shell-bg"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <>
+                {!ready && (
+                  <p className="text-sm text-shell-muted">Opening block file…</p>
+                )}
+                <EditorContent editor={editor} className="block-file-editor" />
+              </>
+            )}
+          </div>
         </div>
       </div>
     </section>

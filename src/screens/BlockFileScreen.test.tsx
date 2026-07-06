@@ -10,7 +10,14 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import AppRoutes from "../AppRoutes";
@@ -74,6 +81,50 @@ describe("Block File screen - quick card creation", () => {
     expect(card.querySelector('[data-card-region="tagline"]')).not.toBeNull();
     expect(card.querySelector('[data-card-region="cite"]')).not.toBeNull();
     expect(card.querySelector('[data-card-region="body"]')).not.toBeNull();
+  });
+});
+
+describe("Block File screen - card-cutting toolbar", () => {
+  it("renders the card-cutting toolbar with the shipped tool once the editor mounts", async () => {
+    renderShellAt("/blocks");
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("toolbar", { name: /card tools/i }),
+      ).toBeInTheDocument();
+    });
+
+    const toolbar = screen.getByRole("toolbar", { name: /card tools/i });
+    // The reference tool's button is present (proves the register→render seam).
+    expect(within(toolbar).getAllByRole("button").length).toBeGreaterThan(0);
+  });
+
+  it("enables a tool once a card is created and selected", async () => {
+    const { container } = renderShellAt("/blocks");
+
+    await waitFor(() => {
+      expect(
+        container.querySelector('[contenteditable="true"].ProseMirror'),
+      ).not.toBeNull();
+    });
+
+    const toolbar = screen.getByRole("toolbar", { name: /card tools/i });
+    // No card yet - every tool button is disabled.
+    for (const button of within(toolbar).getAllByRole("button")) {
+      expect(button).toBeDisabled();
+    }
+
+    // Create a card (which leaves the caret inside it); the toolbar enables.
+    fireEvent.click(await screen.findByRole("button", { name: /new card/i }));
+
+    await waitFor(() => {
+      expect(container.querySelector("[data-card]")).not.toBeNull();
+    });
+    await waitFor(() => {
+      for (const button of within(toolbar).getAllByRole("button")) {
+        expect(button).toBeEnabled();
+      }
+    });
   });
 });
 
