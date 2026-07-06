@@ -148,6 +148,7 @@ Key gotchas:
 - Column id becomes the XYFlow node id; flow nodes reference their column via `parentId = columnId`.
 - Register node kinds via `FlowCanvas`'s `flowNodeTypes` prop (`FlowNodeRegistry`). An unregistered kind is skipped (no renderer), not an error.
 - `src/test/setup.ts` installs a no-op `ResizeObserver` stub (jsdom ships none) - XYFlow requires it.
+- **`RootLayout` must use `h-screen` (not `min-h-screen`) on its root div.** `min-h-screen` gives no definite CSS height, so `flex-1` descendants cannot distribute free space and `h-full` inside the canvas resolves to 0 - the XYFlow `ResizeObserver` always measures 0 and column heights stay at the fallback forever. `h-screen` + `overflow-hidden` on the root div give the whole flex chain a definite `100vh`, and `overflow-auto` on `<main>` lets content-heavy screens (Dashboard) still scroll when content exceeds the viewport.
 
 ### Contention container node (`src/flow/contention.ts` + `src/flow/canvas/`)
 
