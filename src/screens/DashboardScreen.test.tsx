@@ -71,20 +71,63 @@ describe("DashboardScreen three-zone shell", () => {
     ).toBeTruthy();
   });
 
-  it("exposes a placeholder recent slot and placeholder new-item actions", () => {
+  it("exposes a placeholder recent slot and live new-item actions", () => {
     renderDashboard();
 
     // The recent list is a sibling issue's job: a clearly-marked empty slot.
     const resume = screen.getByRole("region", { name: /resume/i });
     expect(within(resume).getByText(/recent/i)).toBeInTheDocument();
 
-    // The create actions are placeholders wired by a sibling issue.
+    // The create actions are wired and enabled (no dead placeholder buttons).
     const startNew = screen.getByRole("region", { name: /start something new/i });
     expect(
       within(startNew).getByRole("button", { name: /new round/i }),
+    ).toBeEnabled();
+    expect(
+      within(startNew).getByRole("button", { name: /new card/i }),
+    ).toBeEnabled();
+    expect(
+      within(startNew).getByRole("button", { name: /open block file/i }),
+    ).toBeEnabled();
+  });
+
+  it("wires New round to create a round and open its flow sheet", async () => {
+    renderDashboard();
+
+    const startNew = screen.getByRole("region", { name: /start something new/i });
+    fireEvent.click(within(startNew).getByRole("button", { name: /new round/i }));
+
+    // Landing on the round screen (its own heading) proves a flow-sheet document
+    // was created through the document service and navigated to.
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /round 1/i }),
     ).toBeInTheDocument();
     expect(
-      within(startNew).getByRole("button", { name: /new block file/i }),
+      screen.queryByRole("heading", { level: 2, name: /dashboard/i }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("wires Open block file to open the block-file editor", async () => {
+    renderDashboard();
+
+    const startNew = screen.getByRole("region", { name: /start something new/i });
+    fireEvent.click(
+      within(startNew).getByRole("button", { name: /open block file/i }),
+    );
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /block file/i }),
+    ).toBeInTheDocument();
+  });
+
+  it("wires New card to the block file (its interim home)", async () => {
+    renderDashboard();
+
+    const startNew = screen.getByRole("region", { name: /start something new/i });
+    fireEvent.click(within(startNew).getByRole("button", { name: /new card/i }));
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: /block file/i }),
     ).toBeInTheDocument();
   });
 

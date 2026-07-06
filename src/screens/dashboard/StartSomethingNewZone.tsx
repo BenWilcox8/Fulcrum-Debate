@@ -1,11 +1,29 @@
+import { useNavigate } from "react-router-dom";
+
 /**
- * The Start Something New zone - the dashboard's create-actions area. This slice
- * ships the action buttons as inert placeholders; a sibling issue wires each to
- * the create/open flow (spin up a fresh round or block file and navigate to it).
- * Keep these buttons as the seam for that work: add the handlers, do not rebuild
- * the layout.
+ * The Start Something New zone - the dashboard's create-actions area.
+ *
+ * The dashboard is the app's default landing route, so it must render on the
+ * boot path without a {@link ../../documents/react DocumentsProvider} (the
+ * provider is mounted outside `App`; `App.offline-boot.test.tsx` renders `App`
+ * bare to prove boot is local-first). This zone therefore never touches the
+ * document service directly: each action just navigates, and the destination
+ * route owns the create/open primitive. This mirrors the block-file singleton,
+ * whose screen already find-or-creates its document on arrival.
+ *
+ *  - **New round** navigates to `/rounds/new`, which creates a fresh flow-sheet
+ *    document (through the round lifecycle seam) and redirects to its canvas.
+ *  - **Open block file** navigates to `/blocks`, whose screen opens the
+ *    workspace's single block-file document.
+ *  - **New card** shares the block-file destination: a card is authored *inside*
+ *    the block file (there is no standalone card editor yet), so rather than
+ *    ship a dead/disabled button, this lands the debater on the block file - the
+ *    surface where cards are cut - as the documented interim placeholder. When a
+ *    dedicated card editor lands, only this handler changes.
  */
 export default function StartSomethingNewZone() {
+  const navigate = useNavigate();
+
   return (
     <section
       aria-labelledby="dashboard-start-heading"
@@ -23,23 +41,27 @@ export default function StartSomethingNewZone() {
         </p>
       </div>
 
-      {/* Placeholder actions: a sibling issue wires the create/open handlers. */}
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          disabled
-          aria-disabled="true"
-          className="cursor-not-allowed rounded-md bg-shell-text px-4 py-2 text-sm font-medium text-shell-surface disabled:opacity-40"
+          onClick={() => navigate("/rounds/new")}
+          className="rounded-md bg-shell-text px-4 py-2 text-sm font-medium text-shell-surface transition-opacity hover:opacity-90"
         >
           New round
         </button>
         <button
           type="button"
-          disabled
-          aria-disabled="true"
-          className="cursor-not-allowed rounded-md border border-shell-border bg-shell-surface px-4 py-2 text-sm font-medium text-shell-text disabled:opacity-40"
+          onClick={() => navigate("/blocks")}
+          className="rounded-md border border-shell-border bg-shell-surface px-4 py-2 text-sm font-medium text-shell-text transition-colors hover:border-shell-text"
         >
-          New block file
+          New card
+        </button>
+        <button
+          type="button"
+          onClick={() => navigate("/blocks")}
+          className="rounded-md border border-shell-border bg-shell-surface px-4 py-2 text-sm font-medium text-shell-text transition-colors hover:border-shell-text"
+        >
+          Open block file
         </button>
       </div>
     </section>
