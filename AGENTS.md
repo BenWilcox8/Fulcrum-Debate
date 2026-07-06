@@ -97,6 +97,15 @@ The routed Settings screen and its contribution seam over the preference store. 
 - **Gotcha - panel variance:** a `SettingsPanel<S>` consumes a `SectionHandle<S>`, so it is contravariant in `S`; a `SettingsContribution<SpecificSchema>` does not widen to the generic `SettingsContribution` on its own. Author contributions through **`defineSettingsContribution(...)`** - it type-checks the panel against its section schema at the definition site, then erases the generic (the shell only ever invokes a panel with its own section's handle, so the erasure is sound). The demo panel lives in its own file (`DemoSettingsPanel.tsx`), separate from the section-definition module, to satisfy `react-refresh/only-export-components`.
 - **Tests:** `settings.test.tsx` covers section listing, default/selected panel render, panel switching (incl. the no-panel placeholder), live re-render on set, section-scoped reset, and the empty state; `settings-navigation.test.tsx` renders the real `App` to prove the route is reachable from the nav chrome and the shipped demo section renders its panel. `settings.e2e.test.tsx` is the whole-stack closeout: it contributes a section over a *persistent* store (`openPreferenceStore`), changes a value through the real `SettingsScreen` UI, asserts a separate consumer updates live, proves the override survives reopening a fresh store over the same y-indexeddb backend, and that reset restores the default (live and in storage).
 
+## Dashboard home screen (`src/screens/DashboardScreen.tsx` + `src/screens/dashboard/`)
+
+The prep-centric home rendered on the default index route. It renders synchronously from local data with no spinner or connecting state (upholds local-first boot). `DashboardScreen` is a thin composition of three zone components, in descending prominence:
+
+- **`ResumeRecentZone`** (most prominent - an elevated bordered/shadowed card) and **`StartSomethingNewZone`** (`New round` / `New block file` buttons) are **clean placeholder slots**: sibling issues fill the recent-items list and wire the create-action handlers respectively. Keep them as seams - swap the placeholder body / add the handlers, don't rebuild the layout.
+- **`LibraryNavZone`** is complete: `<Link>`s onto the existing `/blocks` and `/rounds` screens.
+- **Gotcha - duplicate nav links:** the Library zone links to Block File/Rounds, so at `/` those link names now match in *two* places (primary nav + dashboard). Any test doing a global `getByRole("link", { name: /block file|rounds/i })` throws "multiple elements" - scope such queries to the primary nav via `within(screen.getByRole("navigation", { name: /primary/i }))`. `App.offline-boot.test.tsx` and `App.test.tsx` were updated this way; keep it.
+- **Tests:** `DashboardScreen.test.tsx` covers default-landing + no-connecting-gate, all three zones as labelled regions (`<section aria-labelledby>` → `role="region"`), Resume-first reading order, the placeholder recent slot + placeholder actions, and Library navigation into both screens.
+
 ## Fragment convention (Yjs shared-type layout)
 
 Each document's content lives in named top-level Yjs shared types ("fragments") on `handle.doc`.

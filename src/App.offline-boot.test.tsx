@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
@@ -80,13 +80,14 @@ describe("app boot is local-first (offline)", () => {
     // The real root component, including its router provider.
     render(<App />);
 
-    // Nav chrome is present...
-    expect(
-      screen.getByRole("navigation", { name: /primary/i }),
-    ).toBeInTheDocument();
+    // Nav chrome is present... (scope to the primary nav: the dashboard's
+    // Library zone also links to Block File/Rounds, so a global link query
+    // would match more than one.)
+    const primaryNav = screen.getByRole("navigation", { name: /primary/i });
+    expect(primaryNav).toBeInTheDocument();
     for (const label of ["Dashboard", "Block File", "Rounds"]) {
       expect(
-        screen.getByRole("link", { name: new RegExp(label, "i") }),
+        within(primaryNav).getByRole("link", { name: new RegExp(label, "i") }),
       ).toBeInTheDocument();
     }
 
