@@ -23,7 +23,7 @@ function navLinkClass({ isActive }: { isActive: boolean }): string {
  */
 export default function RootLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-shell-bg text-shell-text">
+    <div className="flex h-screen flex-col overflow-hidden bg-shell-bg text-shell-text">
       <header className="border-b border-shell-border">
         <div className="flex items-center gap-6 px-6 py-3">
           <span className="text-sm font-semibold tracking-tight">
@@ -43,7 +43,7 @@ export default function RootLayout() {
           </nav>
         </div>
       </header>
-      <main className="flex flex-1 flex-col min-h-0 px-6 py-8">
+      <main className="flex flex-1 flex-col min-h-0 overflow-auto px-6 py-8">
         <Outlet />
       </main>
     </div>

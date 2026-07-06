@@ -105,6 +105,18 @@ describe("FlowCanvas", () => {
     expect(getByTestId("flow-canvas")).toBeInTheDocument();
   });
 
+  it("wrapper div carries h-full and w-full so the ancestor flex chain can fill it", () => {
+    // Regression: the canvas container must declare h-full/w-full so that a
+    // parent flex chain with a definite height (h-screen on RootLayout) can
+    // propagate that height all the way down to the XYFlow surface. Without
+    // these classes the ResizeObserver always measures 0 and column heights
+    // stay at the DEFAULT_COLUMN_HEIGHT fallback forever.
+    const { getByTestId } = render(<FlowCanvas handle={null} />);
+    const wrapper = getByTestId("flow-canvas");
+    expect(wrapper.className).toMatch(/\bh-full\b/);
+    expect(wrapper.className).toMatch(/\bw-full\b/);
+  });
+
   it("renders one full-height, side-coloured column per flow-doc column", async () => {
     const handle = await openFlowSheet();
     addColumn(handle, { side: "aff", label: "1AC" });

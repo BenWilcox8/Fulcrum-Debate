@@ -26,6 +26,17 @@ describe("App shell", () => {
       screen.getByRole("heading", { level: 2, name: /dashboard/i }),
     ).toBeInTheDocument();
   });
+
+  it("root layout div carries h-screen (not min-h-screen) so the flex height chain is definite", () => {
+    // Regression: with min-h-screen the root div has no definite height, so
+    // flex-1 descendants never get a real height, and h-full inside the flow
+    // canvas resolves to 0. h-screen gives a definite 100vh so the whole
+    // chain works without devtools intervention.
+    const { container } = render(<App />);
+    const rootDiv = container.firstElementChild as HTMLElement;
+    expect(rootDiv.className).toMatch(/\bh-screen\b/);
+    expect(rootDiv.className).not.toMatch(/\bmin-h-screen\b/);
+  });
 });
 
 describe("frame navigation", () => {
