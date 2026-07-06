@@ -107,7 +107,7 @@ describe("SendToBlockFileControl", () => {
       screen.getByRole("button", { name: /send to block file/i }),
     );
 
-    const dialog = screen.getByRole("dialog", { name: /send to block file/i });
+    const dialog = screen.getByRole("group", { name: /send to block file/i });
     const select = within(dialog).getByLabelText(/destination/i);
     expect(within(select).getByRole("option", { name: "AT: Gold" })).toBeInTheDocument();
     expect(within(select).getByRole("option", { name: "AT: Warming" })).toBeInTheDocument();
@@ -123,7 +123,7 @@ describe("SendToBlockFileControl", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /send to block file/i }),
     );
-    const dialog = screen.getByRole("dialog", { name: /send to block file/i });
+    const dialog = screen.getByRole("group", { name: /send to block file/i });
     fireEvent.change(within(dialog).getByLabelText(/destination/i), {
       target: { value: "neg:0" },
     });
@@ -146,7 +146,7 @@ describe("SendToBlockFileControl", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /send to block file/i }),
     );
-    const dialog = screen.getByRole("dialog", { name: /send to block file/i });
+    const dialog = screen.getByRole("group", { name: /send to block file/i });
     fireEvent.click(within(dialog).getByLabelText(/^move$/i));
     fireEvent.change(within(dialog).getByLabelText(/destination/i), {
       target: { value: "neg:0" },
@@ -167,7 +167,7 @@ describe("SendToBlockFileControl", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /send to block file/i }),
     );
-    const dialog = screen.getByRole("dialog", { name: /send to block file/i });
+    const dialog = screen.getByRole("group", { name: /send to block file/i });
     fireEvent.change(within(dialog).getByLabelText(/destination/i), {
       target: { value: "new:neg" },
     });
@@ -192,7 +192,7 @@ describe("SendToBlockFileControl", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /send to block file/i }),
     );
-    const dialog = screen.getByRole("dialog", { name: /send to block file/i });
+    const dialog = screen.getByRole("group", { name: /send to block file/i });
     expect(within(dialog).getByRole("button", { name: /^send card$/i })).toBeDisabled();
   });
 });

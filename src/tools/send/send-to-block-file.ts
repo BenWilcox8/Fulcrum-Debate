@@ -125,7 +125,7 @@ export function sendSelectedCard(
   const insertPos = getSectionRange(editor, target.side, target.index).to;
   const { from: sourceFrom, to: sourceTo } = located;
 
-  editor
+  const dispatched = editor
     .chain()
     .command(({ tr, editor: ed, dispatch }) => {
       if (!dispatch) return true;
@@ -140,5 +140,5 @@ export function sendSelectedCard(
     })
     .run();
 
-  return { side: target.side, index: target.index, label, mode };
+  return dispatched ? { side: target.side, index: target.index, label, mode } : null;
 }

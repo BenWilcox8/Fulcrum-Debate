@@ -122,7 +122,15 @@ export function SendToBlockFileControl({
       target = { side: parsed.side, index: parsed.index };
     }
 
-    const result = sendSelectedCard(editor, target, mode);
+    let result;
+    try {
+      result = sendSelectedCard(editor, target, mode);
+    } catch (err) {
+      setConfirmation(
+        err instanceof Error ? err.message : "Send failed; please try again.",
+      );
+      return;
+    }
     if (result) {
       setConfirmation(
         `${result.mode === "move" ? "Moved" : "Copied"} card to ` +
@@ -147,8 +155,9 @@ export function SendToBlockFileControl({
 
       {open && (
         <div
-          role="dialog"
+          role="group"
           aria-label="Send to block file"
+          onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
           className="absolute left-0 top-full z-10 mt-1 flex w-72 flex-col gap-3 rounded-lg border border-shell-border bg-shell-surface p-card shadow-lg"
         >
           <fieldset className="flex items-center gap-4">
