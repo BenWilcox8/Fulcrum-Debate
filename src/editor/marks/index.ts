@@ -12,6 +12,11 @@
 export { BoldMark, BOLD_MARK_NAME } from "./bold";
 export { HighlightMark, HIGHLIGHT_MARK_NAME } from "./highlight";
 export {
+  highlightedRuns,
+  hasHighlightedRuns,
+  type HighlightedRun,
+} from "./highlighted-runs";
+export {
   FONT_SIZE_SCALE,
   DEFAULT_FONT_SIZE,
   UNSET_FONT_SIZE,

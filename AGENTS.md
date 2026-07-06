@@ -314,6 +314,26 @@ It is wired into `CARD_TOOL_DEFINITIONS`, which `useCardTools` now spreads into 
 - **`HighlightStyles`** (`src/tools/react/`, provider-tolerant like `useFormattingProfile`/`useCardTools`) reads the tool's live `color` off the shared store (registers the tool's section idempotently, rides `useSection`) and renders a `<style data-highlight-tool>`; `BlockFileScreen` mounts one beside `CardFormattingStyles`, so editing the color in Settings restyles the open document with no reload.
 - **Tests:** `highlightCardTool.test.ts` (real block-file+card editor, positions from an independent doc walk) covers the id/label/color-palette schema, apply-adds-highlight, toggle-removes, bold independence, and the pure `highlightColorCss` (scoped background-color + custom scope). `react/HighlightStyles.test.tsx` covers the no-provider default and live update when the color changes on the store.
 
+### Shared highlighted-runs query (`src/editor/marks/highlighted-runs.ts`)
+
+The reusable primitive that answers "which runs carry the highlight mark", re-exported from `src/editor/marks`.
+It is deliberately **not** private to any tool: **Extract Highlight** pulls a card's read-aloud runs, and the future **Auto Speech** pipeline reuses the same function to assemble a speech from highlighted runs across many cards.
+Pure and position-agnostic over ProseMirror structure + marks, the same discipline as `classifyRuns` and the card-unit API.
+
+- **`highlightedRuns(node, basePos = 0)`** walks `node`'s text descendants and returns one `HighlightedRun` (`{ from, to, text, content }`) per *contiguous* stretch of highlighted text. Adjacent highlighted text nodes merge into one run (so a partly-bold highlighted span reads as one), while a paragraph boundary (which consumes a position) breaks contiguity into separate runs - so the caller can keep paragraph structure. `content` is the run's text node(s) as re-insertable document-JSON with **every** inline mark preserved (highlight, bold, `textStyle`/`fontSize`); `text` is that flattened. `from`/`to` are offset by `basePos`: pass `0` for offsets within the node, or the node's first inner position (`region.from + 1`) for absolute doc positions.
+- **`hasHighlightedRuns(node)`** is the short-circuiting predicate a tool uses for enablement.
+- Highlight detection is by mark type name (`HIGHLIGHT_MARK_NAME`), matching the merged Highlight tool's `toggleHighlight` - a boolean `multicolor: false` mark, so nothing depends on per-run color.
+
+### Extract Highlight tool (`src/tools/extract/extractHighlightTool.ts`)
+
+Isolates a card's read-aloud rhetoric: collects the highlighted runs of the card the caret is in and produces a fresh card containing only that content.
+Re-exported from `src/tools`; wired into `SHIPPED_CARD_TOOLS` (toolbar-only, like Condense - it has no settings, so it is **not** in `CARD_TOOL_DEFINITIONS`, which surfaces per-tool Settings panels).
+
+- **UX decision - extract into a new sibling card, source intact by default (copy, never move).** The PRD leaves "produces that isolated content" between *selecting* the runs and *extracting* them; this tool extracts, because a ProseMirror selection cannot span the discontiguous highlighted runs, and the extracted content is only useful as a styled *card*. `extractHighlight` inserts a new card at `card.to` (immediately after the source, respecting the `isolating` card boundary) via `insertContentAt(..., { updateSelection: false })`, copying the source's tag/tagline/cite (`readCardRegionText`) so the extracted card is a complete unit, with a body of just the highlighted runs. The source card is **never modified** - a destructive "cut the highlights out of the source" mode is deliberately out of scope (relocation is *Send to Block File*'s job), which is why Extract exposes **empty settings**.
+- **Body grouping via the shared query.** `buildExtractedCard(located)` (pure) runs `highlightedRuns` per source-body paragraph and emits one extracted paragraph per source paragraph that has highlights (paragraphs with none are dropped), preserving sentence structure rather than gluing into one block; returns `null` (→ no-op `false`) when nothing is highlighted.
+- **Enablement.** `canExtractHighlight(editor)` = a card is selected *and* `hasHighlightedRuns(card body)`; wired to `isEnabled`, so the toolbar button disables (on top of the baseline card gate) until the addressed card has a highlighted run.
+- **Tests:** `extractHighlightTool.test.tsx` (real block-file+card editor, positions from an independent doc walk) covers highlighted-only extraction with source intact, mark preservation, per-paragraph grouping (empty-highlight paragraphs dropped), tag/tagline/cite carry-over, card-boundary isolation (only the addressed card), the no-highlight no-op, the `canExtractHighlight` predicate, the tool-definition shape, and the toolbar disabled/enabled/click integration. `highlighted-runs.test.ts` covers the shared query (highlighted-only, mark preservation, contiguity merge + paragraph split, `basePos` offsetting, empty/`hasHighlightedRuns`).
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.
