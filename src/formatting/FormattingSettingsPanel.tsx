@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSection } from "../preferences";
 import type { SettingsPanelProps } from "../settings/types";
 import {
@@ -33,6 +34,45 @@ const FONT_DATALIST_ID = "formatting-font-family-options";
 function pointSizeToNumber(fontSize: string): number {
   const parsed = Number.parseFloat(fontSize);
   return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function SizeInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (fontSize: string) => void;
+}) {
+  const storedStr = String(pointSizeToNumber(value));
+  const [raw, setRaw] = useState(storedStr);
+  const [prevStored, setPrevStored] = useState(storedStr);
+  if (storedStr !== prevStored) {
+    setPrevStored(storedStr);
+    setRaw(storedStr);
+  }
+
+  return (
+    <input
+      type="number"
+      min={1}
+      step={1}
+      value={raw}
+      onChange={(event) => {
+        const next = event.target.value;
+        setRaw(next);
+        if (next !== "") {
+          onChange(`${next}pt`);
+        }
+      }}
+      onBlur={() => {
+        const parsed = Number.parseFloat(raw);
+        if (raw === "" || !Number.isFinite(parsed)) {
+          setRaw(storedStr);
+        }
+      }}
+      className="w-20 rounded border border-shell-border bg-shell-surface px-2 py-1 text-sm text-shell-text"
+    />
+  );
 }
 
 export function FormattingSettingsPanel({
@@ -90,17 +130,9 @@ export function FormattingSettingsPanel({
 
               <label className="flex flex-col gap-1 text-xs font-medium text-shell-muted">
                 Size (pt)
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={pointSizeToNumber(entry.fontSize)}
-                  onChange={(event) => {
-                    const raw = event.target.value;
-                    if (raw === "") return;
-                    patchEntry(key, { fontSize: `${raw}pt` });
-                  }}
-                  className="w-20 rounded border border-shell-border bg-shell-surface px-2 py-1 text-sm text-shell-text"
+                <SizeInput
+                  value={entry.fontSize}
+                  onChange={(fontSize) => patchEntry(key, { fontSize })}
                 />
               </label>
 
