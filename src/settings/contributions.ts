@@ -1,6 +1,7 @@
 import { CARD_TOOL_DEFINITIONS } from "../tools";
 import { formattingSettingsContribution } from "../formatting";
 import { demoSettingsContribution } from "./demo/demoSettings";
+import { shorthandSettingsContribution } from "./shorthand/shorthandSettings";
 import { toolSettingsContributions } from "./tools/toolSettingsContributions";
 import type { SettingsContribution } from "./types";
 
@@ -16,6 +17,7 @@ import type { SettingsContribution } from "./types";
  */
 export const SETTINGS_CONTRIBUTIONS: readonly SettingsContribution[] = [
   formattingSettingsContribution,
+  shorthandSettingsContribution,
   ...toolSettingsContributions(CARD_TOOL_DEFINITIONS),
   demoSettingsContribution,
 ];

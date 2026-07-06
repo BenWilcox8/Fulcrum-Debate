@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { EditorContent } from "@tiptap/react";
 import type { DocumentHandle } from "../../documents/core";
 import { observeSubpoints, listSubpoints, subpointContentFragment } from "../subpoint";
+import { useSurfaceShorthand } from "../../shorthand/react";
 import { useFlowSheet } from "./flow-sheet-context";
 import { useFlowNodeEditor } from "./useFlowNodeEditor";
 
@@ -64,6 +65,8 @@ export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
   const label = useSubpointHeader(handle, contentionId, subpointId);
   const collapsed = collapse?.isCollapsed(subpointId) ?? false;
   const editor = useFlowNodeEditor(handle, subpointContentFragment(subpointId));
+  // Scope-gated shorthand expansion on this subpoint's Enter / Shift+Enter.
+  useSurfaceShorthand(editor, "flow");
 
   // The header both toggles this subpoint's collapse and marks it active, so
   // "Collapse All Except Active" keeps this subpoint (and its parent contention)

@@ -4,6 +4,7 @@ import App from "./App.tsx";
 import { startWindowGeometryPersistence } from "./ipc/window-geometry";
 import { PreferencesProvider } from "./preferences";
 import { DocumentsProvider } from "./documents/react";
+import { ShorthandProvider } from "./shorthand/react";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
@@ -15,7 +16,9 @@ createRoot(rootElement).render(
   <StrictMode>
     <PreferencesProvider>
       <DocumentsProvider>
-        <App />
+        <ShorthandProvider>
+          <App />
+        </ShorthandProvider>
       </DocumentsProvider>
     </PreferencesProvider>
   </StrictMode>,

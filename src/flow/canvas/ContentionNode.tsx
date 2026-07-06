@@ -9,6 +9,7 @@ import { observeNodes } from "../nodes";
 import { isNodeStruck, setNodeStruck } from "../strike";
 import { contentionContentFragment, listContentions } from "../contention";
 import { listSubpoints, observeSubpoints, type FlowSubpoint } from "../subpoint";
+import { useSurfaceShorthand } from "../../shorthand/react";
 import type { HostedFlowNode } from "./node-host";
 import { useFlowSheet } from "./flow-sheet-context";
 import { useFlowNodeEditor } from "./useFlowNodeEditor";
@@ -154,6 +155,8 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
   // and strip the typed token; the surface itself renders via EditorContent.
   const editor = useFlowNodeEditor(handle, contentionContentFragment(flowNodeId));
   useSubpointTrigger(handle, flowNodeId, editor);
+  // Scope-gated shorthand expansion on this contention's Enter / Shift+Enter.
+  useSurfaceShorthand(editor, "flow");
 
   const subpoints = useContentionSubpoints(handle, flowNodeId);
 

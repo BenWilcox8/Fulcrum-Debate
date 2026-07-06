@@ -10,10 +10,26 @@
  * component module (which would trip `react-refresh/only-export-components` and
  * risk a circular import).
  */
-import { argumentRowExtensions, argumentRowKeymap } from "../argument-rows";
+import { argumentRowExtensions } from "../argument-rows";
+import { shorthandRuntimeExtension } from "../../shorthand";
 import type { EditorPresetOptions } from "../../editor/preset";
+import { flowShorthandRowKeymap } from "./flow-shorthand-keymap";
 
-/** Argument-row schema + Enter/Shift+Enter keymap, as a stable preset reference. */
+/**
+ * Argument-row schema + the shorthand-aware Enter/Shift+Enter keymap + the
+ * shorthand runtime storage slot, as a stable preset reference.
+ *
+ * The keymap is {@link ./flow-shorthand-keymap.flowShorthandRowKeymap} (not the
+ * plain `argumentRowKeymap`): it runs the same row transitions but expands the
+ * completed row first when the editor's live shorthand runtime enables it. The
+ * runtime is disabled by default (declared by {@link shorthandRuntimeExtension} and
+ * pushed live by {@link ../../shorthand/react.useSurfaceShorthand}), so with no
+ * dictionary or an excluding scope the row behaviour is unchanged.
+ */
 export const FLOW_ARGUMENT_PRESET: EditorPresetOptions = {
-  extensions: [...argumentRowExtensions, argumentRowKeymap],
+  extensions: [
+    ...argumentRowExtensions,
+    flowShorthandRowKeymap,
+    shorthandRuntimeExtension,
+  ],
 };
