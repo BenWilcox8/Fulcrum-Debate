@@ -24,8 +24,9 @@
  * - The **card node model** ({@link cardExtensions}, {@link buildCardContent}, and
  *   the card node/region constants) - a debate card as first-class structured
  *   content (a bracketed free-form tag, a tagline, a source-first cite, and a body
- *   region) that lives inside a side region. Append {@link cardExtensions} after
- *   {@link blockFileExtensions} in the shared preset's feature-extension seam.
+ *   region) that lives inside a side region. Append {@link cardExtensions} and
+ *   {@link cardCreate} after {@link blockFileExtensions} in the shared preset's
+ *   feature-extension seam (see *Quick card creation* below for the full form).
  * - The **card-as-a-unit addressability API** ({@link getCardAt},
  *   {@link selectCard}, {@link readCardRegions} & friends) - the pure query and
  *   selection seam that locates the card enclosing a position, selects a whole
