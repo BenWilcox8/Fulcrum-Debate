@@ -98,6 +98,7 @@ export function SendToBlockFileControl({
     setMode(defaultMode);
     setValue("");
     setNewLabel("");
+    setConfirmation("");
     setOpen(true);
   }
 
@@ -141,7 +142,10 @@ export function SendToBlockFileControl({
   }
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+    >
       <button
         type="button"
         disabled={!enabled || !editor}
@@ -157,7 +161,6 @@ export function SendToBlockFileControl({
         <div
           role="group"
           aria-label="Send to block file"
-          onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
           className="absolute left-0 top-full z-10 mt-1 flex w-72 flex-col gap-3 rounded-lg border border-shell-border bg-shell-surface p-card shadow-lg"
         >
           <fieldset className="flex items-center gap-4">
