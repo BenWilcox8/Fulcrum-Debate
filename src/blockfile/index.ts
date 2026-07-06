@@ -24,13 +24,19 @@
  * - The **card node model** ({@link cardExtensions}, {@link buildCardContent}, and
  *   the card node/region constants) - a debate card as first-class structured
  *   content (a bracketed free-form tag, a tagline, a source-first cite, and a body
- *   region) that lives inside a side region. Append {@link cardExtensions} after
- *   {@link blockFileExtensions} in the shared preset's feature-extension seam.
+ *   region) that lives inside a side region. Append {@link cardExtensions} and
+ *   {@link cardCreate} after {@link blockFileExtensions} in the shared preset's
+ *   feature-extension seam (see *Quick card creation* below for the full form).
  * - The **card-as-a-unit addressability API** ({@link getCardAt},
  *   {@link selectCard}, {@link readCardRegions} & friends) - the pure query and
  *   selection seam that locates the card enclosing a position, selects a whole
  *   card, and reads/serializes its four regions. This is what the card-cutting
  *   tools (Extract, Send to Block File) and drag-to-speech pipeline target.
+ * - **Quick card creation** ({@link insertCard}, {@link cardCreate},
+ *   {@link CARD_CREATE_SHORTCUT}) - the one-gesture command that drops a fresh card
+ *   skeleton into the caret's side and lands the cursor in the tag region. Add
+ *   {@link cardCreate} alongside {@link cardExtensions} for the keyboard shortcut;
+ *   call {@link insertCard} from a button.
  *
  * See {@link ./schema} for the design (why two enforced section nodes in one
  * fragment), {@link ./sections} for the position semantics of the region
@@ -101,3 +107,9 @@ export {
   readCardRegions,
   serializeCard,
 } from "./card-unit";
+export {
+  type InsertCardOptions,
+  CARD_CREATE_SHORTCUT,
+  insertCard,
+  cardCreate,
+} from "./card-create";

@@ -80,22 +80,23 @@
  * ## How a feature editor installs this
  *
  * The card nodes layer onto a block-file editor through the same shared-preset
- * feature-extension seam as the side schema - append {@link cardExtensions} after
+ * feature-extension seam as the side schema - append {@link cardExtensions} and
+ * {@link ./card-create.cardCreate | cardCreate} after
  * {@link ./schema.blockFileExtensions | blockFileExtensions}:
  *
  * ```ts
  * const editor = createEditor({
  *   binding: { handle, fragment: BLOCK_FILE_FRAGMENT },
  *   extensions: editorPreset({
- *     extensions: [...blockFileExtensions, ...cardExtensions],
+ *     extensions: [...blockFileExtensions, ...cardExtensions, cardCreate],
  *   }),
  * });
  * ```
  *
  * This slice ships the schema/model and a pure {@link buildCardContent} JSON
- * builder only. The card-unit addressability API and a quick-create UI are sibling
- * follow-up slices that build on these node types; the card-cutting tools come
- * later. No `History` extension is added here - undo continues to flow through the
+ * builder only. The card-unit addressability API is a sibling follow-up slice
+ * that builds on these node types; the card-cutting tools come later. No
+ * `History` extension is added here - undo continues to flow through the
  * collaboration binding's Yjs history.
  */
 import { Node, type JSONContent } from "@tiptap/core";
@@ -228,12 +229,13 @@ export const card: Node = Node.create({
  * The card node model as a ready-to-install extension list: the card container plus
  * its four region nodes.
  *
- * Append it after {@link ./schema.blockFileExtensions | blockFileExtensions} in the
- * shared preset's feature-extension seam - `editorPreset({ extensions:
- * [...blockFileExtensions, ...cardExtensions] })` - so a block-file editor gets
- * cards on top of its enforced side structure and the shared marks/headings. Order
- * within the list does not matter; what matters is that the whole list is layered
- * after the editor-core baseline, which the preset guarantees.
+ * Append it after {@link ./schema.blockFileExtensions | blockFileExtensions} in
+ * the shared preset's feature-extension seam, alongside
+ * {@link ./card-create.cardCreate | cardCreate} for the keyboard shortcut:
+ * `editorPreset({ extensions: [...blockFileExtensions, ...cardExtensions,
+ * cardCreate] })`. Order within the list does not matter; what matters is that
+ * the whole list is layered after the editor-core baseline, which the preset
+ * guarantees.
  */
 export const cardExtensions = [card, cardTag, cardTagline, cardCite, cardBody];
 
