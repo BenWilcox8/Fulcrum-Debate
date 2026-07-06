@@ -209,6 +209,22 @@ The **argument-row** semantics inside a flow-node's Tiptap surface (a contention
 - **`useFlowNodeEditor` (`src/flow/canvas/useFlowNodeEditor.ts`).** Replaces `useDocumentEditor` for flow-node text surfaces (both contention and subpoint). It runs `migrateFlowNodeFragment` on the fragment *before* creating the editor so y-tiptap never sees the legacy shape. Lifecycle mirrors `useDocumentEditor` (one editor per handle+fragment, rebuilt on change, destroyed on unmount); returns `null` until the handle is locally loaded.
 - **Tests:** `argument-rows.test.ts` (`fake-indexeddb`, real editor over a flow-sheet fragment) covers the auto-filled initial box, Enter→new row / Shift+Enter→grouped response (direct-command *and* live `fireEvent.keyDown` proving the keymap wins over the baseline Enter), the `data-flow-*` divider hooks, the keymap binding shape, `locateArgumentRows` cross-checked against an independent walk, and a close/reopen round-trip proving the grouping stays addressable.
 
+### The Enter / Shift+Enter key-event contract (short pointer)
+
+The one keyboard contract inside a flow-node box, and the seam the **Shorthand Engine PRD** hooks:
+
+- **Enter → `newArgumentRow`** (new top-level argument row) and **Shift+Enter → `newGroupedResponse`** (new grouped response in the *current* argument) - both plain `(editor) => boolean` split helpers in `src/flow/argument-rows.ts`, bound by `argumentRowKeymap` (priority `1000`, so its Enter wins over the editor's baseline block-split and falls through to `false` when the caret is not inside a row).
+- **The Shorthand Engine hooks this same transition by wrapping `newArgumentRow` / `newGroupedResponse`, never re-deriving the split** - so the two commands stay the single source of truth for "what Enter / Shift+Enter do in a box". Keep the keymap binding-only (the work lives in the two commands) so a later feature can compose on top without forking the keymap.
+- A committed `S#` subpoint trigger is cancelled in the capture phase *before* ProseMirror (and therefore this keymap) sees the Enter, so only a non-`S#` Enter reaches the argument-row transitions - the two gestures compose cleanly.
+
+### Feature closeout e2e (`src/flow/argument-rows-collapse.e2e.test.tsx`)
+
+`argument-rows-collapse.e2e.test.tsx` is the whole-stack closeout for the **Argument Rows & Collapsing** PRD (slice 3/3) - it composes the two tracks that landed separately (argument-row structure and node-collapsing view-state) the way the app ships them, with no mocks. Over the real round seam (`useRounds`) → `FlowSheetPanel` → C# trigger, and a real Tiptap surface bound to a contention's per-node fragment through the exact `FLOW_ARGUMENT_PRESET` composition `useFlowNodeEditor` ships, it: drops two contentions by keyboard; **collapses** the first to a bar via its header and expands it via the bar, then Collapse All Except Active by the toolbar button *and* by the Ctrl+\ hotkey (active node stays expanded, the other collapses); **builds argument/response structure** inside the first contention by keyboard (`fireEvent.keyDown` Enter → new argument row, Shift+Enter → grouped response, proving the keymap wins over baseline Enter and the `data-flow-response` dividers render); then reopens the same IndexedDB backend through a *completely fresh* service and asserts the keyboard-built grouping survived and stays addressable (`locateArgumentRows`).
+- **Collapse is transient view-state by design, so the reload starts fully expanded** - the e2e asserts only that the *argument structure* persists across the restart, not collapse state (mirrors the `useFlowCollapse` docblock: reopening a round always starts expanded).
+- **jsdom gotchas carried over from the sibling e2es:** all C# gestures fire on `document` *before* any editor typing (jsdom does not implement `HTMLElement.isContentEditable`, so the document-wide C# listener would otherwise fold editor-aimed keystrokes into its token buffer); and jsdom cannot type real text through the *rendered* panel editor, so argument authoring uses a genuine standalone editor over the same fragment the panel binds to (built via the shipped `migrateFlowNodeFragment` + `FLOW_ARGUMENT_PRESET`).
+
+Follows the `contention-subpoint.e2e` / `flow-sheet.e2e` closeout precedent.
+
 ## Block file (`src/blockfile/`)
 
 The aff/neg side division is enforced by the ProseMirror schema - `doc` content is exactly `"affSection negSection"`.
