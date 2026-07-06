@@ -358,6 +358,18 @@ This is the counterpart to `tools.e2e.test.tsx`: that one proves the *framework*
 
 Follows the `settings.e2e` / `card.e2e` / `formatting.e2e` / `tools.e2e` closeout precedent. Positions come from an independent document walk, never the tool under test.
 
+## Auto Speech transform engine (`src/speech/`)
+
+The pure, framework-agnostic core of the Auto Speech PRD (slice 1/3): `transformToSpeech(node, options?)` turns card / selection content into speech-ready block-level document-JSON.
+It is a deliberate **shared dependency** - the Auto Speech clipboard toolbar tool (slice 2), the ToC-checkbox speech pipeline, and the drag-to-speech pipeline all call it - so it is kept in the documented-contract discipline of the card-unit API and the highlighted-runs query: pure over a ProseMirror node, **no React, no toolbar coupling, no editor mutation**.
+Re-exported from `src/speech`.
+
+- **Input.** A ProseMirror `Node` (the currency of the card-anatomy APIs) - a whole block-file doc, a fragment of one, or a bare `card` node. The engine walks it in document order **without descending into a card** (a card node passed directly is transformed whole), collecting cards and section headers; loose prose *outside* a card is ignored (it is not read-aloud content).
+- **Transform rules.** Per card: emit the **tag** (only if `includeTag`, default off - it is a tactical cutting label), the **tagline** rendered **bold** (a real `bold` mark, since card-region CSS does not reach a speech doc - the tagline carries no marks in a card, so the engine adds it), the **cite**, then the **body's highlighted runs flattened to plain text** (via the shared `highlightedRuns` query, all marks dropped), one output paragraph per source body paragraph that has highlights. **Un-highlighted body text is stripped entirely.** A **separator line** (`DEFAULT_SPEECH_SEPARATOR = "---"`) goes between adjacent cards; a section header between two cards is itself the divider, so no extra separator is added around it. **Section headers are preserved** as headings (level + text).
+- **Output = `JSONContent[]`**, a flat list of block-level nodes (the speech body) a consumer drops onto a clipboard or into a speech document. No positions (the engine works structurally). An empty card (no enabled region has content) contributes nothing and does not trigger a separator.
+- **Config (`SpeechTransformOptions`).** `separator` (string; `""` disables), `includeSectionHeaders`, `includeTag`, `includeTagline`, `boldTagline`, `includeCite` - so each downstream pipeline shapes output without forking the engine. Defaults encode the standard speech (bold tagline + cite + highlighted body, cards separated, headers preserved, tag omitted).
+- **Tests.** `transform.test.ts` (`fake-indexeddb`, real block-file+card schema via `schema.nodeFromJSON`) covers the single-card rules (bold tagline, plain former-highlights, stripped un-highlighted, marks dropped, per-paragraph grouping), a bare card node, multi-card separators, header preservation + header-as-divider, every config variation, purity (input unmutated), and loose-prose-ignored. It builds docs directly from the schema rather than via editor commands since the engine is pure over a node.
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.
