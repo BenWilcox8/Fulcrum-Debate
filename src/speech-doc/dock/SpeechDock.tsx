@@ -47,7 +47,7 @@ export function SpeechDock({ position, onPositionChange, onClose }: SpeechDockPr
     <section
       aria-label="Speech dock"
       data-testid="speech-dock"
-      className="flex h-full min-h-0 min-w-0 flex-col border-l border-shell-border bg-shell-bg"
+      className={`flex h-full min-h-0 min-w-0 flex-col bg-shell-bg ${position === "bottom" ? "border-t border-shell-border" : "border-l border-shell-border"}`}
     >
       <header className="flex flex-col gap-2 border-b border-shell-border bg-shell-surface px-3 py-2">
         <div className="flex items-center justify-between gap-2">

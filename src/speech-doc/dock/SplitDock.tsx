@@ -67,6 +67,7 @@ export function SplitDock({
 
   const handlePointerMove = useCallback(
     (event: PointerEvent<HTMLDivElement>) => {
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
       const container = containerRef.current;
       if (!container) return;
       const rect = container.getBoundingClientRect();

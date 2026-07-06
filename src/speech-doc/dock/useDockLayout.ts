@@ -49,23 +49,21 @@ export function useDockLayout(
   );
 
   const setPosition = useCallback(
-    (position: DockPosition) =>
-      setLayout((prev) => {
-        const next = { ...prev, position };
-        save(next);
-        return next;
-      }),
-    [save],
+    (position: DockPosition) => {
+      const next = { ...layout, position };
+      setLayout(next);
+      save(next);
+    },
+    [layout, save],
   );
 
   const setSize = useCallback(
-    (size: number) =>
-      setLayout((prev) => {
-        const next = { ...prev, size: clampDockSize(size) };
-        save(next);
-        return next;
-      }),
-    [save],
+    (size: number) => {
+      const next = { ...layout, size: clampDockSize(size) };
+      setLayout(next);
+      save(next);
+    },
+    [layout, save],
   );
 
   return { layout, setPosition, setSize };
