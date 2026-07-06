@@ -49,7 +49,8 @@ npm install
 │   ├── rounds/             Round lifecycle seam (useRounds, ROUND_KIND, defaultRoundTitle)
 │   ├── index.css           Tailwind entry point and design token definitions (@theme)
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
-│   ├── preferences/        PreferencesProvider and usePreferences hook (persisted app settings)
+│   ├── preferences/        App preferences module: Rust-backed theme store and the typed section store core
+│   │   └── store/          Namespaced typed preference store core (createPreferenceStore, SectionHandle)
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
 │   │   ├── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
