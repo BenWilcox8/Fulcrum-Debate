@@ -10,24 +10,35 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import AppRoutes from "../AppRoutes";
 import { DocumentsProvider } from "../documents/react";
+import {
+  createPreferenceStore,
+  PreferenceStoreProvider,
+  type PreferenceStore,
+} from "../preferences";
+import {
+  DEFAULT_FORMATTING_PROFILE,
+  registerFormattingSection,
+} from "../formatting";
 
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
 });
 
 /** Renders the routed shell at `path` inside a fresh document provider. */
-function renderShellAt(path: string) {
+function renderShellAt(path: string, store?: PreferenceStore) {
   return render(
-    <DocumentsProvider>
-      <MemoryRouter initialEntries={[path]}>
-        <AppRoutes />
-      </MemoryRouter>
-    </DocumentsProvider>,
+    <PreferenceStoreProvider store={store}>
+      <DocumentsProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <AppRoutes />
+        </MemoryRouter>
+      </DocumentsProvider>
+    </PreferenceStoreProvider>,
   );
 }
 
@@ -63,5 +74,53 @@ describe("Block File screen - quick card creation", () => {
     expect(card.querySelector('[data-card-region="tagline"]')).not.toBeNull();
     expect(card.querySelector('[data-card-region="cite"]')).not.toBeNull();
     expect(card.querySelector('[data-card-region="body"]')).not.toBeNull();
+  });
+});
+
+describe("Block File screen - live evidence formatting", () => {
+  it("renders the active formatting profile as scoped card CSS", async () => {
+    const { container } = renderShellAt("/blocks");
+
+    await waitFor(() => {
+      expect(
+        container.querySelector('[contenteditable="true"].ProseMirror'),
+      ).not.toBeNull();
+    });
+
+    const style = container.querySelector("style[data-card-formatting]");
+    expect(style).not.toBeNull();
+    const css = style!.textContent ?? "";
+    // Scoped to the block-file editor surface and encoding the standard.
+    expect(css).toContain('.block-file-editor [data-card-region="tag"]');
+    expect(css).toContain("font-size: 13pt"); // tag
+    expect(css).toContain("font-weight: bold"); // tag bold
+    expect(css).toContain("text-decoration: underline"); // highlight
+  });
+
+  it("updates card rendering live when the profile is edited (no reload)", async () => {
+    const store = createPreferenceStore();
+    const handle = registerFormattingSection(store);
+    const { container } = renderShellAt("/blocks", store);
+
+    await waitFor(() => {
+      expect(
+        container.querySelector('[contenteditable="true"].ProseMirror'),
+      ).not.toBeNull();
+    });
+
+    const css = () =>
+      container.querySelector("style[data-card-formatting]")!.textContent ?? "";
+    expect(css()).toContain("font-size: 12pt"); // body default
+
+    // Edit the body target through the same store a Settings panel would use.
+    act(() => {
+      handle.set("body", {
+        ...DEFAULT_FORMATTING_PROFILE.body,
+        fontSize: "22pt",
+      });
+    });
+
+    // The emitted CSS updates in place, without remounting the editor.
+    expect(css()).toContain("font-size: 22pt");
   });
 });

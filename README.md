@@ -53,7 +53,7 @@ npm install
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
 │   ├── preferences/        App preferences module: Rust-backed theme store, typed section store core, and reactive React bindings
 │   │   ├── store/          Namespaced typed preference store core (createPreferenceStore, SectionHandle) and local persistence wrapper (openPreferenceStore, PersistentPreferenceStore)
-│   │   └── react/          Reactive React bindings (PreferenceStoreProvider, useSection, usePreferenceValue)
+│   │   └── react/          Reactive React bindings (PreferenceStoreProvider, PreferenceStoreContext, usePreferenceStore, useSection, usePreferenceValue)
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
 │   │   ├── registry/       Document metadata index (id, kind, title, timestamps) and recentDocuments query seam
@@ -67,7 +67,8 @@ npm install
 │   │   └── react/          DocumentEditor component and useDocumentEditor hook
 │   ├── settings/           Settings screen shell and contribution seam (SettingsScreen, SettingsProvider, defineSettingsContribution)
 │   │   └── demo/           Demo contribution that proves the seam end-to-end (safe to delete once real panels land)
-│   ├── formatting/         Evidence formatting standards model: FormattingProfile, DEFAULT_FORMATTING_PROFILE, preferences-store section registration (registerFormattingSection, readFormattingProfile), and unformatted-text shrink rule (classifyRuns, classifyRunAt, shrinkSize, applyShrinkRule)
+│   ├── formatting/         Evidence formatting standards: profile model (FormattingProfile, DEFAULT_FORMATTING_PROFILE), preferences-store registration (registerFormattingSection, readFormattingProfile), unformatted-text shrink rule (classifyRuns, classifyRunAt, shrinkSize, applyShrinkRule), and pure CSS serialization (formattingProfileCss, DEFAULT_FORMATTING_SCOPE)
+│   │   └── react/          Live card rendering: useFormattingProfile hook and CardFormattingStyles component
 │   ├── blockfile/          Block-file schema and content model: side-division schema, argument sections, section ops, card node model (cardExtensions, buildCardContent), card-as-unit addressability API (cardAt, selectCard, readCardRegions), and quick card creation (insertCard, cardCreate, CARD_CREATE_SHORTCUT)
 │   ├── blockfile-workspace/ Block-file workspace singleton (ensureBlockFile - finds or creates the shared block-file document)
 │   ├── flow/               Flow-sheet layer: speech-column model, flow-node model, helpers, and XYFlow canvas
