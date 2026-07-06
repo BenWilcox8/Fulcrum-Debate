@@ -3,6 +3,7 @@ import RootLayout from "./RootLayout";
 import DashboardScreen from "./screens/DashboardScreen";
 import BlockFileScreen from "./screens/BlockFileScreen";
 import RoundsScreen from "./screens/RoundsScreen";
+import NewRoundScreen from "./screens/NewRoundScreen";
 import RoundScreen from "./screens/RoundScreen";
 import { SettingsScreen } from "./settings";
 
@@ -19,6 +20,8 @@ export default function AppRoutes() {
         <Route index element={<DashboardScreen />} />
         <Route path="blocks" element={<BlockFileScreen />} />
         <Route path="rounds" element={<RoundsScreen />} />
+        {/* Static segment: matches before the `:roundId` param route. */}
+        <Route path="rounds/new" element={<NewRoundScreen />} />
         <Route path="rounds/:roundId" element={<RoundScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
       </Route>
