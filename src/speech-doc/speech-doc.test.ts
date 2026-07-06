@@ -90,19 +90,25 @@ describe("speech-doc persistence (highest seam)", () => {
 
     {
       const handle = await openSpeechDoc(firstId);
-      openBodyEditor(handle).commands.setContent("<p>First speech body.</p>");
+      const editor = openBodyEditor(handle);
+      editor.commands.setContent("<p>First speech body.</p>");
+      editor.destroy();
       await handle.close();
     }
     {
       const handle = await openSpeechDoc(secondId);
-      openBodyEditor(handle).commands.setContent("<p>Second speech body.</p>");
+      const editor = openBodyEditor(handle);
+      editor.commands.setContent("<p>Second speech body.</p>");
+      editor.destroy();
       await handle.close();
     }
 
     const handle = await openSpeechDoc(firstId);
-    const html = openBodyEditor(handle).getHTML();
+    const editor = openBodyEditor(handle);
+    const html = editor.getHTML();
     expect(html).toContain("First speech body.");
     expect(html).not.toContain("Second speech body.");
+    editor.destroy();
     await handle.close();
   });
 });
