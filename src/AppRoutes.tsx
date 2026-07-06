@@ -5,6 +5,9 @@ import BlockFileScreen from "./screens/BlockFileScreen";
 import RoundsScreen from "./screens/RoundsScreen";
 import NewRoundScreen from "./screens/NewRoundScreen";
 import RoundScreen from "./screens/RoundScreen";
+import SpeechDocsScreen from "./screens/SpeechDocsScreen";
+import NewSpeechDocScreen from "./screens/NewSpeechDocScreen";
+import SpeechDocScreen from "./screens/SpeechDocScreen";
 import { SettingsScreen } from "./settings";
 
 /**
@@ -23,6 +26,10 @@ export default function AppRoutes() {
         {/* Static segment: matches before the `:roundId` param route. */}
         <Route path="rounds/new" element={<NewRoundScreen />} />
         <Route path="rounds/:roundId" element={<RoundScreen />} />
+        <Route path="speeches" element={<SpeechDocsScreen />} />
+        {/* Static segment: matches before the `:speechDocId` param route. */}
+        <Route path="speeches/new" element={<NewSpeechDocScreen />} />
+        <Route path="speeches/:speechDocId" element={<SpeechDocScreen />} />
         <Route path="settings" element={<SettingsScreen />} />
       </Route>
     </Routes>
