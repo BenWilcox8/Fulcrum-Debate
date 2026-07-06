@@ -84,7 +84,8 @@ npm install
 │   │   └── canvas/         FlowSheetPanel (editable), FlowCanvas (render-only), ColumnControls, SpeechColumnNode, RfdSection (Reason For Decision region), column-nodes mapping, node-host (registration API + hosted child nodes), useColumnNodes, useColumns, and useFlowNodes hooks
 │   ├── shorthand/          Shorthand Engine (slice 1/2): abbreviation->expansion dictionary with local y-indexeddb persistence (openShorthandDictionary, SHORTHAND_DB_NAME, DEFAULT_SHORTHAND_ENTRIES, seedShorthandDictionary) and surface-agnostic expansion engine (expandText, expandCompletedText, expandThen, TOKEN_PATTERN)
 │   ├── timer/              Floating Timer widget (self-contained, session-state only): useCountdown engine, formatTime/parseTime, EditableTime, PrepTimer, SpeechTimer, TimerWidget
-│   ├── speech-doc/         Speech doc editor and model: document seam (useSpeechDocs, SPEECH_DOC_BODY_FRAGMENT), active-speech-doc store (createActiveSpeechDocStore, ActiveSpeechDocProvider, useActiveSpeechDoc), and SpeechDocEditor component
+│   ├── speech-doc/         Speech doc editor, model, and split-screen docking layout: document seam (useSpeechDocs, SPEECH_DOC_BODY_FRAGMENT), active-speech-doc store (createActiveSpeechDocStore, ActiveSpeechDocProvider, useActiveSpeechDoc), and SpeechDocEditor component
+│   │   └── dock/           Split-screen docking layout (SpeechDockLayout, SpeechDock, SplitDock): dock-layout model + localStorage persistence (dock-layout.ts, dock-layout-storage.ts), resizable divider with pointer-capture drag and arrow-key resize (SplitDock), active-doc indication + speech selector (SpeechDock), and collapse state (SpeechDockLayout)
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/

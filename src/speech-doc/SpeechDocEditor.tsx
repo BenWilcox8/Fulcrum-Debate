@@ -36,8 +36,9 @@ export interface SpeechDocEditorProps {
  * provider-tolerant: with no {@link ./ActiveSpeechDocProvider} it sets the active
  * id on a private fallback store, so a bare editor still renders.
  *
- * The split-screen docking layout that hosts this editor beside the flow sheet
- * is the next slice; for now it renders on its own route.
+ * This editor is hosted both on its own route ({@link ../screens/SpeechDocScreen})
+ * and, docked beside the flow sheet, by
+ * {@link ./dock/SpeechDock | the split-screen dock}.
  */
 export function SpeechDocEditor({ handle, docId, className }: SpeechDocEditorProps) {
   const { setActiveId } = useActiveSpeechDoc();

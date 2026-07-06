@@ -13,8 +13,9 @@ import { SpeechDocEditor, useSpeechDocs } from "../speech-doc";
  * editable view mounts once the local IndexedDB load resolves, so nothing here
  * awaits the network.
  *
- * The split-screen docking layout (bottom/side dock beside the flow sheet) is the
- * next slice; for now the editor renders on its own full-screen route.
+ * This is the standalone full-screen route for editing one speech in isolation.
+ * The split-screen docking layout (the same editor docked beside the flow sheet
+ * on the round screen) is {@link ../speech-doc/dock | SpeechDockLayout}.
  */
 export default function SpeechDocScreen() {
   const { speechDocId } = useParams<{ speechDocId: string }>();
