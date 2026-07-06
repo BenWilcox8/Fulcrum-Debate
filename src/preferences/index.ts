@@ -21,6 +21,11 @@ export { usePreferences } from "./usePreferences";
 export type { PreferencesContextValue } from "./PreferencesContext";
 
 export { createPreferenceStore } from "./store";
+export {
+  openPreferenceStore,
+  PREFERENCES_DB_NAME,
+  type PersistentPreferenceStore,
+} from "./store";
 export type {
   PreferenceField,
   PreferenceStore,
