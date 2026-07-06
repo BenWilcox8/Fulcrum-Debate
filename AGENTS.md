@@ -161,6 +161,19 @@ createEditor({
 
 The workspace singleton (`src/blockfile-workspace/`) is the first `block-file` document in the registry, found-or-created by `ensureBlockFile(service)`. The block-file screen (`src/screens/BlockFileScreen.tsx`) owns the editor via `useDocumentEditor` and passes it to `TableOfContents` - it does not use `DocumentEditor` directly (ToC needs the raw editor instance).
 
+### Card node model (`src/blockfile/card.ts`)
+
+A debate *card* is first-class structured content that lives inside a side region, not free-form prose.
+`cardExtensions` (the `card` container plus its four region nodes) layers onto a block-file editor through the same shared-preset feature-extension seam as the side schema - append it after `blockFileExtensions`: `editorPreset({ extensions: [...blockFileExtensions, ...cardExtensions] })`.
+
+- **One container, four fixed regions.** `card` (node name `card`, the only card node in the `block` group) has content expression `"cardTag cardTagline cardCite cardBody"` - one of each, in order, enforced by the schema exactly like the side division. The four region nodes are deliberately **out of every group** (reachable only by name from the card's content expression), so they can never appear on their own in a section and can never nest.
+- **Region content rules.** `cardTag` / `cardTagline` / `cardCite` are `content: "text*"` with `marks: ""` - plain, single-line text with no marks (`text*` is what makes them single-line). `cardBody` is `content: "paragraph+"` - block prose whose text runs carry the shared marks; **bold and highlight apply here, independently and simultaneously on the same run**. `paragraph+` (not `block+`) keeps cards from nesting and keeps headings out of a card body.
+- **The tag renders bracketed, stores bare.** `cardTag` accepts any free-form token (it is **not** a fixed enum - `[T]`, `[NU]`, `[CP]`, ...); the token is stored without brackets, and the node renders literal `[`/`]` around a `data-card-tag-token` span. `contentElement` re-parses only that inner span so brackets are never re-absorbed as content on an HTML round-trip.
+- **No CSS, data-attribute hooks.** Each region serializes with `data-card-region="tag|tagline|cite|body"` (the tagline's emphasis is a later styling PR's hook); this module ships no CSS, same as the side sections.
+- **`buildCardContent(fields?)`** is a pure document-JSON builder (the seam the quick-create UI/tests use) - every field free-form and optional; its output matches what the schema auto-fills for a bare card (empty text regions, an empty body paragraph via `createAndFill`).
+- **Gotcha - inserting a card via `insertContentAt`:** tiptap's `insertContentAt` *validates* content strictly (it does not `createAndFill` the inserted node), so insert a full node from `buildCardContent`, not a bare `{ type: "card" }`. Pass `{ updateSelection: false }` when inserting so the cursor is not placed inside the block-level card. Separately, y-prosemirror emits a one-time `TextSelection endpoint not pointing into a node with inline content (card)` warning if a *reloaded* document **begins** with a card (a non-textblock leading node); tests append cards after the side's leading paragraph to avoid the artificial edge.
+- **This slice is schema/model + tests only.** The card-unit addressability API and quick-create UI are sibling follow-up slices; card-cutting tools come later. `card.test.ts` covers the four-region structure, `createAndFill` auto-fill, the card inside a side region, the bracketed free-form tag, independent+simultaneous body marks, and a full Yjs round-trip (structure + marks).
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.
