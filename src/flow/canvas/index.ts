@@ -43,6 +43,25 @@ export {
   type ColumnLayoutOptions,
 } from "./column-nodes";
 export { useFlowNodes } from "./useFlowNodes";
+export { ContentionNode } from "./ContentionNode";
+export {
+  CONTENTION_FLOW_NODE_TYPE,
+  CONTENTION_FLOW_NODE_REGISTRY,
+  CONTENTION_NODE_HEIGHT,
+} from "./contention-node-type";
+export {
+  FlowSheetProvider,
+  type FlowSheetProviderProps,
+} from "./FlowSheetProvider";
+export {
+  useFlowSheet,
+  type FlowSheetContextValue,
+} from "./flow-sheet-context";
+export { useContentionTrigger } from "./useContentionTrigger";
+export {
+  stepContentionTrigger,
+  type ContentionTriggerStep,
+} from "./contention-trigger";
 export {
   flowNodesToNodes,
   flowNodeY,
