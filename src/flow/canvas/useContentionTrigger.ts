@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
 import { addContention } from "../contention";
+import { getColumn } from "../columns";
 import { stepContentionTrigger } from "./contention-trigger";
 
 /**
@@ -51,7 +52,9 @@ export function useContentionTrigger(
       bufferRef.current = buffer;
       if (create != null) {
         event.preventDefault();
-        addContention(handle, activeColumnId);
+        if (getColumn(handle, activeColumnId) !== undefined) {
+          addContention(handle, activeColumnId);
+        }
       }
     };
 

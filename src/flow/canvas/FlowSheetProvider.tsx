@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
+import { observeColumns } from "../columns";
 import {
   FlowSheetContext,
   type FlowSheetContextValue,
@@ -24,6 +25,16 @@ export function FlowSheetProvider({
   children,
 }: FlowSheetProviderProps) {
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!handle) return;
+    return observeColumns(handle, (columns) => {
+      setActiveColumnId((prev) => {
+        if (prev === null) return null;
+        return columns.some((c) => c.id === prev) ? prev : null;
+      });
+    });
+  }, [handle]);
 
   const value = useMemo<FlowSheetContextValue>(
     () => ({ handle, activeColumnId, setActiveColumnId }),

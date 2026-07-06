@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { render, waitFor, fireEvent } from "@testing-library/react";
 
 import { openDocument, type DocumentHandle } from "../../documents/core";
-import { addColumn } from "../columns";
+import { addColumn, removeColumn } from "../columns";
 import { listContentions } from "../contention";
 import { FlowSheetPanel } from "./FlowSheetPanel";
 
@@ -80,6 +80,31 @@ describe("FlowSheetPanel C# contention trigger", () => {
     typeTrigger(["C", "1", "Enter"]);
 
     // Give observers a tick; nothing should be created.
+    await new Promise((r) => setTimeout(r, 20));
+    expect(listContentions(handle, col.id)).toHaveLength(0);
+
+    await handle.close();
+  });
+
+  it("creates no node when the active column is removed before the trigger commits", async () => {
+    const handle = await openFlowSheet();
+    const col = addColumn(handle, { side: "aff", label: "1AC" });
+
+    const { findByTestId } = render(<FlowSheetPanel handle={handle} />);
+
+    // Activate the column.
+    const column = await findByTestId("speech-column");
+    fireEvent.click(column);
+
+    // Delete the active column before committing the trigger.
+    removeColumn(handle, col.id);
+
+    // Give the observer a tick to clear activeColumnId.
+    await new Promise((r) => setTimeout(r, 20));
+
+    // Type the trigger: should be a no-op since the column no longer exists.
+    typeTrigger(["C", "1", "Enter"]);
+
     await new Promise((r) => setTimeout(r, 20));
     expect(listContentions(handle, col.id)).toHaveLength(0);
 
