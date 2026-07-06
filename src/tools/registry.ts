@@ -70,6 +70,18 @@ export interface CardToolDefinition<S extends SectionSchema = SectionSchema> {
   /** The tool's customizable settings: typed fields with defaults + metadata. */
   readonly settings: S;
   /**
+   * Whether the tool can act on `editor`'s current selection *right now* - the
+   * per-tool refinement the toolbar uses to enable/disable this tool's button.
+   *
+   * A card-cutting toolbar already gates every tool on "a card is addressable at
+   * the selection" ({@link ../blockfile/card-unit.getSelectedCard}); this optional
+   * predicate lets a tool narrow that further to its own precondition (e.g.
+   * Condense needs the selection to span multiple paragraphs). Omit it and the
+   * tool is enabled whenever the toolbar's baseline card gate is satisfied. It is
+   * a pure read of editor state - it must not mutate the document.
+   */
+  isEnabled?(editor: Editor): boolean;
+  /**
    * Applies the tool to `editor`'s current selection, using its live `settings`
    * snapshot (defaults merged with any persisted overrides - the registry reads
    * it fresh on every invocation). Returns whether it changed the document, the
@@ -95,6 +107,13 @@ export interface RegisteredCardTool<S extends SectionSchema = SectionSchema> {
    * restores the declared defaults - all section-scoped to this tool.
    */
   readonly settings: SectionHandle<S>;
+  /**
+   * Whether the tool can act on `editor`'s current selection right now - the
+   * per-tool enablement the toolbar reads. Forwards to the definition's optional
+   * {@link CardToolDefinition.isEnabled}; a tool that declares none is always
+   * enabled (subject to the toolbar's own baseline card gate).
+   */
+  isEnabled(editor: Editor): boolean;
   /**
    * Reads the tool's current settings snapshot from the store and applies the
    * tool to `editor`'s selection. This is the seam that guarantees a tool always
@@ -174,6 +193,7 @@ export function createCardToolRegistry(
       id: definition.id,
       label: definition.label,
       settings,
+      isEnabled: (editor) => definition.isEnabled?.(editor) ?? true,
       apply: (editor) =>
         definition.applyToSelection(editor, settings.getAll()),
     };

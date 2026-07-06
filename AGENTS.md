@@ -277,6 +277,22 @@ Both point at one namespaced store section (`toolSectionDefinition`, id `tool:<i
 Over a real block-file + card editor (the exact `blockFileExtensions` + `cardExtensions` + `cardCreate` preset), a genuinely *persistent* shared store (`openPreferenceStore`), the real `CardToolbar`, and the real `toolSettingsContributions` on the real `SettingsScreen`, it registers a demo `stamp` tool and drives the whole seam: the tool appears in the toolbar (enabled once a card is addressable at the selection), a click applies it to the live selection with its default setting, its declared setting appears generated-from-schema in Settings, a Settings edit is observed live by the next apply, and the changed setting survives a store restart (a freshly registered tool over the same backend reads the persisted value on its first apply).
 Follows the `settings.e2e` / `card.e2e` / `formatting.e2e` closeout precedent.
 
+### Per-tool enablement (`CardToolDefinition.isEnabled`)
+
+The toolbar gates *every* tool on one baseline - a card is addressable at the selection (`getSelectedCard`) - but a tool can narrow that to its own precondition via the **optional** `isEnabled?(editor): boolean` on `CardToolDefinition` (a pure read of editor state, never a mutation).
+The registry surfaces it as `RegisteredCardTool.isEnabled(editor)` (forwards to the definition's, defaulting to `true` when a tool declares none), and `CardToolbar` computes enablement **per button** as `cardSelected && tool.isEnabled(editor)` - so a tool with no predicate keeps the old uniform "enabled once a card is selected" behaviour, and one with a predicate (Condense) disables until its precondition holds.
+This is why `BlockFileScreen.test.tsx` no longer asserts *every* toolbar button enables after a card is created - it checks the predicate-less `Select card` (demo) tool specifically.
+
+### Condense tool (`src/tools/condense.ts`)
+
+The first real card-cutting tool: collapses the multiple paragraphs a debater selects inside a card body into a single block of running text, preserving every inline mark (bold, highlight, `textStyle`/`fontSize`).
+Registered into the toolbar via `SHIPPED_CARD_TOOLS` in `useCardTools` (id `condense`, label `Condense`); re-exported from `src/tools`.
+
+- **Mechanism = join block boundaries, never rebuild content.** The command finds the selection's `$from.blockRange($to)` and `tr.join`s each paragraph boundary inside it, back-to-front (so earlier positions stay valid as the doc shrinks), each guarded by `canJoin`. Joining removes only the boundary and leaves the inline content - text nodes and their marks - untouched, which is exactly why marks survive losslessly (nothing is re-serialized or re-created).
+- **Card boundaries are free.** `card` is `isolating`, so a text selection can never span out of one card body; the block range always resolves within a single card body and only that card's paragraphs merge. The single-line `text*` header regions hold no paragraph boundaries, so they are never touched.
+- **Enablement.** `canCondenseSelection(editor)` (the shared read behind both the predicate and the command) is true only when the block range spans 2+ blocks; it is wired to `condenseTool.isEnabled`, so the toolbar button disables (on top of the card gate) until the selection spans multiple paragraphs. Running the command with a shorter selection is a no-op returning `false`. Condense has no user settings (empty `CondenseToolSettings` schema), so it is deliberately **not** added to `CARD_TOOL_DEFINITIONS` (which surfaces per-tool Settings panels) - only to the toolbar list.
+- **Tests:** `condense.test.tsx` (real block-file + card editor, `fake-indexeddb`) covers N-paragraph merge into one block, mark preservation (bold/highlight/font-size), the single-paragraph no-op, `canCondenseSelection` true/false, card-boundary isolation (two cards, only the addressed one merges), the tool-definition shape, and the toolbar disabled/enabled/click integration. Positions come from an independent doc walk, never the command under test.
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.

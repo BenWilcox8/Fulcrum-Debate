@@ -45,7 +45,10 @@ function useEditorTick(editor: Editor | null): void {
  * - **Disables when nothing is applicable.** A card-cutting tool needs a card to
  *   act on, so every button is disabled (natively, and `aria-disabled`) whenever
  *   there is no editor or no card is addressable at the current selection
- *   ({@link getSelectedCard}). The state tracks the selection live.
+ *   ({@link getSelectedCard}). A tool may narrow that further through its own
+ *   {@link RegisteredCardTool.isEnabled} predicate (e.g. Condense requires the
+ *   selection to span multiple paragraphs), so enablement is computed per tool.
+ *   The state tracks the selection live.
  *
  * The toolbar is presentation only: it owns no tools and no settings. The
  * registry (`src/tools`) owns those, and {@link useCardTools} wires them.
@@ -56,8 +59,8 @@ export function CardToolbar({ editor, tools }: CardToolbarProps) {
   if (tools.length === 0) return null;
 
   // A card-cutting tool needs a card at the selection; without one (or without
-  // an editor) there is nothing to cut, so the whole toolbar is inert.
-  const enabled = editor !== null && getSelectedCard(editor) !== null;
+  // an editor) there is nothing to cut, so the whole toolbar's baseline is inert.
+  const cardSelected = editor !== null && getSelectedCard(editor) !== null;
 
   return (
     <div
@@ -65,7 +68,10 @@ export function CardToolbar({ editor, tools }: CardToolbarProps) {
       aria-label="Card tools"
       className="flex shrink-0 flex-wrap items-center gap-2 rounded-lg border border-shell-border bg-shell-surface px-card py-2"
     >
-      {tools.map((tool) => (
+      {tools.map((tool) => {
+        // Baseline card gate, narrowed by the tool's own precondition (if any).
+        const enabled = cardSelected && tool.isEnabled(editor!);
+        return (
         <button
           key={tool.id}
           type="button"
@@ -78,7 +84,8 @@ export function CardToolbar({ editor, tools }: CardToolbarProps) {
         >
           {tool.label}
         </button>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -114,16 +114,19 @@ describe("Block File screen - card-cutting toolbar", () => {
       expect(button).toBeDisabled();
     }
 
-    // Create a card (which leaves the caret inside it); the toolbar enables.
+    // Create a card (which leaves the caret inside it); a tool that only needs a
+    // selected card enables. (Tools with a narrower precondition - e.g. Condense
+    // needs the selection to span multiple paragraphs - stay disabled until it is
+    // met; enablement is per tool.)
     fireEvent.click(await screen.findByRole("button", { name: /new card/i }));
 
     await waitFor(() => {
       expect(container.querySelector("[data-card]")).not.toBeNull();
     });
     await waitFor(() => {
-      for (const button of within(toolbar).getAllByRole("button")) {
-        expect(button).toBeEnabled();
-      }
+      expect(
+        within(toolbar).getByRole("button", { name: /select card/i }),
+      ).toBeEnabled();
     });
   });
 });

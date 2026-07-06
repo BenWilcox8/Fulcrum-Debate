@@ -18,3 +18,11 @@ export {
   type CardToolRegistry,
 } from "./registry";
 export { CARD_TOOL_DEFINITIONS } from "./cardTools";
+export {
+  condenseTool,
+  canCondenseSelection,
+  condenseSelection,
+  CONDENSE_TOOL_ID,
+  CONDENSE_TOOL_LABEL,
+  type CondenseToolSettings,
+} from "./condense";
