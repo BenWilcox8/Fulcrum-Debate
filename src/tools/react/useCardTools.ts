@@ -10,18 +10,23 @@ import {
   type CardToolDefinition,
   type RegisteredCardTool,
 } from "../registry";
+import { CARD_TOOL_DEFINITIONS } from "../cardTools";
 import { demoCardTool } from "../demo/demoCardTool";
 import { condenseTool } from "../condense";
 
 /**
- * The card-cutting tools the toolbar ships, in the order they render. Alongside
- * the {@link demoCardTool} reference tool, each real tool (Condense, and later
- * Extract, Shrink, ...) appends itself here as it lands, and the toolbar renders
- * it with no further wiring.
+ * The card-cutting tools the toolbar ships, in the order they render: the
+ * app-level {@link CARD_TOOL_DEFINITIONS} (the single list that also drives the
+ * Settings screen, so a real tool - Shrink today - is wired into both surfaces by
+ * one addition there), then the {@link condenseTool}, then the {@link demoCardTool}
+ * reference tool (retired once the real tools have fully replaced it). Each real
+ * tool appends itself here (or to `CARD_TOOL_DEFINITIONS`) as it lands, and the
+ * toolbar renders it with no further wiring.
  */
 const SHIPPED_CARD_TOOLS: readonly CardToolDefinition[] = [
-  demoCardTool as CardToolDefinition,
+  ...CARD_TOOL_DEFINITIONS,
   condenseTool as CardToolDefinition,
+  demoCardTool as CardToolDefinition,
 ];
 
 /**

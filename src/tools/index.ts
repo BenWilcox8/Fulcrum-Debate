@@ -26,3 +26,11 @@ export {
   CONDENSE_TOOL_LABEL,
   type CondenseToolSettings,
 } from "./condense";
+export {
+  shrinkCardTool,
+  applyShrink,
+  parseShrinkSequence,
+  DEFAULT_SHRINK_SEQUENCE,
+  SHRINK_TOOL_ID,
+  type ShrinkToolSettings,
+} from "./shrink/shrinkCardTool";
