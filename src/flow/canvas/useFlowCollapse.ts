@@ -35,6 +35,11 @@ export interface FlowCollapseState {
    * collapses everything. Reads the live container tree off the handle.
    */
   collapseAllExceptActive(): void;
+  /**
+   * Clears the active node id if it is no longer among the given live container
+   * ids. Used by {@link ./FlowSheetProvider} to mirror the stale-column guard.
+   */
+  clearActiveNodeIfAbsent(liveIds: ReadonlySet<string>): void;
 }
 
 /**
@@ -86,6 +91,13 @@ export function useFlowCollapse(
     setCollapsedNodeIds(collapseTargets(allIds, activeNodeId, parentOf));
   }, [handle, activeNodeId]);
 
+  const clearActiveNodeIfAbsent = useCallback(
+    (liveIds: ReadonlySet<string>) => {
+      setActiveNodeId((prev) => (prev !== null && !liveIds.has(prev) ? null : prev));
+    },
+    [],
+  );
+
   return useMemo<FlowCollapseState>(
     () => ({
       collapsedNodeIds,
@@ -95,6 +107,7 @@ export function useFlowCollapse(
       toggleCollapsed,
       setActiveNodeId,
       collapseAllExceptActive,
+      clearActiveNodeIfAbsent,
     }),
     [
       collapsedNodeIds,
@@ -103,6 +116,7 @@ export function useFlowCollapse(
       setCollapsed,
       toggleCollapsed,
       collapseAllExceptActive,
+      clearActiveNodeIfAbsent,
     ],
   );
 }

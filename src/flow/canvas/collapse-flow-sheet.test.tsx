@@ -13,7 +13,8 @@ import { render, waitFor, fireEvent, within } from "@testing-library/react";
 import { openDocument, type DocumentHandle } from "../../documents/core";
 import { addColumn } from "../columns";
 import { addContention } from "../contention";
-import { addSubpoint } from "../subpoint";
+import { addSubpoint, removeSubpoint } from "../subpoint";
+import { removeNode } from "../nodes";
 import { FlowSheetPanel } from "./FlowSheetPanel";
 
 beforeEach(() => {
@@ -131,6 +132,83 @@ describe("FlowSheetPanel node collapsing", () => {
       expect(nodeEl(container, c2.id)).toHaveAttribute("data-collapsed", "true"),
     );
     expect(nodeEl(container, c1.id)).not.toHaveAttribute("data-collapsed");
+
+    await handle.close();
+  });
+
+  it("clears activeNodeId when the active contention is removed", async () => {
+    const handle = await openFlowSheet();
+    const col = addColumn(handle, { side: "aff", label: "1AC" });
+    const c1 = addContention(handle, col.id);
+    const c2 = addContention(handle, col.id);
+
+    const { container, findAllByTestId, getByTestId } = render(
+      <FlowSheetPanel handle={handle} />,
+    );
+    await findAllByTestId("contention-node");
+
+    // Activate c1 by clicking its header (collapses it), then expand again.
+    fireEvent.click(within(nodeEl(container, c1.id)).getByTestId("contention-header"));
+    fireEvent.click(within(nodeEl(container, c1.id)).getByTestId("contention-header"));
+    await waitFor(() =>
+      expect(nodeEl(container, c1.id)).not.toHaveAttribute("data-collapsed"),
+    );
+
+    // Remove the active contention (c1) from the document.
+    removeNode(handle, c1.id);
+    await waitFor(() =>
+      expect(
+        container.querySelector(`[data-flow-node-id="${c1.id}"]`),
+      ).toBeNull(),
+    );
+
+    // With c1 gone and activeNodeId cleared, "Collapse All Except Active"
+    // should collapse c2 (not keep it open as if c1 were still active).
+    fireEvent.click(getByTestId("collapse-all-except-active"));
+    await waitFor(() =>
+      expect(nodeEl(container, c2.id)).toHaveAttribute("data-collapsed", "true"),
+    );
+
+    await handle.close();
+  });
+
+  it("clears activeNodeId when the active subpoint is removed", async () => {
+    const handle = await openFlowSheet();
+    const col = addColumn(handle, { side: "aff", label: "1AC" });
+    const c1 = addContention(handle, col.id);
+    const c2 = addContention(handle, col.id);
+    const s1 = addSubpoint(handle, c1.id);
+
+    const { container, findAllByTestId, getByTestId } = render(
+      <FlowSheetPanel handle={handle} />,
+    );
+    await findAllByTestId("contention-node");
+
+    // Activate s1 by clicking its header.
+    const subEl = () =>
+      container.querySelector<HTMLElement>(
+        `[data-testid="subpoint-node"][data-flow-node-id="${s1.id}"]`,
+      )!;
+    fireEvent.click(within(subEl()).getByTestId("subpoint-header"));
+    fireEvent.click(within(subEl()).getByTestId("subpoint-header"));
+    await waitFor(() =>
+      expect(subEl()).not.toHaveAttribute("data-collapsed"),
+    );
+
+    // Remove the active subpoint.
+    removeSubpoint(handle, s1.id);
+    await waitFor(() =>
+      expect(
+        container.querySelector(`[data-flow-node-id="${s1.id}"]`),
+      ).toBeNull(),
+    );
+
+    // With s1 gone and activeNodeId cleared, both contentions collapse.
+    fireEvent.click(getByTestId("collapse-all-except-active"));
+    await waitFor(() =>
+      expect(nodeEl(container, c1.id)).toHaveAttribute("data-collapsed", "true"),
+    );
+    expect(nodeEl(container, c2.id)).toHaveAttribute("data-collapsed", "true");
 
     await handle.close();
   });
