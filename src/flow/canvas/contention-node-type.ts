@@ -23,11 +23,17 @@ import type {
  */
 export const CONTENTION_NODE_HEIGHT = 160;
 
-/** The contention node kind's registration with the canvas. */
+/**
+ * The contention node kind's registration with the canvas. Marked `draggable` so
+ * a debater can drag a contention onto another column to cross-apply it (copy +
+ * transparent arrow); the drop is resolved by {@link ./FlowCanvas} and performed
+ * by {@link ../cross-apply}.
+ */
 export const CONTENTION_FLOW_NODE_TYPE: FlowNodeTypeDefinition = {
   kind: CONTENTION_KIND,
   component: ContentionNode,
   height: CONTENTION_NODE_HEIGHT,
+  draggable: true,
 };
 
 /**

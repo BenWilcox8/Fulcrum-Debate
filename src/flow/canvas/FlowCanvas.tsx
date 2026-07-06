@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   PanOnScrollMode,
+  applyNodeChanges,
+  type Node,
+  type NodeChange,
   type NodeTypes,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -11,10 +14,14 @@ import { SpeechColumnNode } from "./SpeechColumnNode";
 import { SPEECH_COLUMN_NODE_TYPE } from "./column-nodes";
 import { useColumnNodes } from "./useColumnNodes";
 import { useFlowNodes } from "./useFlowNodes";
+import { useFlowEdges } from "./useFlowEdges";
 import { useFlowSheet } from "./flow-sheet-context";
+import { resolveNodeDropColumn, type DropColumn } from "./flow-drag";
 import {
+  FLOW_NODE_WIDTH,
   registryToNodeTypes,
   type FlowNodeRegistry,
+  type HostedFlowNode,
 } from "./node-host";
 
 /**
@@ -27,12 +34,6 @@ const BASE_NODE_TYPES: NodeTypes = {
 
 /** A stable empty registry so omitting `flowNodeTypes` never re-renders. */
 const EMPTY_REGISTRY: FlowNodeRegistry = [];
-
-/**
- * No edges are ever drawn on the flow sheet. A stable empty array keeps XYFlow
- * from treating each render as an edge-set change.
- */
-const NO_EDGES: [] = [];
 
 /**
  * Vertical panning is pinned to 0 so full-height columns always fill the
@@ -61,6 +62,19 @@ export interface FlowCanvasProps {
    * columns only (the render-only default).
    */
   flowNodeTypes?: FlowNodeRegistry;
+  /**
+   * Called when a draggable flow node is dropped onto a *different* column than
+   * the one it started in. The canvas resolves the drop geometrically and hands
+   * back the node id and the source/target column ids; the caller performs the
+   * cross-application copy (see {@link ../cross-apply}). Omitted means drops are
+   * inert (the node just snaps back). The canvas never mutates the document
+   * itself - it stays a pure view over the flow model.
+   */
+  onNodeCrossColumnDrop?: (
+    nodeId: string,
+    fromColumnId: string,
+    toColumnId: string,
+  ) => void;
   /** Class applied to the canvas's sizing wrapper. */
   className?: string;
 }
@@ -68,20 +82,28 @@ export interface FlowCanvasProps {
 /**
  * The flow-sheet canvas: an XYFlow surface rendering one full-height, side-
  * coloured column per flow-doc speech column, in document order, that pans
- * horizontally across more columns than fit the viewport.
+ * horizontally across more columns than fit the viewport, hosting the flow nodes
+ * (contentions) inside those columns and the transparent cross-application
+ * arrows between them.
  *
- * It is render-only. Columns come straight from the flow-sheet document model
- * via {@link useColumnNodes} (live through `observeColumns`); this component
- * adds no column-editing UI and no flow-node content - those are separate tasks
- * that build on the container seam each {@link SpeechColumnNode} exposes.
+ * Columns, nodes, and edges come straight from the flow-sheet document model
+ * (live through the `observe*` seams); the canvas is a view over that model and
+ * never mutates it. The one interaction it owns is *drag*: a draggable node kind
+ * can be dragged onto another column, and on drop the canvas resolves the target
+ * column and calls {@link FlowCanvasProps.onNodeCrossColumnDrop} so the caller
+ * performs the copy. Node positions are controlled locally during a drag (so it
+ * is smooth) and re-synced from the document whenever the model changes, so a
+ * dropped node snaps back to its computed slot and any newly-copied node appears
+ * in place.
  *
- * Local-first: the surface renders with no async gate. Columns are populated by
- * the observer once IndexedDB has loaded into the doc, so nothing here awaits a
- * network resource - the offline-boot rule holds.
+ * Local-first: the surface renders with no async gate. Columns/nodes/edges are
+ * populated by the observers once IndexedDB has loaded into the doc, so nothing
+ * here awaits a network resource - the offline-boot rule holds.
  */
 export function FlowCanvas({
   handle,
   flowNodeTypes = EMPTY_REGISTRY,
+  onNodeCrossColumnDrop,
   className,
 }: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -107,12 +129,65 @@ export function FlowCanvas({
 
   const columnNodes = useColumnNodes(handle, height);
   const flowNodes = useFlowNodes(handle, flowNodeTypes, collapsedIds);
+  const edges = useFlowEdges(handle);
 
   // Parents must precede their children in the node array (XYFlow requirement),
-  // so column nodes come first, then the flow nodes hosted inside them.
-  const nodes = useMemo(
+  // so column nodes come first, then the flow nodes hosted inside them. This is
+  // the document-authoritative layout - the single source of truth for where a
+  // node rests.
+  const docNodes = useMemo<Node[]>(
     () => [...columnNodes, ...flowNodes],
     [columnNodes, flowNodes],
+  );
+
+  // Locally-controlled node state so a drag is smooth. It is re-seeded from the
+  // document-authoritative layout whenever that changes (a copy landed, a node
+  // was added/moved/collapsed), which is also what snaps a dropped node back to
+  // its computed slot: a no-op drop leaves the doc unchanged, so we reset
+  // explicitly on drag stop; a cross-column drop changes the doc, so the effect
+  // re-seeds with the copy included.
+  const [nodes, setNodes] = useState<Node[]>(docNodes);
+  useEffect(() => {
+    setNodes(docNodes);
+  }, [docNodes]);
+
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setNodes((current) => applyNodeChanges(changes, current));
+  }, []);
+
+  // The column layout the drop resolver needs, derived from the live column
+  // nodes (ids + x-origin + width) so it always matches what is on screen.
+  const dropColumns = useMemo<DropColumn[]>(
+    () =>
+      columnNodes.map((column) => ({
+        id: column.id,
+        x: column.position.x,
+        width: column.width ?? 0,
+      })),
+    [columnNodes],
+  );
+
+  const onNodeDragStop = useCallback(
+    (_event: unknown, node: Node) => {
+      const data = node.data as HostedFlowNode["data"] | undefined;
+      const fromColumnId = data?.columnId;
+      if (fromColumnId) {
+        const toColumnId = resolveNodeDropColumn({
+          sourceColumnId: fromColumnId,
+          nodeRelX: node.position.x,
+          nodeWidth: node.width ?? FLOW_NODE_WIDTH,
+          columns: dropColumns,
+        });
+        if (toColumnId && toColumnId !== fromColumnId) {
+          onNodeCrossColumnDrop?.(node.id, fromColumnId, toColumnId);
+        }
+      }
+      // Always snap back to the document-authoritative layout: the source node
+      // never moves (a cross-application only *copies*), and a no-op drop must
+      // not leave the node where it was released.
+      setNodes(docNodes);
+    },
+    [dropColumns, docNodes, onNodeCrossColumnDrop],
   );
 
   const nodeTypes = useMemo(
@@ -128,8 +203,10 @@ export function FlowCanvas({
     >
       <ReactFlow
         nodes={nodes}
-        edges={NO_EDGES}
+        edges={edges}
         nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onNodeDragStop={onNodeDragStop}
         // Horizontal-only navigation: scroll pans sideways, vertical is pinned
         // so full-height columns stay fully in view.
         panOnScroll
@@ -142,8 +219,8 @@ export function FlowCanvas({
         zoomOnDoubleClick={false}
         minZoom={1}
         maxZoom={1}
-        // Render-only surface.
-        nodesDraggable={false}
+        // Per-node `draggable` governs: only a draggable flow-node kind moves;
+        // columns and render-only kinds stay put. No connecting/selecting.
         nodesConnectable={false}
         elementsSelectable={false}
         // Keep all columns mounted regardless of measurement (jsdom has none).

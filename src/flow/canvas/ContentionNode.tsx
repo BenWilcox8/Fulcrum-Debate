@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { EditorContent } from "@tiptap/react";
-import type { NodeProps } from "@xyflow/react";
+import { Handle, Position, type NodeProps } from "@xyflow/react";
 
 import type { DocumentHandle } from "../../documents/core";
 import type { FlowSide } from "../columns";
@@ -149,6 +149,22 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
         collapsed ? "" : "gap-2 p-card"
       } ${classes.container}`}
     >
+      {/* Invisible anchors for the cross-application arrow edges: a contention is
+          both an edge source (the original) and target (the copy). They are not
+          interactive connection points (the canvas runs with connecting off) -
+          just the geometry XYFlow draws the transparent arrow between. */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        isConnectable={false}
+        className="!h-1 !w-1 !min-w-0 !border-0 !bg-transparent !opacity-0"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        isConnectable={false}
+        className="!h-1 !w-1 !min-w-0 !border-0 !bg-transparent !opacity-0"
+      />
       <button
         type="button"
         data-testid="contention-header"

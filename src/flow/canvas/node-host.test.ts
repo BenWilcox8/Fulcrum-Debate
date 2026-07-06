@@ -195,13 +195,30 @@ describe("flowNodesToNodes", () => {
     expect(withEmpty.height).toBe(FLOW_NODE_HEIGHT);
   });
 
-  it("marks nodes render-only (no drag, no selection)", () => {
+  it("marks nodes render-only (no drag, no selection) by default", () => {
     const groups: ColumnFlowNodes[] = [
       { columnId: "col-1", nodes: [node("a", "col-1", "stub")] },
     ];
     const [n] = flowNodesToNodes(groups, registry);
     expect(n.draggable).toBe(false);
     expect(n.selectable).toBe(false);
+  });
+
+  it("makes a kind declared `draggable` movable and unclipped so it can cross columns", () => {
+    const DragStub: FlowNodeComponent = () => null;
+    const draggableRegistry: FlowNodeRegistry = [
+      { kind: "drag", component: DragStub, draggable: true },
+    ];
+    const groups: ColumnFlowNodes[] = [
+      { columnId: "col-1", nodes: [node("a", "col-1", "drag")] },
+    ];
+    const [n] = flowNodesToNodes(groups, draggableRegistry);
+    expect(n.draggable).toBe(true);
+    // A draggable node must not be clipped to its column, or it could never be
+    // dragged onto another one.
+    expect(n.extent).toBeUndefined();
+    // It still belongs to its column visually via parentId.
+    expect(n.parentId).toBe("col-1");
   });
 
   it("returns no nodes for no groups or empty columns", () => {
