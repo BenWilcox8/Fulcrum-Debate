@@ -399,7 +399,10 @@ describe("card-cutting tools end-to-end", () => {
     // --- 6) Persistence: the pipeline's result survives a reopen over the same
     //        IndexedDB backend. ---------------------------------------------------
     cleanup();
-    await new Promise((r) => setTimeout(r, 20));
+    for (const e of editors) e.destroy();
+    for (const h of handles) await h.close();
+    editors = [];
+    handles = [];
     const reopened = openEditor(await openHandle(DOC_ID));
     const reLanded = cardsInSection(reopened, "neg", 0);
     expect(reLanded).toHaveLength(1);
