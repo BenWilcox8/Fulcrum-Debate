@@ -13,7 +13,7 @@ import {
 import { useBlockFile } from "../blockfile-workspace";
 import { TableOfContents } from "../toc";
 import { CardFormattingStyles } from "../formatting/react";
-import { CardToolbar, useCardTools } from "../tools/react";
+import { CardToolbar, HighlightStyles, useCardTools } from "../tools/react";
 
 /**
  * The block-file schema plus the card node model and its quick-create keyboard
@@ -88,6 +88,11 @@ export default function BlockFileScreen() {
           when the profile is edited (no reload). Scoped to `.block-file-editor`
           below. */}
       <CardFormattingStyles />
+
+      {/* Live highlighter-color stylesheet: paints highlighted (read-aloud)
+          runs in the Highlight tool's configured color, updating in place when
+          the color is changed in Settings. Scoped to `.block-file-editor`. */}
+      <HighlightStyles />
 
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">

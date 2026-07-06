@@ -34,3 +34,11 @@ export {
   SHRINK_TOOL_ID,
   type ShrinkToolSettings,
 } from "./shrink/shrinkCardTool";
+export {
+  highlightCardTool,
+  highlightColorCss,
+  HIGHLIGHT_COLORS,
+  DEFAULT_HIGHLIGHT_COLOR,
+  HIGHLIGHT_TOOL_SCOPE,
+  type HighlightToolSettings,
+} from "./highlight/highlightCardTool";

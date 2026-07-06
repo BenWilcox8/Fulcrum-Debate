@@ -7,3 +7,4 @@
  */
 export { CardToolbar, type CardToolbarProps } from "./CardToolbar";
 export { useCardTools } from "./useCardTools";
+export { HighlightStyles, type HighlightStylesProps } from "./HighlightStyles";
