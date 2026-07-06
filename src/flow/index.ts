@@ -54,6 +54,7 @@ export {
   newArgumentRow,
   newGroupedResponse,
   locateArgumentRows,
+  migrateFlowNodeFragment,
   type ResponseSpan,
   type ArgumentRowSpan,
 } from "./argument-rows";

@@ -79,6 +79,7 @@
  * No `History` extension is added - undo continues to flow through the
  * collaboration binding's Yjs history.
  */
+import * as Y from "yjs";
 import { Extension, Node, type Editor } from "@tiptap/core";
 import type { Node as ProseMirrorNode, ResolvedPos } from "@tiptap/pm/model";
 import type { EditorState, Transaction } from "@tiptap/pm/state";
@@ -289,4 +290,76 @@ export function locateArgumentRows(doc: ProseMirrorNode): ArgumentRowSpan[] {
     });
   });
   return rows;
+}
+
+/**
+ * Load-time migration for a flow-node content fragment from the legacy
+ * bare-paragraph schema (old doc content was `block+`) to the current
+ * argument-row schema (`argument+`).
+ *
+ * When the fragment's top-level children are all `<paragraph>` XML elements
+ * (indicating content written before argument rows were introduced), each
+ * paragraph is wrapped in `<argument><response>...</response></argument>` so the
+ * existing text survives intact under the new schema rather than being discarded
+ * by `createAndFill`.
+ *
+ * Safe to call on every editor open: it is a no-op when the fragment is empty or
+ * already contains `<argument>` elements at the top level.
+ */
+export function migrateFlowNodeFragment(
+  doc: Y.Doc,
+  fragment: Y.XmlFragment,
+): void {
+  const children = fragment.toArray();
+  if (children.length === 0) return;
+
+  if (
+    children.some(
+      (child) =>
+        child instanceof Y.XmlElement && child.nodeName === ARGUMENT_NODE_NAME,
+    )
+  ) {
+    return;
+  }
+
+  if (
+    !children.every(
+      (child) =>
+        child instanceof Y.XmlElement && child.nodeName === "paragraph",
+    )
+  ) {
+    return;
+  }
+
+  // Snapshot delta content from each paragraph's text nodes BEFORE any mutation.
+  // Y.XmlText.toDelta() returns [{insert: "text", attributes?: {...}}, ...].
+  const paragraphDeltas = (children as Y.XmlElement[]).map((para) =>
+    para.toArray().flatMap((child) =>
+      child instanceof Y.XmlText
+        ? [(child.toDelta() as Array<{ insert: string; attributes?: Record<string, unknown> }>)]
+        : [],
+    ),
+  );
+
+  doc.transact(() => {
+    fragment.delete(0, children.length);
+    paragraphDeltas.forEach((deltas) => {
+      const newPara = new Y.XmlElement("paragraph");
+      deltas.forEach((delta) => {
+        const newText = new Y.XmlText();
+        if (delta.length > 0) {
+          newText.applyDelta(delta);
+        }
+        newPara.push([newText]);
+      });
+
+      const newResponse = new Y.XmlElement(RESPONSE_NODE_NAME);
+      newResponse.push([newPara]);
+
+      const newArgument = new Y.XmlElement(ARGUMENT_NODE_NAME);
+      newArgument.push([newResponse]);
+
+      fragment.push([newArgument]);
+    });
+  });
 }

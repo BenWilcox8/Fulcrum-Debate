@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
+import { EditorContent } from "@tiptap/react";
 import type { DocumentHandle } from "../../documents/core";
 import { observeSubpoints, listSubpoints, subpointContentFragment } from "../subpoint";
-import { DocumentEditor } from "../../editor/react";
 import { useFlowSheet } from "./flow-sheet-context";
-import { FLOW_ARGUMENT_PRESET } from "./flow-argument-preset";
+import { useFlowNodeEditor } from "./useFlowNodeEditor";
 
 /**
  * Live `S#` label for one subpoint: its 1-based rank among its contention's
@@ -63,6 +63,7 @@ export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
   const collapse = context?.collapse ?? null;
   const label = useSubpointHeader(handle, contentionId, subpointId);
   const collapsed = collapse?.isCollapsed(subpointId) ?? false;
+  const editor = useFlowNodeEditor(handle, subpointContentFragment(subpointId));
 
   // The header both toggles this subpoint's collapse and marks it active, so
   // "Collapse All Except Active" keeps this subpoint (and its parent contention)
@@ -94,14 +95,9 @@ export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
         </span>
         <span data-testid="subpoint-label">{label}</span>
       </button>
-      {!collapsed && handle && (
+      {!collapsed && (
         <div onFocus={() => collapse?.setActiveNodeId(subpointId)}>
-          <DocumentEditor
-            handle={handle}
-            fragment={subpointContentFragment(subpointId)}
-            preset={FLOW_ARGUMENT_PRESET}
-            className="text-sm text-shell-surface"
-          />
+          <EditorContent editor={editor} className="text-sm text-shell-surface" />
         </div>
       )}
     </div>

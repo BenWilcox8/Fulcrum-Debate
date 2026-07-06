@@ -13,6 +13,7 @@
  */
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
+import * as Y from "yjs";
 import { beforeEach, afterEach, describe, expect, it } from "vitest";
 import { fireEvent } from "@testing-library/react";
 import type { Editor, JSONContent } from "@tiptap/core";
@@ -29,6 +30,7 @@ import {
   newArgumentRow,
   newGroupedResponse,
   locateArgumentRows,
+  migrateFlowNodeFragment,
 } from "./argument-rows";
 
 let handles: DocumentHandle[] = [];
@@ -260,6 +262,75 @@ describe("locateArgumentRows (addressability)", () => {
         expect(doc.nodeAt(response.from)?.type.name).toBe(RESPONSE_NODE_NAME);
       }
     }
+  });
+});
+
+describe("migrateFlowNodeFragment", () => {
+  it("wraps legacy bare-paragraph XML into argument > response structure", async () => {
+    const handle = await openFlowSheet();
+    const fragmentName = "contention:legacy-test";
+    const fragment = handle.doc.getXmlFragment(fragmentName);
+
+    // Seed the fragment with the old schema: bare <paragraph> elements directly
+    // in the XmlFragment (what the editor wrote before argument rows landed).
+    handle.doc.transact(() => {
+      const p1 = new Y.XmlElement("paragraph");
+      const t1 = new Y.XmlText();
+      t1.insert(0, "no link");
+      p1.push([t1]);
+
+      const p2 = new Y.XmlElement("paragraph");
+      const t2 = new Y.XmlText();
+      t2.insert(0, "turn: link is offense");
+      p2.push([t2]);
+
+      fragment.push([p1, p2]);
+    });
+
+    migrateFlowNodeFragment(handle.doc, fragment);
+
+    // After migration, open an editor using the new schema.
+    const editor = openEditor(handle, fragmentName);
+
+    // Each old paragraph becomes one argument row (own response group).
+    const args = argumentsOf(editor);
+    expect(args).toHaveLength(2);
+    expect(args.every((a) => a.type === ARGUMENT_NODE_NAME)).toBe(true);
+
+    const responses0 = responsesOf(args[0]);
+    expect(responses0).toHaveLength(1);
+    expect(responses0[0].type).toBe(RESPONSE_NODE_NAME);
+    expect(textOf(args[0])).toBe("no link");
+    expect(textOf(args[1])).toBe("turn: link is offense");
+
+    // The locator can address both rows.
+    const located = locateArgumentRows(editor.state.doc);
+    expect(located).toHaveLength(2);
+    expect(located[0].responses).toHaveLength(1);
+  });
+
+  it("is a no-op when the fragment is already in the new argument-row format", async () => {
+    const handle = await openFlowSheet();
+    const fragmentName = "contention:already-migrated";
+    const editor = openEditor(handle, fragmentName);
+
+    editor.chain().focus().insertContent("existing content").run();
+    const before = editor.getJSON();
+
+    // Calling migration on already-valid content must not change it.
+    migrateFlowNodeFragment(
+      handle.doc,
+      handle.doc.getXmlFragment(fragmentName),
+    );
+
+    expect(editor.getJSON()).toEqual(before);
+  });
+
+  it("is a no-op on an empty fragment", async () => {
+    const handle = await openFlowSheet();
+    const fragment = handle.doc.getXmlFragment("contention:empty");
+    expect(() => migrateFlowNodeFragment(handle.doc, fragment)).not.toThrow();
+    expect(fragment.length).toBe(0);
   });
 });
 
