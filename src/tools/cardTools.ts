@@ -1,4 +1,5 @@
 import type { CardToolDefinition } from "./registry";
+import { shrinkCardTool } from "./shrink/shrinkCardTool";
 
 /**
  * The app's card-cutting tools, in toolbar order.
@@ -8,8 +9,9 @@ import type { CardToolDefinition } from "./registry";
  * each one's declared settings (via `toolSettingsContributions`). Adding a tool
  * here wires it into both surfaces at once.
  *
- * The individual tools (Extract, Shrink, Condense, Auto Speech, Send to Block
- * File) land in later slices, so the list is empty for now - the seam is live and
- * a real tool is a one-line addition.
+ * The remaining tools (Extract, Condense, Auto Speech, Send to Block File) land in
+ * later slices; each is a one-line addition here.
  */
-export const CARD_TOOL_DEFINITIONS: readonly CardToolDefinition[] = [];
+export const CARD_TOOL_DEFINITIONS: readonly CardToolDefinition[] = [
+  shrinkCardTool as CardToolDefinition,
+];
