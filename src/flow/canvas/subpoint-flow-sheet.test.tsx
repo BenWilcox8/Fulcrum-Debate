@@ -13,6 +13,7 @@ import { render, waitFor, fireEvent } from "@testing-library/react";
 import { openDocument, type DocumentHandle } from "../../documents/core";
 import { addColumn } from "../columns";
 import { addContention } from "../contention";
+import { removeNode } from "../nodes";
 import { listSubpoints } from "../subpoint";
 import { FlowSheetPanel } from "./FlowSheetPanel";
 
@@ -86,6 +87,34 @@ describe("FlowSheetPanel S# subpoint trigger", () => {
 
     const labels = await findAllByTestId("subpoint-label");
     expect(labels.map((l) => l.textContent)).toEqual(["S1", "S2"]);
+
+    await handle.close();
+  });
+
+  it("creates no subpoint when the contention is removed before the trigger commits", async () => {
+    const handle = await openFlowSheet();
+    const col = addColumn(handle, { side: "aff", label: "1AC" });
+    const contention = addContention(handle, col.id);
+
+    const { findByTestId } = render(<FlowSheetPanel handle={handle} />);
+    const contentionNode = await findByTestId("contention-node");
+    const editor = await waitFor(() => {
+      const el = contentionNode.querySelector(".ProseMirror");
+      if (!el) throw new Error("editor not mounted");
+      return el;
+    });
+
+    // Remove the contention before the trigger commits - simulates the race.
+    removeNode(handle, contention.id);
+
+    // Give observers a tick; the ContentionNode may not have unmounted yet.
+    await new Promise((r) => setTimeout(r, 20));
+
+    // Type the trigger: should be a no-op because the contention no longer exists.
+    typeInto(editor, ["S", "1", "Enter"]);
+
+    await new Promise((r) => setTimeout(r, 20));
+    expect(listSubpoints(handle, contention.id)).toHaveLength(0);
 
     await handle.close();
   });
