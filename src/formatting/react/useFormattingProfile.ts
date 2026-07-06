@@ -3,9 +3,9 @@ import { useContext, useMemo, useState } from "react";
 import {
   createPreferenceStore,
   useSection,
+  PreferenceStoreContext,
   type PreferenceStore,
 } from "../../preferences";
-import { PreferenceStoreContext } from "../../preferences/react/PreferenceStoreContext";
 import { registerFormattingSection } from "../preferences";
 import { type FormattingProfile } from "../profile";
 

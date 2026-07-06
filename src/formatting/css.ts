@@ -67,6 +67,10 @@ export interface FormattingCssOptions {
 /** `font-weight` value for an entry's bold flag. */
 const weight = (bold: boolean): string => (bold ? "bold" : "normal");
 
+/** Quote a font-family name if it contains characters that are not valid in a bare CSS ident (e.g. spaces). */
+const quoteFontFamily = (family: string): string =>
+  /[^a-zA-Z0-9_-]/.test(family) ? `"${family}"` : family;
+
 /** `text-decoration` value for an entry's underline flag. */
 const decoration = (underline: boolean): string =>
   underline ? "underline" : "none";
@@ -78,7 +82,7 @@ const decoration = (underline: boolean): string =>
  */
 function regionDeclarations(entry: FormattingEntry): string {
   return [
-    `font-family: ${entry.fontFamily}`,
+    `font-family: ${quoteFontFamily(entry.fontFamily)}`,
     `font-size: ${entry.fontSize}`,
     `color: ${entry.color}`,
     `font-weight: ${weight(entry.bold)}`,
@@ -94,7 +98,7 @@ function regionDeclarations(entry: FormattingEntry): string {
  */
 function highlightMarkDeclarations(entry: FormattingEntry): string {
   return [
-    `font-family: ${entry.fontFamily}`,
+    `font-family: ${quoteFontFamily(entry.fontFamily)}`,
     `color: ${entry.color}`,
     `text-decoration: ${decoration(entry.underline)}`,
   ].join("; ");

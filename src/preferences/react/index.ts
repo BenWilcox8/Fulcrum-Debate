@@ -17,4 +17,5 @@
 export { PreferenceStoreProvider } from "./PreferenceStoreProvider";
 export { usePreferenceStore } from "./usePreferenceStore";
 export { useSection, usePreferenceValue } from "./useSection";
+export { PreferenceStoreContext } from "./PreferenceStoreContext";
 export type { PreferenceStoreContextValue } from "./PreferenceStoreContext";

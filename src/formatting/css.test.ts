@@ -97,6 +97,20 @@ describe("formattingProfileCss", () => {
     expect(body).toContain("font-weight: bold");
   });
 
+  it("quotes multi-word font-family names so the CSS declaration is valid", () => {
+    const custom: FormattingProfile = {
+      ...DEFAULT_FORMATTING_PROFILE,
+      body: {
+        ...DEFAULT_FORMATTING_PROFILE.body,
+        fontFamily: "Times New Roman",
+      },
+    };
+    const css = formattingProfileCss(custom);
+    const body = ruleBody(css, '.block-file-editor [data-card-region="body"]');
+    expect(body).toContain('font-family: "Times New Roman"');
+    expect(body).not.toContain("font-family: Times New Roman;");
+  });
+
   it("honors a custom scope", () => {
     const css = formattingProfileCss(DEFAULT_FORMATTING_PROFILE, {
       scope: ".speech-doc",

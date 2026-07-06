@@ -40,5 +40,6 @@ export {
   usePreferenceStore,
   useSection,
   usePreferenceValue,
+  PreferenceStoreContext,
 } from "./react";
 export type { PreferenceStoreContextValue } from "./react";
