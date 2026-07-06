@@ -50,7 +50,7 @@ npm install
 │   ├── index.css           Tailwind entry point and design token definitions (@theme)
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
 │   ├── preferences/        App preferences module: Rust-backed theme store, typed section store core, and reactive React bindings
-│   │   ├── store/          Namespaced typed preference store core (createPreferenceStore, SectionHandle)
+│   │   ├── store/          Namespaced typed preference store core (createPreferenceStore, SectionHandle) and local persistence wrapper (openPreferenceStore, PersistentPreferenceStore)
 │   │   └── react/          Reactive React bindings (PreferenceStoreProvider, useSection, usePreferenceValue)
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
