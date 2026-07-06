@@ -1,6 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { FlowSheetPanel } from "../flow/canvas";
 import { TimerWidget } from "../timer";
+import { SpeechDockLayout } from "../speech-doc";
 import { useDocument } from "../documents/react";
 import { useRounds } from "../rounds";
 
@@ -59,12 +60,18 @@ export default function RoundScreen() {
         </div>
       </div>
 
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-shell-border bg-shell-surface">
-        <FlowSheetPanel handle={handle} />
-        {/* Floating timers overlay the flow; the widget's own wrapper is
-            pointer-events-none outside its card so it never blocks flowing. */}
-        <TimerWidget />
-      </div>
+      {/* The flow sheet lives in the primary pane; the Speech Doc editor docks
+          beside it (side/bottom, resizable, preference persisted) without
+          touching flowing. The flow keeps its own relative container so the
+          floating timers overlay the flow alone, not the dock. */}
+      <SpeechDockLayout className="overflow-hidden rounded-lg border border-shell-border">
+        <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-shell-surface">
+          <FlowSheetPanel handle={handle} />
+          {/* Floating timers overlay the flow; the widget's own wrapper is
+              pointer-events-none outside its card so it never blocks flowing. */}
+          <TimerWidget />
+        </div>
+      </SpeechDockLayout>
     </section>
   );
 }
