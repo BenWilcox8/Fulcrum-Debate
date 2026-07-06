@@ -26,11 +26,17 @@
  *   content (a bracketed free-form tag, a tagline, a source-first cite, and a body
  *   region) that lives inside a side region. Append {@link cardExtensions} after
  *   {@link blockFileExtensions} in the shared preset's feature-extension seam.
+ * - The **card-as-a-unit addressability API** ({@link getCardAt},
+ *   {@link selectCard}, {@link readCardRegions} & friends) - the pure query and
+ *   selection seam that locates the card enclosing a position, selects a whole
+ *   card, and reads/serializes its four regions. This is what the card-cutting
+ *   tools (Extract, Send to Block File) and drag-to-speech pipeline target.
  *
  * See {@link ./schema} for the design (why two enforced section nodes in one
  * fragment), {@link ./sections} for the position semantics of the region
  * helpers, {@link ./argument-sections} for the heading-level contract behind
- * the section query, and {@link ./card} for the card anatomy.
+ * the section query, {@link ./card} for the card anatomy, and
+ * {@link ./card-unit} for the card-as-a-unit API.
  */
 export { type BlockSide, BLOCK_SIDES, isBlockSide } from "./side";
 export {
@@ -80,3 +86,18 @@ export {
   cardExtensions,
   buildCardContent,
 } from "./card";
+export {
+  type CardRegionKey,
+  type LocatedCardRegion,
+  type LocatedCard,
+  type CardRegionsSnapshot,
+  CARD_REGION_KEYS,
+  cardAt,
+  getCardAt,
+  getSelectedCard,
+  selectCard,
+  readCardRegionText,
+  serializeCardRegion,
+  readCardRegions,
+  serializeCard,
+} from "./card-unit";
