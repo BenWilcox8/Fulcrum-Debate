@@ -65,6 +65,7 @@
 import * as Y from "yjs";
 
 import type { DocumentHandle } from "../documents/core";
+import { removeEdgesForNode } from "./edges";
 
 /** Top-level `Y.Map` fragment name holding the flow nodes keyed by id. */
 export const FLOW_NODES_FRAGMENT = "nodes";
@@ -275,7 +276,10 @@ export function moveNode(
 export function removeNode(handle: DocumentHandle, id: string): void {
   const map = nodesMap(handle.doc);
   if (!map.has(id)) return;
-  map.delete(id);
+  handle.doc.transact(() => {
+    map.delete(id);
+    removeEdgesForNode(handle, id);
+  });
 }
 
 /**

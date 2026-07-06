@@ -16,6 +16,7 @@ import {
   listEdges,
   getEdge,
   removeEdge,
+  removeEdgesForNode,
   observeEdges,
 } from "./edges";
 
@@ -126,6 +127,56 @@ describe("observeEdges", () => {
     expect(calls).toBe(4); // no more after unsubscribe
 
     await handle.close();
+  });
+});
+
+describe("removeEdgesForNode", () => {
+  it("removes all edges incident to the node (as source or target) and leaves unrelated edges intact", async () => {
+    const handle = await openFlowSheet();
+    const eSource = addEdge(handle, { sourceNodeId: "n", targetNodeId: "x" });
+    const eTarget = addEdge(handle, { sourceNodeId: "y", targetNodeId: "n" });
+    const eBoth = addEdge(handle, { sourceNodeId: "n", targetNodeId: "n" });
+    const eUnrelated = addEdge(handle, { sourceNodeId: "a", targetNodeId: "b" });
+
+    removeEdgesForNode(handle, "n");
+
+    expect(getEdge(handle, eSource.id)).toBeUndefined();
+    expect(getEdge(handle, eTarget.id)).toBeUndefined();
+    expect(getEdge(handle, eBoth.id)).toBeUndefined();
+    expect(getEdge(handle, eUnrelated.id)).toEqual(eUnrelated);
+    expect(listEdges(handle)).toEqual([eUnrelated]);
+
+    await handle.close();
+  });
+
+  it("is a no-op when the node has no incident edges", async () => {
+    const handle = await openFlowSheet();
+    const e = addEdge(handle, { sourceNodeId: "a", targetNodeId: "b" });
+    expect(() => removeEdgesForNode(handle, "ghost")).not.toThrow();
+    expect(listEdges(handle)).toEqual([e]);
+    await handle.close();
+  });
+
+  it("cascade survives a close/reopen round-trip", async () => {
+    const id = uniqueId();
+    let unrelated: string;
+
+    {
+      const handle = await openFlowSheet(id);
+      addEdge(handle, { sourceNodeId: "n", targetNodeId: "x" });
+      addEdge(handle, { sourceNodeId: "y", targetNodeId: "n" });
+      const e = addEdge(handle, { sourceNodeId: "a", targetNodeId: "b" });
+      unrelated = e.id;
+      removeEdgesForNode(handle, "n");
+      await handle.close();
+    }
+
+    {
+      const handle = await openFlowSheet(id);
+      const edges = listEdges(handle);
+      expect(edges.map((e) => e.id)).toEqual([unrelated]);
+      await handle.close();
+    }
   });
 });
 

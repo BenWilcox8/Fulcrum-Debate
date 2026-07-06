@@ -77,6 +77,7 @@ export {
   listEdges,
   getEdge,
   removeEdge,
+  removeEdgesForNode,
   observeEdges,
   type FlowEdge,
   type AddEdgeInput,

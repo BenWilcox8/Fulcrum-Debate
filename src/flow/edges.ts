@@ -171,6 +171,29 @@ export function removeEdge(handle: DocumentHandle, id: string): void {
 }
 
 /**
+ * Removes every edge that has `nodeId` as either its source or its target, in
+ * one transaction. A no-op when the node has no incident edges. Call this
+ * whenever a flow node is deleted so orphan edges never accumulate in the
+ * persisted `edges` map.
+ */
+export function removeEdgesForNode(
+  handle: DocumentHandle,
+  nodeId: string,
+): void {
+  const map = edgesMap(handle.doc);
+  const toDelete: string[] = [];
+  map.forEach((edge, id) => {
+    const src = edge.get(FIELD.sourceNodeId) as string;
+    const tgt = edge.get(FIELD.targetNodeId) as string;
+    if (src === nodeId || tgt === nodeId) toDelete.push(id);
+  });
+  if (toDelete.length === 0) return;
+  handle.doc.transact(() => {
+    for (const id of toDelete) map.delete(id);
+  });
+}
+
+/**
  * Subscribes to a flow sheet's edges: invokes `listener` immediately and again
  * after every change - add or remove. Returns an unsubscribe function. Mirrors
  * {@link observeNodes}: it observes the `edges` map deeply, so a change inside a
