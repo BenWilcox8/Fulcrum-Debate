@@ -117,10 +117,12 @@ function useContentionSubpoints(
 export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
   const context = useFlowSheet();
   const handle = context?.handle ?? null;
+  const collapse = context?.collapse ?? null;
   const { flowNodeId, columnId } = data;
 
   const { label, side } = useContentionHeader(handle, columnId, flowNodeId);
   const classes = SIDE_CLASSES[side];
+  const collapsed = collapse?.isCollapsed(flowNodeId) ?? false;
 
   // The raw editor is needed so the S# subpoint trigger can intercept keystrokes
   // and strip the typed token; the surface itself renders via EditorContent.
@@ -132,39 +134,63 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
 
   const subpoints = useContentionSubpoints(handle, flowNodeId);
 
+  // The header is the collapse toggle *and* marks this node active (the debater
+  // is working on it) so "Collapse All Except Active" keeps it open. Collapsed,
+  // the whole node is this single low bar; expanded, it sits above the body.
+  const onHeaderClick = () => {
+    collapse?.setActiveNodeId(flowNodeId);
+    collapse?.toggleCollapsed(flowNodeId);
+  };
+
   return (
     <div
       data-testid="contention-node"
       data-flow-node-id={flowNodeId}
       data-side={side}
-      className={`flex h-full w-full flex-col gap-2 overflow-hidden rounded-xl border-2 p-card shadow-sm ${classes.container}`}
+      data-collapsed={collapsed || undefined}
+      className={`flex h-full w-full flex-col overflow-hidden rounded-xl border-2 shadow-sm ${
+        collapsed ? "" : "gap-2 p-card"
+      } ${classes.container}`}
     >
-      <div
-        data-testid="contention-label"
-        className={`text-sm font-semibold ${classes.header}`}
+      <button
+        type="button"
+        data-testid="contention-header"
+        onClick={onHeaderClick}
+        aria-expanded={!collapsed}
+        title={collapsed ? "Expand contention" : "Collapse contention"}
+        className={`flex items-center gap-2 text-left text-sm font-semibold ${classes.header} ${
+          collapsed ? "h-full w-full px-card" : ""
+        }`}
       >
-        {label}
-      </div>
-      {/* The argument text, then the nested subpoints below it. */}
-      <div
-        data-contention-body
-        data-testid="contention-body"
-        className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
-      >
-        {handle && (
-          <EditorContent
-            editor={editor}
-            className="text-sm text-shell-text"
-          />
-        )}
-        {subpoints.map((subpoint) => (
-          <SubpointNode
-            key={subpoint.id}
-            contentionId={flowNodeId}
-            subpointId={subpoint.id}
-          />
-        ))}
-      </div>
+        <span aria-hidden="true" className="text-xs opacity-70">
+          {collapsed ? "▸" : "▾"}
+        </span>
+        <span data-testid="contention-label">{label}</span>
+      </button>
+      {/* The argument text, then the nested subpoints below it. Hidden while the
+          contention is collapsed to its bar. */}
+      {!collapsed && (
+        <div
+          data-contention-body
+          data-testid="contention-body"
+          className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto"
+        >
+          {handle && (
+            <EditorContent
+              editor={editor}
+              onFocus={() => collapse?.setActiveNodeId(flowNodeId)}
+              className="text-sm text-shell-text"
+            />
+          )}
+          {subpoints.map((subpoint) => (
+            <SubpointNode
+              key={subpoint.id}
+              contentionId={flowNodeId}
+              subpointId={subpoint.id}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

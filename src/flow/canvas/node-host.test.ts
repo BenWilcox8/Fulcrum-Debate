@@ -10,6 +10,7 @@ import {
   FLOW_NODE_WIDTH,
   FLOW_NODE_TOP_INSET,
   FLOW_NODE_GAP,
+  COLLAPSED_NODE_HEIGHT,
   type ColumnFlowNodes,
   type FlowNodeComponent,
   type FlowNodeRegistry,
@@ -151,6 +152,47 @@ describe("flowNodesToNodes", () => {
     expect(nodes[0].height).toBe(120);
     expect(nodes[1].position.y).toBe(FLOW_NODE_TOP_INSET + 120 + FLOW_NODE_GAP);
     expect(nodes[1].height).toBe(40);
+  });
+
+  it("shrinks a collapsed node to the minimal-height bar and reflows below it", () => {
+    const tallRegistry: FlowNodeRegistry = [
+      { kind: "tall", component: Stub, height: 160 },
+    ];
+    const groups: ColumnFlowNodes[] = [
+      {
+        columnId: "col-1",
+        nodes: [
+          node("a", "col-1", "tall"),
+          node("b", "col-1", "tall"),
+          node("c", "col-1", "tall"),
+        ],
+      },
+    ];
+    const nodes = flowNodesToNodes(groups, tallRegistry, {
+      collapsedIds: new Set(["b"]),
+    });
+
+    // The collapsed node reads at the minimal bar height...
+    expect(nodes[1].height).toBe(COLLAPSED_NODE_HEIGHT);
+    expect(nodes[0].height).toBe(160);
+    expect(nodes[2].height).toBe(160);
+    // ...and the node below it moves up by the height it no longer occupies.
+    expect(nodes[1].position.y).toBe(FLOW_NODE_TOP_INSET + 160 + FLOW_NODE_GAP);
+    expect(nodes[2].position.y).toBe(
+      FLOW_NODE_TOP_INSET + 160 + FLOW_NODE_GAP + COLLAPSED_NODE_HEIGHT + FLOW_NODE_GAP,
+    );
+  });
+
+  it("leaves layout unchanged when no collapsedIds are supplied", () => {
+    const groups: ColumnFlowNodes[] = [
+      { columnId: "col-1", nodes: [node("a", "col-1", "stub")] },
+    ];
+    const [withNone] = flowNodesToNodes(groups, registry);
+    const [withEmpty] = flowNodesToNodes(groups, registry, {
+      collapsedIds: new Set(),
+    });
+    expect(withNone.height).toBe(FLOW_NODE_HEIGHT);
+    expect(withEmpty.height).toBe(FLOW_NODE_HEIGHT);
   });
 
   it("marks nodes render-only (no drag, no selection)", () => {

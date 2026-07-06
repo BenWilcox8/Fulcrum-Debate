@@ -20,6 +20,7 @@
 import { createContext, useContext } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
+import type { FlowCollapseState } from "./useFlowCollapse";
 
 /** The value carried by {@link FlowSheetContext}. */
 export interface FlowSheetContextValue {
@@ -32,6 +33,12 @@ export interface FlowSheetContextValue {
   readonly activeColumnId: string | null;
   /** Sets (or clears, with `null`) the active column. */
   setActiveColumnId(id: string | null): void;
+  /**
+   * The transient collapse view-state for this sheet: which containers are
+   * collapsed to a bar, the active node, and the "Collapse All Except Active"
+   * operation. Never persisted (see {@link ./flow-collapse}).
+   */
+  readonly collapse: FlowCollapseState;
 }
 
 /**

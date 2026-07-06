@@ -68,6 +68,16 @@ export {
   stepContentionTrigger,
   type ContentionTriggerStep,
 } from "./contention-trigger";
+export { useFlowCollapse, type FlowCollapseState } from "./useFlowCollapse";
+export {
+  collapseTargets,
+  readFlowContainerTree,
+  type FlowContainerTree,
+} from "./flow-collapse";
+export {
+  useCollapseAllExceptActiveHotkey,
+  COLLAPSE_ALL_HOTKEY_LABEL,
+} from "./useCollapseHotkey";
 export {
   flowNodesToNodes,
   flowNodeY,
@@ -77,10 +87,12 @@ export {
   FLOW_NODE_TOP_INSET,
   FLOW_NODE_HEIGHT,
   FLOW_NODE_GAP,
+  COLLAPSED_NODE_HEIGHT,
   type FlowNodeData,
   type FlowNodeComponent,
   type FlowNodeTypeDefinition,
   type FlowNodeRegistry,
+  type FlowNodeLayoutOptions,
   type HostedFlowNode,
   type ColumnFlowNodes,
 } from "./node-host";

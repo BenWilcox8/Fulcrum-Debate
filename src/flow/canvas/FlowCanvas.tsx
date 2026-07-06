@@ -11,6 +11,7 @@ import { SpeechColumnNode } from "./SpeechColumnNode";
 import { SPEECH_COLUMN_NODE_TYPE } from "./column-nodes";
 import { useColumnNodes } from "./useColumnNodes";
 import { useFlowNodes } from "./useFlowNodes";
+import { useFlowSheet } from "./flow-sheet-context";
 import {
   registryToNodeTypes,
   type FlowNodeRegistry,
@@ -99,8 +100,13 @@ export function FlowCanvas({
     return () => observer.disconnect();
   }, []);
 
+  // Collapse view-state lives on the flow-sheet context (provider-tolerant: a
+  // bare render-only canvas has no provider, so nothing is collapsed). A
+  // collapsed node lays out as a bar and its column reflows - see ./flow-collapse.
+  const collapsedIds = useFlowSheet()?.collapse.collapsedNodeIds;
+
   const columnNodes = useColumnNodes(handle, height);
-  const flowNodes = useFlowNodes(handle, flowNodeTypes);
+  const flowNodes = useFlowNodes(handle, flowNodeTypes, collapsedIds);
 
   // Parents must precede their children in the node array (XYFlow requirement),
   // so column nodes come first, then the flow nodes hosted inside them.

@@ -6,6 +6,7 @@ import {
   FlowSheetContext,
   type FlowSheetContextValue,
 } from "./flow-sheet-context";
+import { useFlowCollapse } from "./useFlowCollapse";
 
 /** Props for {@link FlowSheetProvider}. */
 export interface FlowSheetProviderProps {
@@ -25,6 +26,7 @@ export function FlowSheetProvider({
   children,
 }: FlowSheetProviderProps) {
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+  const collapse = useFlowCollapse(handle);
 
   useEffect(() => {
     if (!handle) return;
@@ -37,8 +39,8 @@ export function FlowSheetProvider({
   }, [handle]);
 
   const value = useMemo<FlowSheetContextValue>(
-    () => ({ handle, activeColumnId, setActiveColumnId }),
-    [handle, activeColumnId],
+    () => ({ handle, activeColumnId, setActiveColumnId, collapse }),
+    [handle, activeColumnId, collapse],
   );
 
   return (

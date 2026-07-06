@@ -5,6 +5,10 @@ import { CONTENTION_FLOW_NODE_REGISTRY } from "./contention-node-type";
 import { FlowSheetProvider } from "./FlowSheetProvider";
 import { useFlowSheet } from "./flow-sheet-context";
 import { useContentionTrigger } from "./useContentionTrigger";
+import {
+  useCollapseAllExceptActiveHotkey,
+  COLLAPSE_ALL_HOTKEY_LABEL,
+} from "./useCollapseHotkey";
 
 /** Props for {@link FlowSheetPanel}. */
 export interface FlowSheetPanelProps {
@@ -45,11 +49,24 @@ export function FlowSheetPanel({ handle, className }: FlowSheetPanelProps) {
  */
 function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
   const context = useFlowSheet();
+  const collapse = context?.collapse ?? null;
   useContentionTrigger(handle, context?.activeColumnId ?? null);
+  useCollapseAllExceptActiveHotkey(collapse);
 
   return (
     <div className={`flex h-full w-full flex-col ${className ?? ""}`}>
       <ColumnControls handle={handle} className="border-b border-shell-border" />
+      <div className="flex items-center gap-2 border-b border-shell-border px-card py-1">
+        <button
+          type="button"
+          data-testid="collapse-all-except-active"
+          onClick={() => collapse?.collapseAllExceptActive()}
+          title={`Collapse every contention and subpoint except the active one (${COLLAPSE_ALL_HOTKEY_LABEL})`}
+          className="rounded border border-shell-border bg-shell-surface px-2 py-1 text-xs font-medium text-shell-text hover:bg-shell-bg"
+        >
+          Collapse all except active
+        </button>
+      </div>
       <div className="min-h-0 flex-1">
         <FlowCanvas
           handle={handle}
