@@ -11,15 +11,17 @@ import {
   type RegisteredCardTool,
 } from "../registry";
 import { demoCardTool } from "../demo/demoCardTool";
+import { condenseTool } from "../condense";
 
 /**
- * The card-cutting tools the toolbar ships, in the order they render. Today this
- * is only the {@link demoCardTool} reference tool; each real tool (Extract,
- * Shrink, ...) appends itself here as it lands, and the toolbar renders it with
- * no further wiring.
+ * The card-cutting tools the toolbar ships, in the order they render. Alongside
+ * the {@link demoCardTool} reference tool, each real tool (Condense, and later
+ * Extract, Shrink, ...) appends itself here as it lands, and the toolbar renders
+ * it with no further wiring.
  */
 const SHIPPED_CARD_TOOLS: readonly CardToolDefinition[] = [
   demoCardTool as CardToolDefinition,
+  condenseTool as CardToolDefinition,
 ];
 
 /**
