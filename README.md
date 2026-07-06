@@ -38,7 +38,7 @@ npm install
 ```
 .
 ├── src/                    React + TypeScript front end
-│   ├── App.tsx             Router provider (HashRouter) - top of the React tree
+│   ├── App.tsx             App shell: preference store + settings providers wrapping the HashRouter
 │   ├── AppRoutes.tsx       Route table - kept separate so tests can use MemoryRouter
 │   ├── RootLayout.tsx      Persistent app frame: nav chrome + routed <Outlet>
 │   ├── screens/            Feature screens (one per primary area)
@@ -63,6 +63,8 @@ npm install
 │   │   ├── headings/       Heading node (levels 1-6) and outline query (getOutline, observeOutline)
 │   │   ├── preset.ts       Canonical shared extension preset (editorPreset) - feature editors start here
 │   │   └── react/          DocumentEditor component and useDocumentEditor hook
+│   ├── settings/           Settings screen shell and contribution seam (SettingsScreen, SettingsProvider, defineSettingsContribution)
+│   │   └── demo/           Demo contribution that proves the seam end-to-end (safe to delete once real panels land)
 │   ├── flow/               Flow-sheet layer: speech-column model, flow-node model, helpers, and XYFlow canvas
 │   │   ├── columns.ts      Speech-column model (add/relabel/move/remove, observeColumns)
 │   │   ├── nodes.ts        Flow-node model: membership + vertical order, node-container contract
