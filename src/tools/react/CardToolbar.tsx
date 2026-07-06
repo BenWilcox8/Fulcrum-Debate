@@ -72,7 +72,7 @@ export function CardToolbar({ editor, tools }: CardToolbarProps) {
           disabled={!enabled}
           aria-disabled={!enabled}
           onClick={() => {
-            if (editor && enabled) tool.apply(editor);
+            if (enabled) tool.apply(editor!);
           }}
           className="rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm font-medium text-shell-text hover:bg-shell-bg disabled:cursor-not-allowed disabled:opacity-50"
         >

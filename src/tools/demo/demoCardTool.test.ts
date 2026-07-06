@@ -76,10 +76,7 @@ describe("demoCardTool", () => {
     const posInCard = insertCardInAff(editor);
     editor.commands.setTextSelection(posInCard);
 
-    const changed = demoCardTool.applyToSelection(
-      editor,
-      demoCardTool.settings as never,
-    );
+    const changed = demoCardTool.applyToSelection(editor, { focusAfter: true });
 
     expect(changed).toBe(true);
     // The selection is now a NodeSelection spanning the whole card.
