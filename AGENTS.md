@@ -50,6 +50,14 @@ Never import `src/documents/core`, `src/documents/registry`, Yjs, or y-indexeddb
 - React integration: `DocumentsProvider` is mounted in `src/main.tsx` (outside `App`) so `App.offline-boot.test.tsx` never constructs a service. Use `useDocuments` / `useDocument(id)` from `src/documents/react`.
 - Tests use `fake-indexeddb/auto` + a fresh `IDBFactory()` per test (jsdom has no IndexedDB).
 
+### Recent-documents query (`src/documents/registry/query.ts`)
+
+`recentDocuments(source, query?)` is the synchronous, local-only read seam for recency surfaces (e.g. the launch dashboard's Resume/Recent zone). Re-exported from `src/documents/registry`.
+
+- **Pure data seam.** It consumes a `Pick<DocumentRegistry, "list">` and returns `RegistryEntry[]`; no async, no I/O, no network. It does **not** re-sort - it rides `list()`'s documented last-edited-descending, stably tie-broken order (the same "never re-derive" discipline as the ToC), and filtering/capping preserve that order.
+- **`RecentDocumentsQuery`** is `{ kind?, limit? }`. `kind` is one `DocumentKind` or an array (e.g. flow sheets *and* block files); omit for all kinds. `limit` caps to the most-recent N after filtering (non-positive/omitted = no cap).
+- Because it reads only through `list()`, tests drive it with a real registry (fake-indexeddb) or a plain `{ list: () => entries }` stub. `query.test.ts` covers ordering, single/multi-kind filtering, the no-filter case, limit (alone and with a kind), empty registry, synchronicity, and the stub-source path.
+
 ### Namespaced preference store core
 
 `src/preferences/store/` is the typed, namespaced preference store core - the pure, in-memory foundation feature settings sections register against (formatting, tools, shorthand config, ...). It is the first slice of the Settings Shell & Preferences Store feature; persistence and React bindings are follow-up slices that attach at its seams, so the core stays **free of React and Tauri imports**. It lives inside the existing `src/preferences` home (one coherent preferences module) and is re-exported from `src/preferences` and `src/preferences/store`.

@@ -54,7 +54,7 @@ npm install
 │   │   └── react/          Reactive React bindings (PreferenceStoreProvider, useSection, usePreferenceValue)
 │   ├── documents/          Local document layer (Yjs + IndexedDB)
 │   │   ├── core/           DocumentHandle abstraction, DocumentKind enum, and persistence binding
-│   │   ├── registry/       Document metadata index (id, kind, title, timestamps) - registry primitive
+│   │   ├── registry/       Document metadata index (id, kind, title, timestamps) and recentDocuments query seam
 │   │   ├── service/        Document service - single lifecycle seam (create/open/list/rename/delete)
 │   │   └── react/          DocumentsProvider, useDocuments, useDocument, useDocumentService hooks
 │   ├── editor/
