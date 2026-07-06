@@ -3,8 +3,8 @@
  *
  * A block file is a debater's evidence store: one continuous, scrollable
  * document whose top-level Affirmative / Negative division is enforced by the
- * ProseMirror schema, not by convention. This module exposes exactly two things
- * feature code consumes:
+ * ProseMirror schema, not by convention. This module exposes the following
+ * seams feature code consumes:
  *
  * - The **schema** ({@link blockFileExtensions}, {@link BLOCK_FILE_FRAGMENT}, and
  *   the node/side constants) - layer {@link blockFileExtensions} onto the shared
