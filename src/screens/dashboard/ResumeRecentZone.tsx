@@ -12,13 +12,23 @@ import type { DocumentKind, RegistryEntry } from "../../documents/service";
  * left out of the Resume list rather than linking nowhere.
  */
 const RESUMABLE_KINDS = ["flow-sheet", "block-file"] as const;
+type ResumableKind = (typeof RESUMABLE_KINDS)[number];
 
 /** How many recent items the zone shows at once. */
 const RESUME_LIMIT = 6;
 
 /** The editor route that resumes a given document, by kind. */
-function resumeHref(entry: RegistryEntry): string {
-  return entry.kind === "flow-sheet" ? `/rounds/${entry.id}` : "/blocks";
+function resumeHref(entry: RegistryEntry & { kind: ResumableKind }): string {
+  switch (entry.kind) {
+    case "flow-sheet":
+      return `/rounds/${entry.id}`;
+    case "block-file":
+      return "/blocks";
+    default: {
+      const _exhaustive: never = entry.kind;
+      return _exhaustive;
+    }
+  }
 }
 
 /**
@@ -119,7 +129,7 @@ export default function ResumeRecentZone() {
           {recent.map((doc) => (
             <li key={doc.id}>
               <Link
-                to={resumeHref(doc)}
+                to={resumeHref(doc as RegistryEntry & { kind: ResumableKind })}
                 aria-label={`Resume ${doc.title}`}
                 className="flex items-center justify-between gap-4 rounded-md border border-shell-border bg-shell-surface px-4 py-3 text-sm text-shell-text transition-colors hover:border-shell-text"
               >
