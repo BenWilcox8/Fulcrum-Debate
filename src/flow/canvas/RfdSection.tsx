@@ -1,3 +1,4 @@
+import { useId } from "react";
 import type { DocumentHandle } from "../../documents/core";
 import { DocumentEditor } from "../../editor/react";
 import { FLOW_RFD_FRAGMENT } from "../rfd";
@@ -30,14 +31,15 @@ export interface RfdSectionProps {
  * flow rather than blending into the column grid.
  */
 export function RfdSection({ handle, className }: RfdSectionProps) {
+  const headingId = useId();
   return (
     <section
-      aria-labelledby="rfd-heading"
+      aria-labelledby={headingId}
       data-testid="rfd-section"
       className={`flex flex-col gap-2 border-t-2 border-shell-border bg-shell-surface px-card py-3 ${className ?? ""}`}
     >
       <h3
-        id="rfd-heading"
+        id={headingId}
         className="text-xs font-semibold uppercase tracking-wide text-shell-muted"
       >
         Reason For Decision
