@@ -104,13 +104,11 @@ describe("FlowSheetPanel S# subpoint trigger", () => {
       return el;
     });
 
-    // Remove the contention before the trigger commits - simulates the race.
+    // Remove the contention then immediately fire the trigger - no tick between
+    // them - so the keydown listener is still attached (ContentionNode has not
+    // unmounted yet) while getNode(handle, contentionId) already returns undefined.
+    // This forces the guard branch in useSubpointTrigger to run.
     removeNode(handle, contention.id);
-
-    // Give observers a tick; the ContentionNode may not have unmounted yet.
-    await new Promise((r) => setTimeout(r, 20));
-
-    // Type the trigger: should be a no-op because the contention no longer exists.
     typeInto(editor, ["S", "1", "Enter"]);
 
     await new Promise((r) => setTimeout(r, 20));
