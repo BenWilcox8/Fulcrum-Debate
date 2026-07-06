@@ -8,10 +8,10 @@ import type { DocumentKind, RegistryEntry } from "../../documents/service";
  * The document kinds a debater resumes from the dashboard, and where each one
  * opens. Flow sheets open at their own round route (the round id *is* the
  * flow-sheet document id); the block file opens the single block-file
- * workspace. Any other kind (e.g. speech docs) has no editor route yet and is
- * left out of the Resume list rather than linking nowhere.
+ * workspace; speech docs open at their own speech-doc route (the speech-doc id
+ * *is* the document id).
  */
-const RESUMABLE_KINDS = ["flow-sheet", "block-file"] as const;
+const RESUMABLE_KINDS = ["flow-sheet", "block-file", "speech-doc"] as const;
 type ResumableKind = (typeof RESUMABLE_KINDS)[number];
 
 /** How many recent items the zone shows at once. */
@@ -24,6 +24,8 @@ function resumeHref(entry: RegistryEntry & { kind: ResumableKind }): string {
       return `/rounds/${entry.id}`;
     case "block-file":
       return "/blocks";
+    case "speech-doc":
+      return `/speeches/${entry.id}`;
     default: {
       const _exhaustive: never = entry.kind;
       return _exhaustive;
@@ -38,6 +40,8 @@ function kindLabel(kind: ResumableKind): string {
       return "Flow sheet";
     case "block-file":
       return "Block file";
+    case "speech-doc":
+      return "Speech";
     default: {
       const _exhaustive: never = kind;
       return _exhaustive;

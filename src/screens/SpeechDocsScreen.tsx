@@ -22,6 +22,8 @@ export default function SpeechDocsScreen() {
     try {
       const id = await createSpeechDoc();
       navigate(`/speeches/${id}`);
+    } catch {
+      console.error("Could not create speech doc");
     } finally {
       setCreating(false);
     }
