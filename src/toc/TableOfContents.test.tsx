@@ -14,6 +14,7 @@ import type { Editor, JSONContent } from "@tiptap/core";
 import { openDocument, type DocumentHandle } from "../documents/core";
 import { createEditor } from "../editor/core";
 import { editorPreset } from "../editor/preset";
+import { getOutline } from "../editor/headings";
 import { BLOCK_FILE_FRAGMENT, blockFileExtensions } from "../blockfile";
 import { TableOfContents } from "./TableOfContents";
 
@@ -173,5 +174,72 @@ describe("TableOfContents", () => {
     expect(
       screen.getByRole("navigation", { name: /contents/i }),
     ).toBeInTheDocument();
+  });
+
+  it("highlights the section in view and moves the highlight as the document scrolls", async () => {
+    // jsdom has no layout, so we fake it: mount the editor inside a scroll
+    // container, assign each heading a content-top offset, and model the real
+    // "viewport rect moves as you scroll" relationship (rect.top = contentTop -
+    // scrollTop) so the hook's measurement resolves to the assigned offsets.
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    const handle = openDocument({ id: uniqueId(), kind: "block-file" });
+    await handle.whenLoaded;
+    const editor = createEditor({
+      binding: { handle, fragment: BLOCK_FILE_FRAGMENT },
+      extensions: editorPreset({ extensions: blockFileExtensions }),
+      element: container,
+    });
+    act(() => {
+      editor.commands.setContent(
+        blockDoc(
+          [
+            [1, "Alpha"],
+            [1, "Beta"],
+          ],
+          [[1, "Gamma"]],
+        ),
+      );
+    });
+
+    const rect = (top: number) => ({ top, bottom: top, left: 0, right: 0, height: 0, width: 0, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    container.getBoundingClientRect = () => rect(0);
+    const contentTops = new Map<string, number>([
+      ["Alpha", 0],
+      ["Beta", 100],
+      ["Gamma", 250],
+    ]);
+    for (const { pos } of getOutline(editor)) {
+      const el = editor.view.nodeDOM(pos) as HTMLElement;
+      const contentTop = contentTops.get(el.textContent ?? "") ?? 0;
+      el.getBoundingClientRect = () => rect(contentTop - container.scrollTop);
+    }
+
+    render(<TableOfContents editor={editor} scrollContainer={container} />);
+
+    const activeLabel = () => {
+      const active = document.querySelectorAll("[data-active='true']");
+      // Only ever one entry highlighted at a time.
+      expect(active.length).toBeLessThanOrEqual(1);
+      return active[0]?.textContent ?? null;
+    };
+
+    // Scrolled to the top: the first section is active.
+    await waitFor(() => expect(activeLabel()).toBe("Alpha"));
+
+    // Scroll past Beta's boundary: the highlight follows.
+    container.scrollTop = 120;
+    act(() => container.dispatchEvent(new Event("scroll")));
+    await waitFor(() => expect(activeLabel()).toBe("Beta"));
+
+    // Scroll into the neg side: Gamma (across the enforced boundary) becomes
+    // active, and Beta is no longer highlighted.
+    container.scrollTop = 300;
+    act(() => container.dispatchEvent(new Event("scroll")));
+    await waitFor(() => expect(activeLabel()).toBe("Gamma"));
+
+    editor.destroy();
+    container.remove();
   });
 });

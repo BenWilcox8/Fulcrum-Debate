@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { EditorContent } from "@tiptap/react";
 
 import { useDocumentEditor } from "../editor/react";
@@ -45,6 +46,13 @@ export default function BlockFileScreen() {
     [handle],
   );
 
+  // The scroll region wrapping the editor - captured via a callback ref (as
+  // state, so the ToC re-renders once the element mounts) and handed to the
+  // sidebar so it can track the scroll position and highlight the live section.
+  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(
+    null,
+  );
+
   return (
     <section
       aria-labelledby="screen-heading"
@@ -64,9 +72,12 @@ export default function BlockFileScreen() {
       </div>
 
       <div className="flex min-h-0 flex-1 gap-4">
-        <TableOfContents editor={editor} />
+        <TableOfContents editor={editor} scrollContainer={scrollContainer} />
 
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card">
+        <div
+          ref={setScrollContainer}
+          className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card"
+        >
           {error ? (
             <div className="flex flex-col gap-2">
               <p className="text-sm text-shell-muted">
