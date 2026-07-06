@@ -71,6 +71,7 @@ npm install
 │   │   └── react/          Live card rendering: useFormattingProfile hook and CardFormattingStyles component
 │   ├── blockfile/          Block-file schema and content model: side-division schema, argument sections, section ops, card node model (cardExtensions, buildCardContent), card-as-unit addressability API (cardAt, selectCard, readCardRegions), and quick card creation (insertCard, cardCreate, CARD_CREATE_SHORTCUT)
 │   ├── blockfile-workspace/ Block-file workspace singleton (ensureBlockFile - finds or creates the shared block-file document)
+│   ├── tools/              Card-cutting tool registration contract (createCardToolRegistry, CardToolDefinition, RegisteredCardTool) - the shared seam every card-cutting tool plugs into; individual tools and toolbar UI land in later slices
 │   ├── flow/               Flow-sheet layer: speech-column model, flow-node model, helpers, and XYFlow canvas
 │   │   ├── columns.ts      Speech-column model (add/relabel/move/remove, observeColumns)
 │   │   ├── nodes.ts        Flow-node model: membership + vertical order, node-container contract
