@@ -345,6 +345,19 @@ Moves or copies the card at the selection into a chosen argument section of the 
 - **Scope.** One block-file editor (source card and destination live in the same block file, the surface the toolbar sits on); sending to a speech doc is a separate pipeline and out of scope.
 - **Tests:** `send-to-block-file.test.ts` covers the pure ops: `listSendDestinations` enumeration (aff-then-neg order, empty side), `sendSelectedCard` copy (leaves source), move (removes source in one transaction, cursor mapped), null when not in a card, and throw on invalid target index. `SendToBlockFileControl.test.tsx` covers the React control: toolbar button disabled when no card / no editor, enabled when card selected, open/close, mode radio, destination select, send-copies-card + confirmation message, send-moves-card, new-section flow (name input, `addSection` called, sends to new index), error display on failed send, and Escape closes picker. `toolbar-integration.test.tsx` is the whole-stack toolbar integration: the Send control appears as the first slot, the picker opens, a copy send completes with confirmation, and a move send removes the source card.
 
+### Card-Cutting Tools closeout e2e (`src/tools/card-cutting-tools.e2e.test.tsx`)
+
+`card-cutting-tools.e2e.test.tsx` is the whole-stack closeout for the **Card-Cutting Tools** PRD - it composes the five real tools on **one card** the way a debater cuts it, with no mocks: highlight two body runs (`highlightCardTool`) → extract them into a fresh sibling card (`extractHighlightTool`) → shrink the source's un-highlighted rest to 8pt (`shrinkCardTool`) → condense the source's two body paragraphs into one, marks intact (`condenseTool`) → move the finished card into a new neg argument section (`sendSelectedCard`), then reopen the same document over the same IndexedDB backend to prove the result persisted.
+This is the counterpart to `tools.e2e.test.tsx`: that one proves the *framework* seam (a demo tool through registry + toolbar + Settings), this one proves the *tools themselves* compose. Distinct enough to be its own file, not an extension.
+
+- **Two durable conventions this surfaced, worth reusing when driving tools in a test:**
+  - **Adjacent unmarked runs merge into one text node,** so a to-be-highlighted run does not exist as a discrete node until a mark splits it out - address it by *substring offset* within its paragraph's text node (`selectText`), not by exact-text node lookup, until after the mark is applied. (After Highlight splits the run, exact-text `sizeOf`/walks work again.)
+  - **`addSection` can move the selection into the new heading,** so re-select the source card (`getSelectedCard` must resolve) *after* adding a destination section and *before* `sendSelectedCard`. The four in-place tools are driven through the real `createCardToolRegistry` + `CardToolbar` via `registry.register(...).apply(editor)`; Send is driven through its pure op because `sendToBlockFileTool.applyToSelection` is a deliberate no-op (its real entry point is the custom control).
+
+- **Registration-contract note:** the five merged tools split into two wiring buckets and did **not** change the contract itself. Tools *with* settings (`highlightCardTool`, `shrinkCardTool`, `sendToBlockFileTool`) live in `CARD_TOOL_DEFINITIONS` (both toolbar + Settings); settings-less tools (`condenseTool`, `extractHighlightTool`) are toolbar-only in `SHIPPED_CARD_TOOLS`. Send is the one tool whose `applyToSelection` is intentionally inert - it reaches the toolbar via `renderControl`, not the default apply-button.
+
+Follows the `settings.e2e` / `card.e2e` / `formatting.e2e` / `tools.e2e` closeout precedent. Positions come from an independent document walk, never the tool under test.
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.
