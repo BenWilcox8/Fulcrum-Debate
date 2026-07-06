@@ -5,6 +5,7 @@ import { crossApplyContention } from "../cross-apply";
 import { setNodeStruck } from "../strike";
 import { ColumnControls } from "./ColumnControls";
 import { FlowCanvas } from "./FlowCanvas";
+import { RfdSection } from "./RfdSection";
 import { CONTENTION_FLOW_NODE_REGISTRY } from "./contention-node-type";
 import { FlowSheetProvider } from "./FlowSheetProvider";
 import { useFlowSheet } from "./flow-sheet-context";
@@ -38,6 +39,10 @@ export interface FlowSheetPanelProps {
  * debater drops a contention into the focused column, no dialog. The panel adds
  * no document state of its own, so the local-first boot rule the canvas and
  * controls uphold carries through.
+ *
+ * Below the canvas it renders the {@link RfdSection} - the free-form Reason For
+ * Decision region at the end of the flow, visually delineated from the speech
+ * columns and persisted in the same flow document.
  */
 export function FlowSheetPanel({ handle, className }: FlowSheetPanelProps) {
   return (
@@ -100,6 +105,7 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
           onNodeCrossColumnDrop={onNodeCrossColumnDrop}
         />
       </div>
+      <RfdSection handle={handle} />
     </div>
   );
 }

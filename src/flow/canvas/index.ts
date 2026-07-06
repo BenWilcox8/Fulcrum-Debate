@@ -23,6 +23,7 @@ export {
   FlowSheetPanel,
   type FlowSheetPanelProps,
 } from "./FlowSheetPanel";
+export { RfdSection, type RfdSectionProps } from "./RfdSection";
 export {
   ColumnControls,
   type ColumnControlsProps,
