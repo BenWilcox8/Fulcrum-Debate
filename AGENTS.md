@@ -481,6 +481,17 @@ Every test follows the established pattern - `fake-indexeddb/auto` + a fresh `ID
 
 The expected `[tiptap warn] Duplicate extension names: ['doc']` line in these tests is the block schema's deliberate `doc` override, not a failure.
 
+## Table of contents sidebar
+
+`src/toc/` is the persistent ToC sidebar - a live projection of a document editor's heading outline, rendered alongside the editor (first consumer: `BlockFileScreen`).
+It only *consumes* the heading layer's public seams (`observeOutline` + `buildOutlineTree`/`OutlineTreeNode` from `src/editor/headings`); it never re-derives outline structure.
+
+- **`TableOfContents({ editor })`** is the sidebar region: an always-visible `<nav aria-label="Contents">`, not a toggled/collapsible panel. It renders its chrome synchronously even with a `null` editor or no headings (empty state), so it is stable layout, not a gate. It renders the nested tree recursively as `<ul>/<li>`, each heading a `TocRow`; children nest inside their parent's `<li>` (matching the tree derivation), keyed by heading `pos`. It deliberately ships **no** click-to-scroll and **no** current-section highlighting - those are separate follow-up issues.
+- **`TocRow({ node, leadingControl? })`** is one heading row - a flat, presentational unit (not recursive; nesting is the tree renderer's job). `leadingControl` is a reserved slot rendered *before* the label (test id `toc-row-leading`), unused today: a later speech-doc-pipeline feature drops a per-heading "include" checkbox in it **without editing this component's structure**. Omitted -> no leading element at all.
+- **`useOutlineTree(editor)`** layers the two seams: `observeOutline` (fires immediately + on every `docChanged`, ignores selection-only moves) shaped by `buildOutlineTree`. A nullish editor yields `[]`; the subscription follows editor identity and detaches on unmount.
+- **Screen wiring:** the ToC needs the *same* live editor the surface renders, so `BlockFileScreen` owns the editor via `useDocumentEditor` (the documented toolbar-style pattern) and renders `<EditorContent editor={editor}/>` itself instead of delegating to `DocumentEditor`; it passes that editor to `TableOfContents`. Because `preset` is not deep-compared by `useDocumentEditor`, the block-file preset stays a module-level constant and `[handle]` is the rebuild dep.
+- **Tests** (`TocRow.test.tsx`, `TableOfContents.test.tsx`) follow the established pattern. The row test is a pure render (no editor/IndexedDB) proving the label renders and the leading slot is present only when passed. The sidebar test drives a *real* block-file editor+handle: headings from both aff and neg sides are listed, a deeper heading nests under its shallower parent (asserted via the parent's `<li>` containing the child), and add/rename/delete each update the list with no manual refresh.
+
 ## Sharp edges
 
 - **TypeScript build:** `build` type-checks `tsconfig.json` (app) and `tsconfig.node.json` (Vite config) as two plain `tsc -p ... --noEmit` passes rather than project references, because a composite referenced project may not disable emit (`tsc -b` errors TS6310/TS6306). Keep both `noEmit: true` and do not add `references`/`composite` back without switching the whole setup to solution-style configs.
