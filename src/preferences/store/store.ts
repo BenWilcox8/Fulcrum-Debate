@@ -85,8 +85,7 @@ function createSection<S extends SectionSchema>(
   };
 
   const notify = () => {
-    const snapshot = getAll();
-    for (const listener of listeners) listener(snapshot);
+    for (const listener of [...listeners]) listener(getAll());
   };
 
   const set = <K extends keyof S>(key: K, value: SectionValues<S>[K]): void => {
