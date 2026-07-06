@@ -43,3 +43,15 @@ export {
   addContention,
   listContentions,
 } from "./contention";
+export {
+  FLOW_SUBPOINTS_FRAGMENT,
+  SUBPOINT_CONTENT_FRAGMENT_PREFIX,
+  subpointContentFragment,
+  parseSubpointTrigger,
+  addSubpoint,
+  listSubpoints,
+  getSubpoint,
+  removeSubpoint,
+  observeSubpoints,
+  type FlowSubpoint,
+} from "./subpoint";
