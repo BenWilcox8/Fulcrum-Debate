@@ -39,4 +39,19 @@ describe("TocRow", () => {
     // The label still renders alongside the control.
     expect(screen.getByText("AT: Gold")).toBeInTheDocument();
   });
+
+  it("is not marked active by default", () => {
+    render(<TocRow node={node({ text: "Inactive" })} />);
+    const row = screen.getByText("Inactive").closest("[data-active]");
+    expect(row).toBeNull();
+    expect(screen.getByText("Inactive").closest("[aria-current]")).toBeNull();
+  });
+
+  it("marks the row active when `active` is set", () => {
+    render(<TocRow node={node({ text: "Active" })} active />);
+    const label = screen.getByText("Active");
+    const row = label.closest("[data-active='true']");
+    expect(row).not.toBeNull();
+    expect(row).toHaveAttribute("aria-current", "location");
+  });
 });

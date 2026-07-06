@@ -2,6 +2,7 @@ import type { Editor } from "@tiptap/core";
 
 import type { OutlineTreeNode } from "../editor/headings";
 import { TocRow } from "./TocRow";
+import { useActiveHeading } from "./useActiveHeading";
 import { useOutlineTree } from "./useOutlineTree";
 
 /** Props for {@link TableOfContents}. */
@@ -11,6 +12,13 @@ export interface TableOfContentsProps {
    * document is still opening. A nullish editor renders the empty sidebar.
    */
   editor: Editor | null;
+  /**
+   * The element that scrolls the editor's document, used to track which section
+   * is in view and highlight its entry. `null`/omitted disables highlighting
+   * (the outline still renders); the block-file screen passes its editor-
+   * wrapping scroll region here.
+   */
+  scrollContainer?: HTMLElement | null;
 }
 
 /**
@@ -18,17 +26,23 @@ export interface TableOfContentsProps {
  * {@link TocRow}. Recurses through `children` so the rendered nesting matches the
  * tree derivation exactly.
  */
-function TocNodes({ nodes }: { nodes: OutlineTreeNode[] }) {
+function TocNodes({
+  nodes,
+  activePos,
+}: {
+  nodes: OutlineTreeNode[];
+  activePos: number | null;
+}) {
   return (
     <ul className="flex flex-col">
       {nodes.map((node) => (
         // `pos` is unique per heading within a snapshot, and the whole tree is
         // re-derived on every document change, so it is a stable-enough key.
         <li key={node.pos}>
-          <TocRow node={node} />
+          <TocRow node={node} active={node.pos === activePos} />
           {node.children.length > 0 && (
             <div className="border-l border-shell-border pl-3">
-              <TocNodes nodes={node.children} />
+              <TocNodes nodes={node.children} activePos={activePos} />
             </div>
           )}
         </li>
@@ -44,16 +58,20 @@ function TocNodes({ nodes }: { nodes: OutlineTreeNode[] }) {
  * observes the outline and shapes it into the nested tree, and this component
  * renders that tree as rows. Adding, renaming, or removing a heading in the
  * document flows through the observer and re-renders the list with no manual
- * refresh. It never scrolls the document or highlights a section - those are
- * separate follow-ups; this issue is the persistent layout region and its live
- * contents.
+ * refresh. When a `scrollContainer` is provided it also highlights the entry for
+ * the section currently in view, tracking the scroll position live
+ * ({@link useActiveHeading}); click-to-scroll navigation is a separate follow-up.
  *
  * The sidebar renders its chrome synchronously (heading + region) even with no
  * editor or no headings, so it is a stable layout region rather than a toggled
  * panel.
  */
-export function TableOfContents({ editor }: TableOfContentsProps) {
+export function TableOfContents({
+  editor,
+  scrollContainer = null,
+}: TableOfContentsProps) {
   const tree = useOutlineTree(editor);
+  const activePos = useActiveHeading(editor, scrollContainer);
 
   return (
     <nav
@@ -66,7 +84,7 @@ export function TableOfContents({ editor }: TableOfContentsProps) {
       {tree.length === 0 ? (
         <p className="text-sm text-shell-muted">No headings yet</p>
       ) : (
-        <TocNodes nodes={tree} />
+        <TocNodes nodes={tree} activePos={activePos} />
       )}
     </nav>
   );

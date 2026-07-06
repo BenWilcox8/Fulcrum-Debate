@@ -14,6 +14,13 @@ export interface TocRowProps {
    * structure. When omitted, no leading element is rendered at all.
    */
   leadingControl?: ReactNode;
+  /**
+   * Whether this row is the section currently in view - the one heading whose
+   * offset is closest above the scroll position (see {@link findActiveHeading}).
+   * Exactly one row is active at a time; an active row is visually marked and
+   * carries `aria-current="location"` for assistive tech.
+   */
+  active?: boolean;
 }
 
 /**
@@ -25,9 +32,15 @@ export interface TocRowProps {
  * so this component stays a flat, presentational unit that a future per-row
  * control can slot into without knowing anything about the tree.
  */
-export function TocRow({ node, leadingControl }: TocRowProps) {
+export function TocRow({ node, leadingControl, active = false }: TocRowProps) {
   return (
-    <div className="flex items-center gap-2 py-0.5">
+    <div
+      data-active={active || undefined}
+      aria-current={active ? "location" : undefined}
+      className={`flex items-center gap-2 rounded px-1 py-0.5 ${
+        active ? "bg-shell-bg font-medium text-shell-text" : ""
+      }`}
+    >
       {leadingControl != null && (
         <span data-testid="toc-row-leading" className="flex-none">
           {leadingControl}

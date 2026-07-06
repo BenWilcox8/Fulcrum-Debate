@@ -9,9 +9,11 @@
  *   later per-heading feature (speech-doc pipeline checkboxes) fills without
  *   rewriting the row.
  * - {@link useOutlineTree} is the underlying hook: observe outline + build tree.
+ * - {@link useActiveHeading} tracks the scroll position against heading offsets
+ *   so the sidebar highlights the section currently in view.
  *
- * Click-to-scroll and current-section highlighting are deliberately out of scope
- * here (separate follow-up issues).
+ * Click-to-scroll navigation is deliberately out of scope here (a separate
+ * follow-up issue).
  */
 export {
   TableOfContents,
@@ -19,3 +21,9 @@ export {
 } from "./TableOfContents";
 export { TocRow, type TocRowProps } from "./TocRow";
 export { useOutlineTree } from "./useOutlineTree";
+export { useActiveHeading } from "./useActiveHeading";
+export {
+  findActiveHeading,
+  ACTIVE_HEADING_TOLERANCE,
+  type HeadingOffset,
+} from "./active-heading";
