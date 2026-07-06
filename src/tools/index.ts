@@ -42,3 +42,12 @@ export {
   HIGHLIGHT_TOOL_SCOPE,
   type HighlightToolSettings,
 } from "./highlight/highlightCardTool";
+export {
+  extractHighlightTool,
+  buildExtractedCard,
+  canExtractHighlight,
+  extractHighlight,
+  EXTRACT_HIGHLIGHT_TOOL_ID,
+  EXTRACT_HIGHLIGHT_TOOL_LABEL,
+  type ExtractHighlightToolSettings,
+} from "./extract/extractHighlightTool";
