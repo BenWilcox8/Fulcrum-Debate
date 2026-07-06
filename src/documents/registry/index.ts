@@ -13,3 +13,4 @@ export {
   type DocumentRegistry,
 } from "./registry";
 export type { RegistryEntry, AddEntryInput } from "./entry";
+export { recentDocuments, type RecentDocumentsQuery } from "./query";
