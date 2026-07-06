@@ -2,6 +2,7 @@ import type { CardToolDefinition } from "./registry";
 import { shrinkCardTool } from "./shrink/shrinkCardTool";
 import { highlightCardTool } from "./highlight/highlightCardTool";
 import { sendToBlockFileTool } from "./send/sendTool";
+import { autoSpeechTool } from "./speech/auto-speech";
 
 /**
  * The app's card-cutting tools, in toolbar order.
@@ -12,11 +13,13 @@ import { sendToBlockFileTool } from "./send/sendTool";
  * `toolSettingsContributions`). Adding a tool here wires it into both surfaces at
  * once.
  *
- * The remaining tools (Auto Speech) land in later slices; each is a one-line
- * addition here.
+ * Auto Speech copies a speech to the clipboard and needs a custom control (like
+ * Send) for its feedback, but it still declares settings, so it belongs here (both
+ * surfaces); {@link ../react/useCardTools} attaches its control.
  */
 export const CARD_TOOL_DEFINITIONS: readonly CardToolDefinition[] = [
   shrinkCardTool as CardToolDefinition,
   highlightCardTool as CardToolDefinition,
   sendToBlockFileTool as CardToolDefinition,
+  autoSpeechTool as CardToolDefinition,
 ];

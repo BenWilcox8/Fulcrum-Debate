@@ -62,3 +62,15 @@ export {
   listSendDestinations,
   sendSelectedCard,
 } from "./send";
+export {
+  AUTO_SPEECH_TOOL_ID,
+  AUTO_SPEECH_TOOL_LABEL,
+  autoSpeechTool,
+  buildSpeechPayload,
+  copySpeechToClipboard,
+  writeSpeechToClipboard,
+  speechSelectionNode,
+  type AutoSpeechToolSettings,
+  type SpeechClipboardPayload,
+  type SpeechCopyResult,
+} from "./speech";

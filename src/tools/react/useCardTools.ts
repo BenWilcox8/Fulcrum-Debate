@@ -19,6 +19,12 @@ import {
   type SendToolSettings,
 } from "../send";
 import { SendToBlockFileControl } from "../send/SendToBlockFileControl";
+import {
+  AUTO_SPEECH_TOOL_ID,
+  type AutoSpeechToolSettings,
+} from "../speech";
+import { AutoSpeechControl } from "../speech/AutoSpeechControl";
+import type { SectionHandle } from "../../preferences";
 import type { ToolbarTool } from "./CardToolbar";
 
 /**
@@ -70,24 +76,41 @@ export function useCardTools(): ToolbarTool[] {
   return useMemo(() => {
     const registry = createCardToolRegistry(store);
     for (const definition of SHIPPED_CARD_TOOLS) registry.register(definition);
-    // Send needs an interactive destination picker, so it renders a custom
-    // control (reading its default copy/move action from the live settings)
-    // instead of the default apply-button.
+    // A few tools need richer interaction than the default apply-button and so
+    // supply a custom control: Send its destination picker, and Auto Speech its
+    // async clipboard copy + confirmation. Both read their live settings off the
+    // store, so a Settings edit is observed on the next use.
     return registry.list().map((tool): ToolbarTool => {
-      if (tool.id !== SEND_TOOL_ID) return tool;
-      const settings = tool.settings as unknown as {
-        get(key: keyof SendToolSettings): SendMode;
-      };
-      return {
-        ...tool,
-        renderControl: ({ editor, enabled }) =>
-          createElement(SendToBlockFileControl, {
-            editor,
-            enabled,
-            defaultMode: settings.get("defaultMode"),
-            label: tool.label,
-          }),
-      };
+      if (tool.id === SEND_TOOL_ID) {
+        const settings = tool.settings as unknown as {
+          get(key: keyof SendToolSettings): SendMode;
+        };
+        return {
+          ...tool,
+          renderControl: ({ editor, enabled }) =>
+            createElement(SendToBlockFileControl, {
+              editor,
+              enabled,
+              defaultMode: settings.get("defaultMode"),
+              label: tool.label,
+            }),
+        };
+      }
+      if (tool.id === AUTO_SPEECH_TOOL_ID) {
+        const settings =
+          tool.settings as unknown as SectionHandle<AutoSpeechToolSettings>;
+        return {
+          ...tool,
+          renderControl: ({ editor, enabled }) =>
+            createElement(AutoSpeechControl, {
+              editor,
+              enabled,
+              settings,
+              label: tool.label,
+            }),
+        };
+      }
+      return tool;
     });
   }, [store]);
 }
