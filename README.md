@@ -44,6 +44,7 @@ npm install
 │   ├── screens/            Feature screens (one per primary area)
 │   │   ├── DashboardScreen.tsx
 │   │   ├── dashboard/      Dashboard zone components (ResumeRecentZone, StartSomethingNewZone, LibraryNavZone)
+│   │   ├── NewRoundScreen.tsx  Create-and-redirect screen: creates a round then navigates to its canvas
 │   │   ├── BlockFileScreen.tsx
 │   │   ├── RoundsScreen.tsx    Round index: list + "New round" button
 │   │   └── RoundScreen.tsx     Single round's flow-sheet canvas
