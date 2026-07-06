@@ -31,6 +31,20 @@ function resumeHref(entry: RegistryEntry & { kind: ResumableKind }): string {
   }
 }
 
+/** The human-readable label shown on the kind badge for a resumable document. */
+function kindLabel(kind: ResumableKind): string {
+  switch (kind) {
+    case "flow-sheet":
+      return "Flow sheet";
+    case "block-file":
+      return "Block file";
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
+}
+
 /**
  * The live document listing for the Resume zone - a provider-optional reader.
  *
@@ -137,7 +151,7 @@ export default function ResumeRecentZone() {
                   {doc.title}
                 </span>
                 <span className="shrink-0 text-xs text-shell-muted">
-                  {doc.kind === "flow-sheet" ? "Flow sheet" : "Block file"}
+                  {kindLabel(doc.kind as ResumableKind)}
                 </span>
               </Link>
             </li>
