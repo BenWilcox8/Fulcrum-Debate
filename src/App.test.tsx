@@ -4,7 +4,7 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 import AppRoutes from "./AppRoutes";
@@ -42,13 +42,17 @@ describe("frame navigation", () => {
   it("switches the routed region when nav links are clicked, without a reload", () => {
     renderAt("/");
 
+    // Scope link clicks to the primary nav: the dashboard's Library zone also
+    // links to Block File/Rounds, so a global link query would be ambiguous.
+    const nav = () => screen.getByRole("navigation", { name: /primary/i });
+
     // Starts on Dashboard.
     expect(
       screen.getByRole("heading", { level: 2, name: /dashboard/i }),
     ).toBeInTheDocument();
 
     // Click through to Block File.
-    fireEvent.click(screen.getByRole("link", { name: /block file/i }));
+    fireEvent.click(within(nav()).getByRole("link", { name: /block file/i }));
     expect(
       screen.getByRole("heading", { level: 2, name: /block file/i }),
     ).toBeInTheDocument();
@@ -57,7 +61,7 @@ describe("frame navigation", () => {
     ).not.toBeInTheDocument();
 
     // And on to Rounds.
-    fireEvent.click(screen.getByRole("link", { name: /rounds/i }));
+    fireEvent.click(within(nav()).getByRole("link", { name: /rounds/i }));
     expect(
       screen.getByRole("heading", { level: 2, name: /rounds/i }),
     ).toBeInTheDocument();
@@ -66,7 +70,7 @@ describe("frame navigation", () => {
     ).not.toBeInTheDocument();
 
     // Back to Dashboard.
-    fireEvent.click(screen.getByRole("link", { name: /dashboard/i }));
+    fireEvent.click(within(nav()).getByRole("link", { name: /dashboard/i }));
     expect(
       screen.getByRole("heading", { level: 2, name: /dashboard/i }),
     ).toBeInTheDocument();
