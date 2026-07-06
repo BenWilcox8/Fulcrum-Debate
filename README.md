@@ -65,13 +65,14 @@ npm install
 │   │   ├── headings/       Heading node (levels 1-6) and outline query (getOutline, observeOutline)
 │   │   ├── preset.ts       Canonical shared extension preset (editorPreset) - feature editors start here
 │   │   └── react/          DocumentEditor component and useDocumentEditor hook
-│   ├── settings/           Settings screen shell and contribution seam (SettingsScreen, SettingsProvider, defineSettingsContribution)
+│   ├── settings/           Settings screen shell and contribution seam (SettingsScreen, SettingsProvider, defineSettingsContribution, SchemaSettingsPanel)
+│   │   ├── tools/          Maps card-cutting tool definitions to Settings contributions (toolSettingsContributions)
 │   │   └── demo/           Demo contribution that proves the seam end-to-end (safe to delete once real panels land)
 │   ├── formatting/         Evidence formatting standards: profile model (FormattingProfile, DEFAULT_FORMATTING_PROFILE), preferences-store registration (registerFormattingSection, readFormattingProfile), unformatted-text shrink rule (classifyRuns, classifyRunAt, shrinkSize, applyShrinkRule), and pure CSS serialization (formattingProfileCss, DEFAULT_FORMATTING_SCOPE)
 │   │   └── react/          Live card rendering: useFormattingProfile hook and CardFormattingStyles component
 │   ├── blockfile/          Block-file schema and content model: side-division schema, argument sections, section ops, card node model (cardExtensions, buildCardContent), card-as-unit addressability API (cardAt, selectCard, readCardRegions), and quick card creation (insertCard, cardCreate, CARD_CREATE_SHORTCUT)
 │   ├── blockfile-workspace/ Block-file workspace singleton (ensureBlockFile - finds or creates the shared block-file document)
-│   ├── tools/              Card-cutting tool registration contract (createCardToolRegistry, CardToolDefinition, RegisteredCardTool) - the shared seam every card-cutting tool plugs into
+│   ├── tools/              Card-cutting tool registration contract (createCardToolRegistry, toolSectionDefinition, CardToolDefinition, RegisteredCardTool, CARD_TOOL_DEFINITIONS) - the shared seam every card-cutting tool plugs into
 │   │   ├── react/          Toolbar React layer: CardToolbar component and useCardTools hook (imported as src/tools/react so the model index stays React-free)
 │   │   └── demo/           Demo card tool that proves the seam end-to-end without shipping a real cutting tool (retired when the first real tool lands)
 │   ├── flow/               Flow-sheet layer: speech-column model, flow-node model, helpers, and XYFlow canvas
