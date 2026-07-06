@@ -4,7 +4,14 @@
 // browser; this pins the arithmetic.
 import { describe, it, expect } from "vitest";
 
-import { columnAtX, resolveNodeDropColumn, type DropColumn } from "./flow-drag";
+import {
+  columnAtX,
+  resolveNodeDropColumn,
+  resolveAdjacentNode,
+  ADJACENCY_MARGIN,
+  type DropColumn,
+  type DropTargetNode,
+} from "./flow-drag";
 
 // Three columns 300px wide, 20px apart: [0,300) [320,620) [640,940).
 const columns: DropColumn[] = [
@@ -80,5 +87,45 @@ describe("resolveNodeDropColumn", () => {
         columns,
       }),
     ).toBeNull();
+  });
+});
+
+describe("resolveAdjacentNode", () => {
+  // Two stacked target-column nodes, 160px tall, 8px apart:
+  // "x" spans [48,208), "y" spans [216,376).
+  const targets: DropTargetNode[] = [
+    { id: "x", y: 48, height: 160 },
+    { id: "y", y: 216, height: 160 },
+  ];
+
+  it("returns the node whose vertical slot contains the drop center", () => {
+    expect(resolveAdjacentNode(120, targets)).toBe("x");
+    expect(resolveAdjacentNode(300, targets)).toBe("y");
+    // Exactly on a slot's top edge counts as inside it.
+    expect(resolveAdjacentNode(48, targets)).toBe("x");
+  });
+
+  it("counts a drop in the immediate gap as adjacent to the nearest node", () => {
+    // The 8px gap between the two nodes is within the adjacency margin of both;
+    // the nearer one wins. Center at 210 is 2px below x's bottom (208) and 6px
+    // above y's top (216) -> nearer to x.
+    expect(resolveAdjacentNode(210, targets)).toBe("x");
+    // Center at 214 is 6px below x and 2px above y -> nearer to y.
+    expect(resolveAdjacentNode(214, targets)).toBe("y");
+  });
+
+  it("returns null when the drop is beyond the adjacency margin of every node", () => {
+    // Far below both nodes (well past y's bottom + margin).
+    expect(resolveAdjacentNode(1000, targets)).toBeNull();
+    // Above the first node by more than the margin.
+    expect(resolveAdjacentNode(48 - ADJACENCY_MARGIN - 1, targets)).toBeNull();
+  });
+
+  it("returns null when the target column has no nodes", () => {
+    expect(resolveAdjacentNode(120, [])).toBeNull();
+  });
+
+  it("exposes a positive adjacency margin", () => {
+    expect(ADJACENCY_MARGIN).toBeGreaterThan(0);
   });
 });

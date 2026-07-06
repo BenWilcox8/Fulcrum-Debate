@@ -2,6 +2,7 @@ import { useCallback } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
 import { crossApplyContention } from "../cross-apply";
+import { setNodeStruck } from "../strike";
 import { ColumnControls } from "./ColumnControls";
 import { FlowCanvas } from "./FlowCanvas";
 import { CONTENTION_FLOW_NODE_REGISTRY } from "./contention-node-type";
@@ -58,11 +59,22 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
 
   // Dragging a contention onto another column cross-applies it: a copy lands in
   // the target column and a transparent arrow points from the original to the
-  // copy. The canvas resolves the drop geometry; this performs the copy.
+  // copy. The canvas resolves the drop geometry; this performs the copy. When the
+  // drop landed *adjacent* to an opponent's argument, the clash workflow also
+  // strikes that argument (non-destructively) - so dropping next to it both
+  // cross-applies AND strikes, per the DnD/Strike PRD.
   const onNodeCrossColumnDrop = useCallback(
-    (nodeId: string, _fromColumnId: string, toColumnId: string) => {
+    (
+      nodeId: string,
+      _fromColumnId: string,
+      toColumnId: string,
+      adjacentNodeId: string | null,
+    ) => {
       if (!handle || handle.closed) return;
-      crossApplyContention(handle, nodeId, toColumnId);
+      handle.doc.transact(() => {
+        crossApplyContention(handle, nodeId, toColumnId);
+        if (adjacentNodeId) setNodeStruck(handle, adjacentNodeId, true);
+      });
     },
     [handle],
   );

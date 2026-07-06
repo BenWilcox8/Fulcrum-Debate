@@ -6,6 +6,7 @@ import type { DocumentHandle } from "../../documents/core";
 import type { FlowSide } from "../columns";
 import { getColumn, observeColumns } from "../columns";
 import { observeNodes } from "../nodes";
+import { isNodeStruck, setNodeStruck } from "../strike";
 import { contentionContentFragment, listContentions } from "../contention";
 import { listSubpoints, observeSubpoints, type FlowSubpoint } from "../subpoint";
 import type { HostedFlowNode } from "./node-host";
@@ -97,6 +98,30 @@ function useContentionSubpoints(
 }
 
 /**
+ * Live strike state for a contention: whether it is currently struck (an
+ * opponent's argument a debater crossed out after answering it). A pure
+ * derivation of the flow doc ({@link isNodeStruck}); it rides {@link observeNodes}
+ * because the strike flag lives on the node's own map, so setting/clearing it
+ * fires the same deep observer the label uses - the node restyles live.
+ */
+function useNodeStruck(
+  handle: DocumentHandle | null,
+  nodeId: string,
+): boolean {
+  const [struck, setStruck] = useState(false);
+
+  useEffect(() => {
+    if (!handle || handle.closed) {
+      setStruck(false);
+      return;
+    }
+    return observeNodes(handle, () => setStruck(isNodeStruck(handle, nodeId)));
+  }, [handle, nodeId]);
+
+  return struck;
+}
+
+/**
  * The custom XYFlow node for one Contention container.
  *
  * A contention is a large, rounded, side-coloured panel with a `C#` header and
@@ -123,6 +148,7 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
   const { label, side } = useContentionHeader(handle, columnId, flowNodeId);
   const classes = SIDE_CLASSES[side];
   const collapsed = collapse?.isCollapsed(flowNodeId) ?? false;
+  const struck = useNodeStruck(handle, flowNodeId);
 
   // The raw editor is needed so the S# subpoint trigger can intercept keystrokes
   // and strip the typed token; the surface itself renders via EditorContent.
@@ -145,10 +171,27 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
       data-flow-node-id={flowNodeId}
       data-side={side}
       data-collapsed={collapsed || undefined}
-      className={`flex h-full w-full flex-col overflow-hidden rounded-xl border-2 shadow-sm ${
+      data-struck={struck ? "true" : undefined}
+      className={`relative flex h-full w-full flex-col overflow-hidden rounded-xl border-2 shadow-sm ${
         collapsed ? "" : "gap-2 p-card"
-      } ${classes.container}`}
+      } ${struck ? "line-through decoration-2 opacity-70" : ""} ${classes.container}`}
     >
+      {/* Struck = a non-destructive strike-through: the argument's text stays
+          readable (line-through, not removed). The clear control appears only
+          while struck so an unstruck contention carries no strike chrome; it
+          re-toggles the flag off. */}
+      {struck && !collapsed && (
+        <button
+          type="button"
+          data-testid="contention-clear-strike"
+          onClick={() => handle && setNodeStruck(handle, flowNodeId, false)}
+          title="Clear strike"
+          aria-label="Clear strike"
+          className="absolute right-1 top-1 z-10 rounded border border-shell-border bg-shell-surface px-1 text-xs font-medium text-shell-muted no-underline hover:text-shell-text"
+        >
+          ✕
+        </button>
+      )}
       {/* Invisible anchors for the cross-application arrow edges: a contention is
           both an edge source (the original) and target (the copy). They are not
           interactive connection points (the canvas runs with connecting off) -

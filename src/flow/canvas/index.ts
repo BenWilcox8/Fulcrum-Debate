@@ -51,8 +51,11 @@ export {
 export {
   columnAtX,
   resolveNodeDropColumn,
+  resolveAdjacentNode,
+  ADJACENCY_MARGIN,
   type DropColumn,
   type NodeDropInput,
+  type DropTargetNode,
 } from "./flow-drag";
 export { ContentionNode } from "./ContentionNode";
 export { SubpointNode, type SubpointNodeProps } from "./SubpointNode";

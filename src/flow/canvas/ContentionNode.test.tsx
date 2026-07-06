@@ -8,11 +8,12 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, waitFor, fireEvent } from "@testing-library/react";
 
 import { openDocument, type DocumentHandle } from "../../documents/core";
 import { addColumn } from "../columns";
 import { addContention } from "../contention";
+import { isNodeStruck, setNodeStruck } from "../strike";
 import { FlowCanvas } from "./FlowCanvas";
 import { FlowSheetProvider } from "./FlowSheetProvider";
 import { CONTENTION_FLOW_NODE_REGISTRY } from "./contention-node-type";
@@ -65,6 +66,46 @@ describe("ContentionNode", () => {
 
     const headers = await findAllByTestId("contention-label");
     expect(headers.map((h) => h.textContent)).toEqual(["C1", "C2"]);
+
+    await handle.close();
+  });
+
+  it("renders a struck contention with a non-destructive strike-through", async () => {
+    const handle = await openFlowSheet();
+    const col = addColumn(handle, { side: "neg", label: "1NC" });
+    const contention = addContention(handle, col.id);
+    setNodeStruck(handle, contention.id, true);
+
+    const { findByTestId } = renderCanvas(handle);
+
+    const node = await findByTestId("contention-node");
+    // The struck state is a data hook (for CSS + tests) and a readable
+    // strike-through, not a removal - the text is still there to read.
+    await waitFor(() => expect(node).toHaveAttribute("data-struck", "true"));
+    expect(node.className).toMatch(/line-through/);
+    // Non-destructive: the label and body are still rendered.
+    expect(node.querySelector('[data-testid="contention-label"]')).not.toBeNull();
+
+    await handle.close();
+  });
+
+  it("clears the strike via the clear-strike control (re-toggle)", async () => {
+    const handle = await openFlowSheet();
+    const col = addColumn(handle, { side: "aff", label: "1AC" });
+    const contention = addContention(handle, col.id);
+    setNodeStruck(handle, contention.id, true);
+
+    const { findByTestId, queryByTestId } = renderCanvas(handle);
+
+    // The clear control appears only while struck.
+    const clear = await findByTestId("contention-clear-strike");
+    fireEvent.click(clear);
+
+    await waitFor(() => expect(isNodeStruck(handle, contention.id)).toBe(false));
+    // The control disappears once the strike is cleared.
+    await waitFor(() =>
+      expect(queryByTestId("contention-clear-strike")).toBeNull(),
+    );
 
     await handle.close();
   });

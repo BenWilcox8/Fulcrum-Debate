@@ -16,9 +16,15 @@ import { useColumnNodes } from "./useColumnNodes";
 import { useFlowNodes } from "./useFlowNodes";
 import { useFlowEdges } from "./useFlowEdges";
 import { useFlowSheet } from "./flow-sheet-context";
-import { resolveNodeDropColumn, type DropColumn } from "./flow-drag";
+import {
+  resolveNodeDropColumn,
+  resolveAdjacentNode,
+  type DropColumn,
+  type DropTargetNode,
+} from "./flow-drag";
 import {
   FLOW_NODE_WIDTH,
+  FLOW_NODE_HEIGHT,
   registryToNodeTypes,
   type FlowNodeRegistry,
   type HostedFlowNode,
@@ -65,15 +71,19 @@ export interface FlowCanvasProps {
   /**
    * Called when a draggable flow node is dropped onto a *different* column than
    * the one it started in. The canvas resolves the drop geometrically and hands
-   * back the node id and the source/target column ids; the caller performs the
-   * cross-application copy (see {@link ../cross-apply}). Omitted means drops are
-   * inert (the node just snaps back). The canvas never mutates the document
-   * itself - it stays a pure view over the flow model.
+   * back the node id, the source/target column ids, and - for the strike gesture
+   * - the id of the target-column node the drop landed **adjacent** to (or `null`
+   * when it was not next to any argument). The caller performs the cross-
+   * application copy (see {@link ../cross-apply}) and, when an adjacent node is
+   * given, strikes it (see {@link ../strike}). Omitted means drops are inert (the
+   * node just snaps back). The canvas never mutates the document itself - it stays
+   * a pure view over the flow model.
    */
   onNodeCrossColumnDrop?: (
     nodeId: string,
     fromColumnId: string,
     toColumnId: string,
+    adjacentNodeId: string | null,
   ) => void;
   /** Class applied to the canvas's sizing wrapper. */
   className?: string;
@@ -179,7 +189,27 @@ export function FlowCanvas({
           columns: dropColumns,
         });
         if (toColumnId && toColumnId !== fromColumnId) {
-          onNodeCrossColumnDrop?.(node.id, fromColumnId, toColumnId);
+          // Which of the target column's arguments did the drop land next to?
+          // Vertical geometry: the dragged node's center against the target
+          // column's laid-out node slots. `null` = not adjacent to any (copy
+          // only, no strike). Coordinates are column-relative and every column
+          // sits at y-origin 0, so the dragged node's `position.y` is directly
+          // comparable to the target nodes' `position.y`.
+          const centerY = node.position.y + (node.height ?? FLOW_NODE_HEIGHT) / 2;
+          const targetNodes: DropTargetNode[] = flowNodes
+            .filter((candidate) => candidate.parentId === toColumnId)
+            .map((candidate) => ({
+              id: candidate.id,
+              y: candidate.position.y,
+              height: candidate.height ?? FLOW_NODE_HEIGHT,
+            }));
+          const adjacentNodeId = resolveAdjacentNode(centerY, targetNodes);
+          onNodeCrossColumnDrop?.(
+            node.id,
+            fromColumnId,
+            toColumnId,
+            adjacentNodeId,
+          );
         }
       }
       // Always snap back to the document-authoritative layout: the source node
@@ -187,7 +217,7 @@ export function FlowCanvas({
       // not leave the node where it was released.
       setNodes(docNodes);
     },
-    [dropColumns, docNodes, onNodeCrossColumnDrop],
+    [dropColumns, docNodes, flowNodes, onNodeCrossColumnDrop],
   );
 
   const nodeTypes = useMemo(

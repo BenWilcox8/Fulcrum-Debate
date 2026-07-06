@@ -83,3 +83,9 @@ export {
   type AddEdgeInput,
 } from "./edges";
 export { crossApplyContention } from "./cross-apply";
+export {
+  STRIKE_FIELD,
+  isNodeStruck,
+  setNodeStruck,
+  toggleNodeStruck,
+} from "./strike";
