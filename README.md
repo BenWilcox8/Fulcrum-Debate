@@ -47,7 +47,10 @@ npm install
 │   │   ├── NewRoundScreen.tsx  Create-and-redirect screen: creates a round then navigates to its canvas
 │   │   ├── BlockFileScreen.tsx
 │   │   ├── RoundsScreen.tsx    Round index: list + "New round" button
-│   │   └── RoundScreen.tsx     Single round's flow-sheet canvas
+│   │   ├── RoundScreen.tsx     Single round's flow-sheet canvas
+│   │   ├── SpeechDocsScreen.tsx  Speech doc list + "New" button
+│   │   ├── NewSpeechDocScreen.tsx  Create-and-redirect screen: creates a speech doc then navigates to its editor
+│   │   └── SpeechDocScreen.tsx     Single speech doc's editor surface
 │   ├── rounds/             Round lifecycle seam (useRounds, ROUND_KIND, defaultRoundTitle)
 │   ├── index.css           Tailwind entry point and design token definitions (@theme)
 │   ├── ipc/                Typed IPC bridge to the Rust backend (one wrapper per command)
@@ -80,6 +83,7 @@ npm install
 │   │   ├── nodes.ts        Flow-node model: membership + vertical order, node-container contract
 │   │   └── canvas/         FlowSheetPanel (editable), FlowCanvas (render-only), ColumnControls, SpeechColumnNode, RfdSection (Reason For Decision region), column-nodes mapping, node-host (registration API + hosted child nodes), useColumnNodes, useColumns, and useFlowNodes hooks
 │   ├── timer/              Floating Timer widget (self-contained, session-state only): useCountdown engine, formatTime/parseTime, EditableTime, PrepTimer, SpeechTimer, TimerWidget
+│   ├── speech-doc/         Speech doc editor and model: document seam (useSpeechDocs, SPEECH_DOC_BODY_FRAGMENT), active-speech-doc store (createActiveSpeechDocStore, ActiveSpeechDocProvider, useActiveSpeechDoc), and SpeechDocEditor component
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
