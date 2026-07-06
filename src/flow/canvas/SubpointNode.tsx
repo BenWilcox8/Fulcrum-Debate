@@ -4,6 +4,7 @@ import type { DocumentHandle } from "../../documents/core";
 import { observeSubpoints, listSubpoints, subpointContentFragment } from "../subpoint";
 import { DocumentEditor } from "../../editor/react";
 import { useFlowSheet } from "./flow-sheet-context";
+import { FLOW_ARGUMENT_PRESET } from "./flow-argument-preset";
 
 /**
  * Live `S#` label for one subpoint: its 1-based rank among its contention's
@@ -98,6 +99,7 @@ export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
           <DocumentEditor
             handle={handle}
             fragment={subpointContentFragment(subpointId)}
+            preset={FLOW_ARGUMENT_PRESET}
             className="text-sm text-shell-surface"
           />
         </div>

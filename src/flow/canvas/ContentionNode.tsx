@@ -9,6 +9,7 @@ import { observeNodes } from "../nodes";
 import { contentionContentFragment, listContentions } from "../contention";
 import { listSubpoints, observeSubpoints, type FlowSubpoint } from "../subpoint";
 import { useDocumentEditor } from "../../editor/react";
+import { FLOW_ARGUMENT_PRESET } from "./flow-argument-preset";
 import type { HostedFlowNode } from "./node-host";
 import { useFlowSheet } from "./flow-sheet-context";
 import { useSubpointTrigger } from "./useSubpointTrigger";
@@ -129,6 +130,7 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
   const editor = useDocumentEditor({
     handle,
     fragment: contentionContentFragment(flowNodeId),
+    preset: FLOW_ARGUMENT_PRESET,
   });
   useSubpointTrigger(handle, flowNodeId, editor);
 
