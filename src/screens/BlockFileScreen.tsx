@@ -12,6 +12,7 @@ import {
 } from "../blockfile";
 import { useBlockFile } from "../blockfile-workspace";
 import { TableOfContents } from "../toc";
+import { CardFormattingStyles } from "../formatting/react";
 
 /**
  * The block-file schema plus the card node model and its quick-create keyboard
@@ -77,6 +78,12 @@ export default function BlockFileScreen() {
       aria-labelledby="screen-heading"
       className="flex flex-1 min-h-0 flex-col gap-4"
     >
+      {/* Live evidence-formatting stylesheet: renders card regions and
+          highlighted runs to the active formatting profile, updating in place
+          when the profile is edited (no reload). Scoped to `.block-file-editor`
+          below. */}
+      <CardFormattingStyles />
+
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h2
