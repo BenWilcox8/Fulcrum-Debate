@@ -9,6 +9,9 @@
  * - The {@link ./outline | outline query} - the table-of-contents seam. A pure
  *   {@link getOutline} snapshot plus an {@link observeOutline} live wrapper a
  *   ToC panel consumes.
+ * - The {@link ./outline-tree | outline-tree derivation} - a pure
+ *   {@link buildOutlineTree} that nests the flat outline into the hierarchy a
+ *   ToC panel renders.
  */
 export {
   heading,
@@ -22,3 +25,4 @@ export {
   outlineFromDoc,
   type OutlineHeading,
 } from "./outline";
+export { buildOutlineTree, type OutlineTreeNode } from "./outline-tree";
