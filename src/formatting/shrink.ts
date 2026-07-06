@@ -160,14 +160,27 @@ export function classifyRuns(state: EditorState): ClassifiedRun[] {
 /**
  * Classifies the text run at `pos` (the run whose range contains the position),
  * or `null` when no text sits there (e.g. a boundary or an empty region). A pure
- * convenience over {@link classifyRuns} for a single position.
+ * convenience for a single position; uses a dedicated early-exit walk rather than
+ * building the full {@link classifyRuns} list.
  */
 export function classifyRunAt(
   state: EditorState,
   pos: number,
 ): FormattingTargetKey | null {
-  for (const run of classifyRuns(state)) {
-    if (run.from <= pos && pos < run.to) return run.classification;
+  const $pos = state.doc.resolve(pos);
+  const parent = $pos.parent;
+  const parentOffset = $pos.parentOffset;
+  const parentStart = $pos.start();
+  let childOffset = 0;
+  for (let i = 0; i < parent.childCount; i++) {
+    const child = parent.child(i);
+    const childEnd = childOffset + child.nodeSize;
+    if (child.isText && childOffset <= parentOffset && parentOffset < childEnd) {
+      const nodePos = parentStart + childOffset;
+      const region = enclosingRegionName(state.doc, nodePos);
+      return classifyTextNode(child, region);
+    }
+    childOffset = childEnd;
   }
   return null;
 }
@@ -213,8 +226,8 @@ function rangeNeedsSize(
  *
  * Idempotent: runs already at the shrink size are skipped, so re-applying (or
  * applying when there is nothing to shrink) is a no-op that returns `false`.
- * Returns whether the document changed. The prior selection is restored, so the
- * caller's cursor is preserved.
+ * Returns whether the document changed. The prior cursor or text-range selection
+ * is restored (a NodeSelection is coerced to a text range).
  */
 export function applyShrinkRule(
   editor: Editor,
