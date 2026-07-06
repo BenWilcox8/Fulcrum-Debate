@@ -5,6 +5,14 @@
  * ({@link useCardTools}). Imported directly from `src/tools/react` (like
  * `src/formatting/react`) so the `src/tools` model index stays React-free.
  */
-export { CardToolbar, type CardToolbarProps } from "./CardToolbar";
+export {
+  CardToolbar,
+  type CardToolbarProps,
+  type ToolbarTool,
+} from "./CardToolbar";
 export { useCardTools } from "./useCardTools";
 export { HighlightStyles, type HighlightStylesProps } from "./HighlightStyles";
+export {
+  SendToBlockFileControl,
+  type SendToBlockFileControlProps,
+} from "../send/SendToBlockFileControl";
