@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
 import { observeColumns } from "../columns";
+import { observeNodes } from "../nodes";
+import { observeSubpoints } from "../subpoint";
 import {
   FlowSheetContext,
   type FlowSheetContextValue,
 } from "./flow-sheet-context";
+import { readFlowContainerTree } from "./flow-collapse";
+import { useFlowCollapse } from "./useFlowCollapse";
 
 /** Props for {@link FlowSheetProvider}. */
 export interface FlowSheetProviderProps {
@@ -25,6 +29,7 @@ export function FlowSheetProvider({
   children,
 }: FlowSheetProviderProps) {
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
+  const collapse = useFlowCollapse(handle);
 
   useEffect(() => {
     if (!handle) return;
@@ -36,9 +41,24 @@ export function FlowSheetProvider({
     });
   }, [handle]);
 
+  const { clearActiveNodeIfAbsent } = collapse;
+  useEffect(() => {
+    if (!handle) return;
+    const check = () => {
+      const { allIds } = readFlowContainerTree(handle);
+      clearActiveNodeIfAbsent(new Set(allIds));
+    };
+    const unsubNodes = observeNodes(handle, check);
+    const unsubSubpoints = observeSubpoints(handle, check);
+    return () => {
+      unsubNodes();
+      unsubSubpoints();
+    };
+  }, [handle, clearActiveNodeIfAbsent]);
+
   const value = useMemo<FlowSheetContextValue>(
-    () => ({ handle, activeColumnId, setActiveColumnId }),
-    [handle, activeColumnId],
+    () => ({ handle, activeColumnId, setActiveColumnId, collapse }),
+    [handle, activeColumnId, collapse],
   );
 
   return (

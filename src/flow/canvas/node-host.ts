@@ -54,6 +54,14 @@ export const FLOW_NODE_TOP_INSET = 48;
 /** Default height of one flow node's vertical slot, in px. */
 export const FLOW_NODE_HEIGHT = 96;
 
+/**
+ * Height of a **collapsed** flow node's slot, in px: a single low horizontal bar
+ * that reads its label at a glance and no more. When a node's id is in the
+ * collapsed set ({@link FlowNodeLayoutOptions.collapsedIds}) it takes this height
+ * regardless of its kind's normal slot, and the nodes below it reflow up.
+ */
+export const COLLAPSED_NODE_HEIGHT = 40;
+
 /** Vertical gap between stacked flow nodes in a column, in px. */
 export const FLOW_NODE_GAP = 8;
 
@@ -107,6 +115,20 @@ export interface FlowNodeTypeDefinition {
  */
 export type FlowNodeRegistry = readonly FlowNodeTypeDefinition[];
 
+/**
+ * Layout-time options for {@link flowNodesToNodes}. Optional so existing callers
+ * (and tests) can omit it entirely for the uncollapsed default.
+ */
+export interface FlowNodeLayoutOptions {
+  /**
+   * The ids of nodes currently **collapsed** to a bar. A node in this set is laid
+   * out at {@link COLLAPSED_NODE_HEIGHT} instead of its kind's slot height, and
+   * the nodes below it in the same column reflow up. This is transient view-state
+   * (see {@link ./flow-collapse}); it never touches the flow document.
+   */
+  readonly collapsedIds?: ReadonlySet<string>;
+}
+
 /** A column's nodes in vertical order (top-first) - the unit the mapper lays out. */
 export interface ColumnFlowNodes {
   /** The column id these nodes belong to (their shared XYFlow `parentId`). */
@@ -159,19 +181,27 @@ export function flowNodeY(index: number, height: number): number {
  *
  * Nodes are render-only (non-draggable, non-selectable): this contract ships no
  * drag or editing gestures.
+ *
+ * A node whose id is in `options.collapsedIds` is laid out at
+ * {@link COLLAPSED_NODE_HEIGHT} (a single bar) instead of its kind's slot height,
+ * and the nodes below it reflow up - the layout side of the collapse view-state.
  */
 export function flowNodesToNodes(
   groups: readonly ColumnFlowNodes[],
   registry: FlowNodeRegistry,
+  options: FlowNodeLayoutOptions = {},
 ): HostedFlowNode[] {
   const byKind = indexRegistry(registry);
+  const collapsedIds = options.collapsedIds;
   const out: HostedFlowNode[] = [];
   for (const { columnId, nodes } of groups) {
     let y = FLOW_NODE_TOP_INSET;
     for (const node of nodes) {
       const def = byKind.get(node.kind);
       if (!def) continue; // No registered renderer for this kind: skip it.
-      const height = def.height ?? FLOW_NODE_HEIGHT;
+      const height = collapsedIds?.has(node.id)
+        ? COLLAPSED_NODE_HEIGHT
+        : def.height ?? FLOW_NODE_HEIGHT;
       out.push({
         id: node.id,
         type: node.kind,

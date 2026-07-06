@@ -45,6 +45,7 @@ function readGroups(handle: DocumentHandle): ColumnFlowNodes[] {
 export function useFlowNodes(
   handle: DocumentHandle | null,
   registry: FlowNodeRegistry = EMPTY_REGISTRY,
+  collapsedIds?: ReadonlySet<string>,
 ): HostedFlowNode[] {
   const [groups, setGroups] = useState<ColumnFlowNodes[]>(() =>
     handle ? readGroups(handle) : [],
@@ -66,8 +67,11 @@ export function useFlowNodes(
     };
   }, [handle]);
 
+  // Collapsed ids are transient view-state (see ./flow-collapse): a collapsed
+  // node lays out as a bar and the nodes below it reflow up. Threaded here so the
+  // canvas restacks live as a debater collapses/expands, without touching the doc.
   return useMemo(
-    () => flowNodesToNodes(groups, registry),
-    [groups, registry],
+    () => flowNodesToNodes(groups, registry, { collapsedIds }),
+    [groups, registry, collapsedIds],
   );
 }

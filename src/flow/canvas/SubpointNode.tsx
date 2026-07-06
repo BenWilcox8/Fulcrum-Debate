@@ -59,26 +59,48 @@ export interface SubpointNodeProps {
 export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
   const context = useFlowSheet();
   const handle = context?.handle ?? null;
+  const collapse = context?.collapse ?? null;
   const label = useSubpointHeader(handle, contentionId, subpointId);
+  const collapsed = collapse?.isCollapsed(subpointId) ?? false;
+
+  // The header both toggles this subpoint's collapse and marks it active, so
+  // "Collapse All Except Active" keeps this subpoint (and its parent contention)
+  // open. Collapsed, the subpoint reads as its dark bar with just the S# label.
+  const onHeaderClick = () => {
+    collapse?.setActiveNodeId(subpointId);
+    collapse?.toggleCollapsed(subpointId);
+  };
 
   return (
     <div
       data-testid="subpoint-node"
       data-flow-node-id={subpointId}
-      className="ml-4 flex flex-col gap-1 rounded-md border-l-2 border-shell-border bg-shell-text pl-3 pr-2 py-2 text-shell-surface shadow-sm"
+      data-collapsed={collapsed || undefined}
+      className={`ml-4 flex flex-col rounded-md border-l-2 border-shell-border bg-shell-text pl-3 pr-2 py-2 text-shell-surface shadow-sm ${
+        collapsed ? "" : "gap-1"
+      }`}
     >
-      <div
-        data-testid="subpoint-label"
-        className="text-xs font-semibold text-shell-surface/80"
+      <button
+        type="button"
+        data-testid="subpoint-header"
+        onClick={onHeaderClick}
+        aria-expanded={!collapsed}
+        title={collapsed ? "Expand subpoint" : "Collapse subpoint"}
+        className="flex items-center gap-1 text-left text-xs font-semibold text-shell-surface/80"
       >
-        {label}
-      </div>
-      {handle && (
-        <DocumentEditor
-          handle={handle}
-          fragment={subpointContentFragment(subpointId)}
-          className="text-sm text-shell-surface"
-        />
+        <span aria-hidden="true" className="opacity-70">
+          {collapsed ? "▸" : "▾"}
+        </span>
+        <span data-testid="subpoint-label">{label}</span>
+      </button>
+      {!collapsed && handle && (
+        <div onFocus={() => collapse?.setActiveNodeId(subpointId)}>
+          <DocumentEditor
+            handle={handle}
+            fragment={subpointContentFragment(subpointId)}
+            className="text-sm text-shell-surface"
+          />
+        </div>
       )}
     </div>
   );
