@@ -148,6 +148,10 @@ export const DEFAULT_FORMATTING_PROFILE: FormattingProfile = {
     underline: false,
   },
 };
+for (const key of FORMATTING_TARGET_KEYS) {
+  Object.freeze(DEFAULT_FORMATTING_PROFILE[key]);
+}
+Object.freeze(DEFAULT_FORMATTING_PROFILE);
 
 /**
  * Human-facing labels for each target, for the settings UI. Kept beside the
