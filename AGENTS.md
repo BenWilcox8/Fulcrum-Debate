@@ -194,6 +194,10 @@ The one-gesture "new card" command layered on the card node model - the fast, no
 - **Cursor lands in the tag, ready to type.** The card opens at the insert position `at`, so `at + 2` is the first text position inside the empty `cardTag` region; `insertCard` inserts with `{ updateSelection: false }` then `setTextSelection(at + 2)` + `focus()` in one chain (one undo step). The next keystroke fills the tag.
 - **Tests:** `card-create.test.ts` (unit, `fake-indexeddb`) covers the four-region insert, caret-lands-in-tag (typing flows into the tag), aff-and-neg placement, the explicit-`side` override, field seeding, sibling-after-current-block placement, and the extension registration + shortcut constant. `screens/BlockFileScreen.test.tsx` drives the real routed screen: the *New card* button appears once the editor mounts and one click renders a full card (all four `data-card-region` hooks) in the document.
 
+### Feature closeout e2e (`src/blockfile/card.e2e.test.ts`)
+
+`card.e2e.test.ts` is the whole-stack closeout for the Card Anatomy & Tag System feature - it spans the three card slices above (node model, card-unit API, quick-create) composed the way `BlockFileScreen` ships them, with no mocks. Over the real document service + `ensureBlockFile` singleton and IndexedDB, it drives the debater's full card lifecycle: `insertCard` (quick-create) → type all four regions → apply bold + highlight **together** on one body run → address the card as a unit (`getCardAt`/`selectCard`/`getSelectedCard`/`readCardRegions`/`serializeCard`), then tears the service down and reopens a **fresh** instance over the same backend to prove the whole card (four regions, every field's text, both coexisting body marks) survived and re-addresses it. Positions that drive the card-unit locator come from an independent document walk, never the API under test - same discipline as `card-unit.test.ts`. Follows the `settings.e2e`/`dashboard.e2e`/`toc-sidebar.e2e` closeout precedent.
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.
