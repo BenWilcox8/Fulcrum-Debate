@@ -43,6 +43,7 @@ npm install
 │   ├── RootLayout.tsx      Persistent app frame: nav chrome + routed <Outlet>
 │   ├── screens/            Feature screens (one per primary area)
 │   │   ├── DashboardScreen.tsx
+│   │   ├── dashboard/      Dashboard zone components (ResumeRecentZone, StartSomethingNewZone, LibraryNavZone)
 │   │   ├── BlockFileScreen.tsx
 │   │   ├── RoundsScreen.tsx    Round index: list + "New round" button
 │   │   └── RoundScreen.tsx     Single round's flow-sheet canvas
