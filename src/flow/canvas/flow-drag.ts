@@ -8,7 +8,14 @@
  * testable. A dragged child node's position is relative to its (source) column,
  * so resolving the drop is "project the node's center into absolute canvas x,
  * then find the column whose span contains it".
+ *
+ * It resolves two things about a drop, both pure geometry: the target *column*
+ * (horizontal - {@link resolveNodeDropColumn}) and, for the strike gesture, the
+ * target *node* the drop landed **adjacent** to (vertical -
+ * {@link resolveAdjacentNode}). Together they answer "did this argument get
+ * dropped next to an opponent's argument, and which one?".
  */
+import { FLOW_NODE_GAP } from "./node-host";
 
 /** One column's horizontal placement on the canvas, in flow coordinates. */
 export interface DropColumn {
@@ -75,4 +82,56 @@ export function resolveNodeDropColumn({
   if (!source) return null;
   const centerX = source.x + nodeRelX + nodeWidth / 2;
   return columnAtX(centerX, columns);
+}
+
+/**
+ * How far (in px) a drop's vertical center may sit *outside* a target node's
+ * slot and still count as **adjacent** to it. Inside the slot is distance 0
+ * (always adjacent); beyond this margin is no target. Sized to the inter-node
+ * gap so a drop landing in the immediate whitespace beside an argument still
+ * strikes it, while a drop in far-off empty column space strikes nothing.
+ */
+export const ADJACENCY_MARGIN = FLOW_NODE_GAP;
+
+/** One target-column node's vertical placement, in column-relative flow px. */
+export interface DropTargetNode {
+  /** The node's stable id (its XYFlow node id). */
+  readonly id: string;
+  /** The node's y-origin within its column (its XYFlow child `position.y`). */
+  readonly y: number;
+  /** The node's height in flow px (its laid-out slot height). */
+  readonly height: number;
+}
+
+/**
+ * The id of the target-column node the drop landed **adjacent** to, or `null`
+ * when the drop is not next to any argument.
+ *
+ * Adjacency is defined explicitly by vertical proximity: for each candidate node
+ * we take the gap between `centerY` and the node's slot `[y, y + height)` (0 when
+ * the center is *inside* the slot). The nearest node wins, and only if that gap
+ * is within `margin` - so a drop squarely on an argument, or in the immediate
+ * whitespace beside it, is adjacent, while a drop in far-off empty column space
+ * (or an empty column) is adjacent to nothing. All coordinates are column-
+ * relative; since every column sits at canvas y-origin 0, a dragged node's
+ * column-relative `position.y` is directly comparable to a target node's `y`.
+ */
+export function resolveAdjacentNode(
+  centerY: number,
+  nodes: readonly DropTargetNode[],
+  margin: number = ADJACENCY_MARGIN,
+): string | null {
+  let bestId: string | null = null;
+  let bestDistance = Infinity;
+  for (const node of nodes) {
+    const top = node.y;
+    const bottom = node.y + node.height;
+    const distance =
+      centerY < top ? top - centerY : centerY > bottom ? centerY - bottom : 0;
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestId = node.id;
+    }
+  }
+  return bestId !== null && bestDistance <= margin ? bestId : null;
 }
