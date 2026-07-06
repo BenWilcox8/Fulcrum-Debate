@@ -83,6 +83,7 @@ export {
   type AddEdgeInput,
 } from "./edges";
 export { crossApplyContention } from "./cross-apply";
+export { FLOW_RFD_FRAGMENT } from "./rfd";
 export {
   STRIKE_FIELD,
   isNodeStruck,
