@@ -6,8 +6,9 @@
  * denser card. Those highlighted runs are meaningful document data (a real
  * queryable mark, never scraped CSS), and more than one feature needs to *pull
  * them out*: the **Extract Highlight** card-cutting tool isolates a card's
- * read-aloud rhetoric into a fresh card, and the **Auto Speech** pipeline (a later
- * PRD) assembles a speech from the highlighted runs across many cards. This module
+ * read-aloud rhetoric into a fresh card, and the **Auto Speech** engine
+ * ({@link ../../speech | src/speech}) assembles a speech from the highlighted runs
+ * across many cards. This module
  * is that shared primitive, deliberately **not** private to any one tool.
  *
  * It is a pure, position-agnostic read over ProseMirror structure + marks, in the

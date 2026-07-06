@@ -318,7 +318,7 @@ It is wired into `CARD_TOOL_DEFINITIONS`, which `useCardTools` now spreads into 
 ### Shared highlighted-runs query (`src/editor/marks/highlighted-runs.ts`)
 
 The reusable primitive that answers "which runs carry the highlight mark", re-exported from `src/editor/marks`.
-It is deliberately **not** private to any tool: **Extract Highlight** pulls a card's read-aloud runs, and the future **Auto Speech** pipeline reuses the same function to assemble a speech from highlighted runs across many cards.
+It is deliberately **not** private to any tool: **Extract Highlight** pulls a card's read-aloud runs, and the **Auto Speech** engine (`src/speech`) reuses the same function to assemble a speech from highlighted runs across many cards.
 Pure and position-agnostic over ProseMirror structure + marks, the same discipline as `classifyRuns` and the card-unit API.
 
 - **`highlightedRuns(node, basePos = 0)`** walks `node`'s text descendants and returns one `HighlightedRun` (`{ from, to, text, content }`) per *contiguous* stretch of highlighted text. Adjacent highlighted text nodes merge into one run (so a partly-bold highlighted span reads as one), while a paragraph boundary (which consumes a position) breaks contiguity into separate runs - so the caller can keep paragraph structure. `content` is the run's text node(s) as re-insertable document-JSON with **every** inline mark preserved (highlight, bold, `textStyle`/`fontSize`); `text` is that flattened. `from`/`to` are offset by `basePos`: pass `0` for offsets within the node, or the node's first inner position (`region.from + 1`) for absolute doc positions.
