@@ -200,6 +200,25 @@ describe("transformToSpeech - single card", () => {
     expect(out.map(blockText)).toEqual(["first spoken", "third spoken"]);
   });
 
+  it("joins multiple non-adjacent highlighted runs in one paragraph with a space", () => {
+    const out = transformToSpeech(
+      doc([
+        cardJson({
+          body: [
+            [
+              { text: "word1", highlight: true },
+              { text: " and " },
+              { text: "word2", highlight: true },
+            ],
+          ],
+        }),
+      ]),
+    );
+
+    expect(out).toHaveLength(1);
+    expect(blockText(out[0])).toBe("word1 word2");
+  });
+
   it("transforms a bare card node passed directly", () => {
     const cardNode = schema.nodeFromJSON(
       cardJson({

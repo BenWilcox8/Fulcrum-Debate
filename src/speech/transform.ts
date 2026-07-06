@@ -240,7 +240,10 @@ function cardBlocks(
     body.forEach((sourceParagraph) => {
       const runs = highlightedRuns(sourceParagraph);
       if (runs.length === 0) return; // un-highlighted paragraph is stripped
-      const text = runs.map((run) => run.text).join("");
+      const text = runs
+        .map((run) => run.text.trim())
+        .filter(Boolean)
+        .join(" ");
       if (text) blocks.push(paragraph([textNode(text)]));
     });
   }
