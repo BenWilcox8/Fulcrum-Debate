@@ -15,6 +15,8 @@ export { default as SettingsScreen } from "./SettingsScreen";
 export { SettingsProvider } from "./SettingsProvider";
 export { useSettingsPanels } from "./useSettingsPanels";
 export { SETTINGS_CONTRIBUTIONS } from "./contributions";
+export { SchemaSettingsPanel } from "./SchemaSettingsPanel";
+export { toolSettingsContributions } from "./tools/toolSettingsContributions";
 export { defineSettingsContribution } from "./types";
 export type {
   SettingsContribution,
