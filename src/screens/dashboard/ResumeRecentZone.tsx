@@ -1,11 +1,121 @@
+import { useContext, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { DocumentsContext } from "../../documents/react/DocumentsContext";
+import { recentDocuments } from "../../documents/registry";
+import type { DocumentKind, RegistryEntry } from "../../documents/service";
+
+/**
+ * The document kinds a debater resumes from the dashboard, and where each one
+ * opens. Flow sheets open at their own round route (the round id *is* the
+ * flow-sheet document id); the block file opens the single block-file
+ * workspace. Any other kind (e.g. speech docs) has no editor route yet and is
+ * left out of the Resume list rather than linking nowhere.
+ */
+const RESUMABLE_KINDS = ["flow-sheet", "block-file"] as const;
+type ResumableKind = (typeof RESUMABLE_KINDS)[number];
+
+/** How many recent items the zone shows at once. */
+const RESUME_LIMIT = 6;
+
+/** The editor route that resumes a given document, by kind. */
+function resumeHref(entry: RegistryEntry & { kind: ResumableKind }): string {
+  switch (entry.kind) {
+    case "flow-sheet":
+      return `/rounds/${entry.id}`;
+    case "block-file":
+      return "/blocks";
+    default: {
+      const _exhaustive: never = entry.kind;
+      return _exhaustive;
+    }
+  }
+}
+
+/** The human-readable label shown on the kind badge for a resumable document. */
+function kindLabel(kind: ResumableKind): string {
+  switch (kind) {
+    case "flow-sheet":
+      return "Flow sheet";
+    case "block-file":
+      return "Block file";
+    default: {
+      const _exhaustive: never = kind;
+      return _exhaustive;
+    }
+  }
+}
+
+/**
+ * The live document listing for the Resume zone - a provider-optional reader.
+ *
+ * It mirrors {@link import("../../documents/react").useDocuments}, but reads the
+ * {@link DocumentsContext} directly and tolerates its absence: when the zone is
+ * mounted without a {@link DocumentsProvider} it returns an empty listing rather
+ * than throwing. That is deliberate - production always wraps `App` in the
+ * provider (see `main.tsx`), but the local-first boot test renders a bare `App`
+ * with no provider (and no IndexedDB) precisely so nothing on the boot path
+ * constructs a document service (see AGENTS.md "Local-first boot"). Degrading to
+ * empty keeps the dashboard painting there while upholding that guarantee.
+ */
+function useResumeDocuments(): RegistryEntry[] {
+  const service = useContext(DocumentsContext)?.service;
+  const [documents, setDocuments] = useState<RegistryEntry[]>([]);
+
+  useEffect(() => {
+    // A closed service can transiently sit in context during a StrictMode /
+    // remount cycle: the provider closes the old service, then re-renders with a
+    // fresh one, and this child effect can run in between. `subscribe` throws on
+    // a closed service, so bail out and wait for the provider's fresh service to
+    // re-run this effect.
+    if (!service || service.closed) return;
+    let active = true;
+
+    const refresh = () => {
+      service
+        .list()
+        .then((list) => {
+          if (active) setDocuments(list);
+        })
+        .catch(() => {
+          // A rejection means the service was closed mid-flight (e.g. a
+          // StrictMode remount); leave the last good listing in place.
+        });
+    };
+
+    service.whenReady.then(refresh).catch(() => {});
+    const unsubscribe = service.subscribe(refresh);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [service]);
+
+  return documents;
+}
+
 /**
  * The Resume/Recent zone - the dashboard's most prominent area, where the user
- * picks up their in-progress prep. This slice ships the framed slot only; a
- * sibling issue fills it with the live recent-items list (sourced from a
- * documents-layer query). Keep this component as the clean seam for that work:
- * swap the placeholder body below for the real list.
+ * picks up their in-progress prep. It reads the live document listing and
+ * narrows it to the resumable kinds via the local-only {@link recentDocuments}
+ * query, riding that seam's last-edited-descending order rather than re-deriving
+ * it. Each entry is a one-click link straight into its editor with that
+ * document open.
+ *
+ * Rendering stays synchronous from local data - no spinner, no network await -
+ * upholding the local-first boot guarantee (see AGENTS.md). An empty registry
+ * shows a plain empty state rather than a broken or blank zone.
  */
 export default function ResumeRecentZone() {
+  const documents = useResumeDocuments();
+
+  // Reuse the documents-layer recency seam over the already-ordered listing,
+  // narrowing to the kinds that have an editor route.
+  const recent = recentDocuments(
+    { list: () => documents },
+    { kind: RESUMABLE_KINDS as readonly DocumentKind[], limit: RESUME_LIMIT },
+  );
+
   return (
     <section
       aria-labelledby="dashboard-resume-heading"
@@ -23,10 +133,31 @@ export default function ResumeRecentZone() {
         </p>
       </div>
 
-      {/* Placeholder slot: a sibling issue renders the recent-items list here. */}
-      <div className="rounded-lg border border-dashed border-shell-border px-card py-8 text-center text-sm text-shell-muted">
-        Your recent rounds and block files will appear here.
-      </div>
+      {recent.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-shell-border px-card py-8 text-center text-sm text-shell-muted">
+          No recent prep yet. Your recent rounds and block files will appear
+          here.
+        </div>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {recent.map((doc) => (
+            <li key={doc.id}>
+              <Link
+                to={resumeHref(doc as RegistryEntry & { kind: ResumableKind })}
+                aria-label={`Resume ${doc.title}`}
+                className="flex items-center justify-between gap-4 rounded-md border border-shell-border bg-shell-surface px-4 py-3 text-sm text-shell-text transition-colors hover:border-shell-text"
+              >
+                <span className="min-w-0 truncate font-medium">
+                  {doc.title}
+                </span>
+                <span className="shrink-0 text-xs text-shell-muted">
+                  {kindLabel(doc.kind as ResumableKind)}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }
