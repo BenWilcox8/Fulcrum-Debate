@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSection } from "../preferences";
 import type { PreferenceField } from "../preferences";
 import type { SettingsPanelProps } from "./types";
@@ -33,6 +34,44 @@ export function SchemaSettingsPanel({ handle }: SettingsPanelProps) {
         />
       ))}
     </div>
+  );
+}
+
+function NumberInput({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: unknown) => void;
+}) {
+  const storedStr = String(value);
+  const [raw, setRaw] = useState(storedStr);
+  const [prevStored, setPrevStored] = useState(storedStr);
+  if (storedStr !== prevStored) {
+    setPrevStored(storedStr);
+    setRaw(storedStr);
+  }
+
+  return (
+    <input
+      type="number"
+      value={raw}
+      onChange={(event) => {
+        const next = event.target.value;
+        setRaw(next);
+        if (next !== "") {
+          const parsed = Number(next);
+          if (!Number.isNaN(parsed)) onChange(parsed);
+        }
+      }}
+      onBlur={() => {
+        const parsed = Number(raw);
+        if (raw === "" || Number.isNaN(parsed)) {
+          setRaw(storedStr);
+        }
+      }}
+      className="w-24 rounded border border-shell-border bg-shell-surface px-2 py-1 text-sm text-shell-text"
+    />
   );
 }
 
@@ -76,18 +115,7 @@ function FieldControl({
         className="h-4 w-4 accent-aff-strong"
       />
     ) : typeof field.default === "number" ? (
-      <input
-        type="number"
-        value={value as number}
-        onChange={(event) => {
-          const raw = event.target.value;
-          if (raw === "") return;
-          const parsed = Number(raw);
-          if (Number.isNaN(parsed)) return;
-          onChange(parsed);
-        }}
-        className="w-24 rounded border border-shell-border bg-shell-surface px-2 py-1 text-sm text-shell-text"
-      />
+      <NumberInput value={value as number} onChange={onChange} />
     ) : typeof field.default === "string" ? (
       <input
         type="text"
