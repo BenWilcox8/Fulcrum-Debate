@@ -8,9 +8,9 @@ import { getColumn, observeColumns } from "../columns";
 import { observeNodes } from "../nodes";
 import { contentionContentFragment, listContentions } from "../contention";
 import { listSubpoints, observeSubpoints, type FlowSubpoint } from "../subpoint";
-import { useDocumentEditor } from "../../editor/react";
 import type { HostedFlowNode } from "./node-host";
 import { useFlowSheet } from "./flow-sheet-context";
+import { useFlowNodeEditor } from "./useFlowNodeEditor";
 import { useSubpointTrigger } from "./useSubpointTrigger";
 import { SubpointNode } from "./SubpointNode";
 
@@ -126,10 +126,7 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
 
   // The raw editor is needed so the S# subpoint trigger can intercept keystrokes
   // and strip the typed token; the surface itself renders via EditorContent.
-  const editor = useDocumentEditor({
-    handle,
-    fragment: contentionContentFragment(flowNodeId),
-  });
+  const editor = useFlowNodeEditor(handle, contentionContentFragment(flowNodeId));
   useSubpointTrigger(handle, flowNodeId, editor);
 
   const subpoints = useContentionSubpoints(handle, flowNodeId);

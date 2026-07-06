@@ -67,3 +67,25 @@
   content: "Negative";
   color: var(--color-neg-strong);
 }
+
+/* --- Flow-node argument rows ----------------------------------------- */
+/*
+ * A flow-node text surface (a contention or subpoint) renders its content as
+ * stacked argument rows, each grouping one or more responses (see
+ * src/flow/argument-rows.ts). The nodes serialize to `<div data-flow-argument>`
+ * and `<div data-flow-response>`; style them here off those hooks (the schema
+ * ships no CSS).
+ *
+ * A grouped response after the first in an argument gets a top divider so the
+ * grouping reads at a glance - matching the flow's existing `shell-border`
+ * divider language. Adjacent argument rows get a little breathing room.
+ */
+[data-flow-argument] + [data-flow-argument] {
+  margin-top: 0.5rem;
+}
+
+[data-flow-argument] > [data-flow-response] + [data-flow-response] {
+  margin-top: 0.375rem;
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--color-shell-border);
+}

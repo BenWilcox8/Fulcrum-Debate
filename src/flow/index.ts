@@ -44,6 +44,21 @@ export {
   listContentions,
 } from "./contention";
 export {
+  ARGUMENT_NODE_NAME,
+  RESPONSE_NODE_NAME,
+  argument,
+  response,
+  flowArgumentDocument,
+  argumentRowExtensions,
+  argumentRowKeymap,
+  newArgumentRow,
+  newGroupedResponse,
+  locateArgumentRows,
+  migrateFlowNodeFragment,
+  type ResponseSpan,
+  type ArgumentRowSpan,
+} from "./argument-rows";
+export {
   FLOW_SUBPOINTS_FRAGMENT,
   SUBPOINT_CONTENT_FRAGMENT_PREFIX,
   subpointContentFragment,
