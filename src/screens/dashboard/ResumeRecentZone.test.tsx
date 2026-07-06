@@ -88,14 +88,14 @@ describe("ResumeRecentZone", () => {
     expect(block).toHaveAttribute("href", "/blocks");
   });
 
-  it("excludes non-resumable kinds (e.g. speech docs)", async () => {
+  it("resumes a speech doc at its own route with a Speech badge", async () => {
     renderZone([
-      entry({ id: "r3", kind: "flow-sheet", title: "Round 3 Flow", lastEditedAt: 300 }),
-      entry({ id: "s1", kind: "speech-doc", title: "1AC", lastEditedAt: 400 }),
+      entry({ id: "sp42", kind: "speech-doc", title: "1AC", lastEditedAt: 400 }),
     ]);
 
-    await screen.findByRole("link", { name: /resume round 3 flow/i });
-    expect(screen.queryByText(/1AC/)).toBeNull();
+    const link = await screen.findByRole("link", { name: /resume 1AC/i });
+    expect(link).toHaveAttribute("href", "/speeches/sp42");
+    expect(within(link).getByText("Speech")).toBeInTheDocument();
   });
 
   it("shows a sensible empty state, not a broken zone, on an empty registry", async () => {
