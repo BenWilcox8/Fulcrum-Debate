@@ -24,7 +24,8 @@ import {
   type PersistentPreferenceStore,
   type PreferenceField,
 } from "../preferences";
-import { openDocument, type DocumentHandle } from "../documents/core";
+import { openDocumentService, type DocumentService } from "../documents/service";
+import type { DocumentHandle } from "../documents/core";
 import { createEditor } from "../editor/core";
 import { editorPreset } from "../editor/preset";
 import {
@@ -74,6 +75,7 @@ async function openStore(): Promise<PersistentPreferenceStore> {
 
 let handles: DocumentHandle[] = [];
 let editors: Editor[] = [];
+let services: DocumentService[] = [];
 
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
@@ -84,6 +86,8 @@ afterEach(async () => {
   editors = [];
   for (const handle of handles) await handle.close();
   handles = [];
+  for (const service of services) await service.close();
+  services = [];
   for (const store of openStores) await store.close();
   openStores = [];
 });
@@ -269,9 +273,11 @@ describe("a tool's settings persist through the store and reset to defaults", ()
 
 describe("apply operates on a real Tiptap selection with live settings", () => {
   it("inserts the persisted prefix at the current selection", async () => {
-    const handle = openDocument({ id: "tool-e2e", kind: "block-file" });
-    await handle.whenLoaded;
+    const service = openDocumentService();
+    services.push(service);
+    const handle = await service.create({ kind: "block-file", title: "tool-e2e" });
     handles.push(handle);
+    await handle.whenLoaded;
     const editor = createEditor({
       binding: { handle, fragment: "body" },
       extensions: editorPreset(),
