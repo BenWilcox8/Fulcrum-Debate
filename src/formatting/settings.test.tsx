@@ -124,6 +124,21 @@ describe("FormattingSettingsPanel", () => {
     expect(screen.getByTestId("consume-body-size")).toHaveTextContent("14pt");
   });
 
+  it("restores the stored size when a size field is cleared and blurred", () => {
+    const { handle } = renderPanel();
+
+    const body = targetGroup(FORMATTING_TARGET_LABELS.body);
+    const input = within(body).getByLabelText(/size/i);
+
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input).toHaveValue(null);
+
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue(12);
+    expect(handle.get("body").fontSize).toBe("12pt");
+  });
+
   it("applies a color edit live to a consuming read", () => {
     renderPanel();
 
