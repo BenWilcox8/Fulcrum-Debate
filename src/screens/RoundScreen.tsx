@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { FlowSheetPanel } from "../flow/canvas";
+import { TimerWidget } from "../timer";
 import { useDocument } from "../documents/react";
 import { useRounds } from "../rounds";
 
@@ -58,8 +59,11 @@ export default function RoundScreen() {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden rounded-lg border border-shell-border bg-shell-surface">
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-lg border border-shell-border bg-shell-surface">
         <FlowSheetPanel handle={handle} />
+        {/* Floating timers overlay the flow; the widget's own wrapper is
+            pointer-events-none outside its card so it never blocks flowing. */}
+        <TimerWidget />
       </div>
     </section>
   );
