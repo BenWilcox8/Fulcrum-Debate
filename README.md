@@ -67,7 +67,7 @@ npm install
 │   │   └── react/          DocumentEditor component and useDocumentEditor hook
 │   ├── settings/           Settings screen shell and contribution seam (SettingsScreen, SettingsProvider, defineSettingsContribution)
 │   │   └── demo/           Demo contribution that proves the seam end-to-end (safe to delete once real panels land)
-│   ├── blockfile/          Block-file schema and content model: side-division schema, argument sections, section ops, and card node model (cardExtensions, buildCardContent)
+│   ├── blockfile/          Block-file schema and content model: side-division schema, argument sections, section ops, card node model (cardExtensions, buildCardContent), and card-as-unit addressability API (cardAt, selectCard, readCardRegions)
 │   ├── blockfile-workspace/ Block-file workspace singleton (ensureBlockFile - finds or creates the shared block-file document)
 │   ├── flow/               Flow-sheet layer: speech-column model, flow-node model, helpers, and XYFlow canvas
 │   │   ├── columns.ts      Speech-column model (add/relabel/move/remove, observeColumns)
