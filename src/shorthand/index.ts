@@ -19,3 +19,27 @@ export {
   expandThen,
   type ShorthandLookup,
 } from "./expand";
+export {
+  SHORTHAND_SCOPES,
+  DEFAULT_SHORTHAND_SCOPE,
+  isShorthandEnabledForSurface,
+  type ShorthandScope,
+  type ShorthandSurface,
+} from "./scope";
+export {
+  SHORTHAND_SECTION_ID,
+  SHORTHAND_SCOPE_KEY,
+  shorthandSectionDefinition,
+  registerShorthandSection,
+  readShorthandScope,
+  type ShorthandSectionSchema,
+  type ShorthandSectionHandle,
+} from "./preferences";
+export {
+  SHORTHAND_STORAGE_KEY,
+  shorthandRuntimeExtension,
+  getShorthandRuntime,
+  setShorthandRuntime,
+  expandTransition,
+  type ShorthandRuntime,
+} from "./runtime";
