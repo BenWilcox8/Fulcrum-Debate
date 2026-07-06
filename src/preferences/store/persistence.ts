@@ -41,6 +41,7 @@ import type {
   SectionHandle,
   SectionSchema,
 } from "./types";
+import { clone, deepEqual } from "./utils";
 
 /**
  * IndexedDB database name backing the preference store. A sibling of the
@@ -144,8 +145,9 @@ export function openPreferenceStore(): PersistentPreferenceStore {
     const stored = sections.get(handle.id);
     if (!stored) return;
     const fields = handle.definition.fields;
-    // Snapshot the stored overrides up front: applying them re-enters `set`,
-    // and reading a mutating Y.Map mid-loop would see our own partial writes.
+    // Snapshot the stored overrides up front for defensive clarity: the loop
+    // body re-enters `set`, and iterating a stable copy avoids any coupling to
+    // the Y.Map's internal state during the loop.
     const overrides = new Map<string, unknown>();
     for (const key of Object.keys(fields)) {
       if (stored.has(key)) overrides.set(key, clone(stored.get(key)));
@@ -171,8 +173,9 @@ export function openPreferenceStore(): PersistentPreferenceStore {
     if (loaded) hydrate(handle);
     else void whenLoaded.then(() => hydrate(handle));
 
-    // Persist on every subsequent set/reset. (Hydration's own `set` calls also
-    // route here and re-persist the same overrides, which is harmless.)
+    // Persist on every subsequent set/reset. Hydration's own `set` calls are
+    // fully suppressed by the `hydrating` guard in `persist` - that guard is
+    // load-bearing, not a harmless optimization.
     handle.subscribe(() => persist(handle));
   };
 
@@ -197,39 +200,3 @@ export function openPreferenceStore(): PersistentPreferenceStore {
   };
 }
 
-/** Deep structural equality for plain, JSON-serializable preference values. */
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (a === b) return true;
-  if (a === null || b === null) return false;
-  if (typeof a !== "object" || typeof b !== "object") return false;
-
-  const aIsArray = Array.isArray(a);
-  if (aIsArray !== Array.isArray(b)) return false;
-  if (aIsArray) {
-    const aArr = a as unknown[];
-    const bArr = b as unknown[];
-    if (aArr.length !== bArr.length) return false;
-    return aArr.every((v, i) => deepEqual(v, bArr[i]));
-  }
-
-  const aObj = a as Record<string, unknown>;
-  const bObj = b as Record<string, unknown>;
-  const aKeys = Object.keys(aObj);
-  const bKeys = Object.keys(bObj);
-  if (aKeys.length !== bKeys.length) return false;
-  return aKeys.every(
-    (key) =>
-      Object.prototype.hasOwnProperty.call(bObj, key) &&
-      deepEqual(aObj[key], bObj[key]),
-  );
-}
-
-/**
- * Clones a value on the storage boundary so a mutated object can never corrupt
- * stored state. Preference values are plain JSON-serializable data, so
- * `structuredClone` is sufficient; primitives pass straight through.
- */
-function clone<T>(value: T): T {
-  if (value === null || typeof value !== "object") return value;
-  return structuredClone(value);
-}
