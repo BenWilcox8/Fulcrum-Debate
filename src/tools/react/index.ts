@@ -16,3 +16,7 @@ export {
   SendToBlockFileControl,
   type SendToBlockFileControlProps,
 } from "../send/SendToBlockFileControl";
+export {
+  AutoSpeechControl,
+  type AutoSpeechControlProps,
+} from "../speech/AutoSpeechControl";
