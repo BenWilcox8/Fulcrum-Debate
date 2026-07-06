@@ -60,7 +60,7 @@ export function TocRow({ node, leadingControl, active = false, onActivate }: Toc
         <button
           type="button"
           onClick={onActivate}
-          className="truncate text-left text-sm text-shell-text hover:text-aff-strong"
+          className="truncate text-left text-sm text-shell-text hover:text-shell-text hover:underline"
           title={node.text}
         >
           {node.text}
