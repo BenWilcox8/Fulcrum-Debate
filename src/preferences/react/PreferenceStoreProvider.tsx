@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { createPreferenceStore, type PreferenceStore } from "../store";
 import { PreferenceStoreContext } from "./PreferenceStoreContext";
 
@@ -25,10 +25,11 @@ export function PreferenceStoreProvider({
   const [ownStore] = useState<PreferenceStore>(
     () => store ?? createPreferenceStore(),
   );
-  const value = store ?? ownStore;
+  const resolvedStore = store ?? ownStore;
+  const contextValue = useMemo(() => ({ store: resolvedStore }), [resolvedStore]);
 
   return (
-    <PreferenceStoreContext.Provider value={{ store: value }}>
+    <PreferenceStoreContext.Provider value={contextValue}>
       {children}
     </PreferenceStoreContext.Provider>
   );
