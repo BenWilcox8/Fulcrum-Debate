@@ -5,6 +5,11 @@
  * slices.
  */
 export { createPreferenceStore } from "./store";
+export {
+  openPreferenceStore,
+  PREFERENCES_DB_NAME,
+  type PersistentPreferenceStore,
+} from "./persistence";
 export type {
   PreferenceField,
   PreferenceStore,

@@ -70,6 +70,15 @@ The React binding layer over the store core; re-exported from `src/preferences`.
 - **Gotcha - snapshot caching:** `getAll()`/`get()` allocate a fresh clone on every call, so `getSnapshot` must **not** call them directly (that reports a change every render and loops). `useSection` caches the snapshot and refreshes it only inside the `subscribe` listener (and once on (re)subscribe to catch a set that slipped in between render and effect), keeping the reference stable between notifications so React bails out when nothing changed.
 - **Tests:** `react/react.test.tsx` covers typed defaults, live re-render on set/reset from elsewhere, stable-reference-between-notifications, unsubscribe-on-unmount, single-key selection, and the provider/`usePreferenceStore` sharing + outside-provider throw.
 
+#### Local persistence (slice 2)
+
+`src/preferences/store/persistence.ts` adds local persistence at the core's seams **without reworking it**: `openPreferenceStore()` wraps a fresh `createPreferenceStore()` and returns a `PersistentPreferenceStore` (the same registration surface plus `whenLoaded`, `loaded`, and `close()`). Re-exported from `src/preferences` and `src/preferences/store`.
+
+- **Mechanism = y-indexeddb, mirroring the document registry.** The store holds arbitrary section x key JSON, a shape the fixed Rust `Preferences` struct behind the IPC seam cannot represent, so it uses one well-known Y.Doc (`PREFERENCES_DB_NAME = "fulcrum:preferences"`, a sibling of `fulcrum:registry`) bound by the same `IndexeddbPersistence` provider the document core uses. It is offline and free of React/Tauri, matching the core's constraint. `whenLoaded` reflects local IndexedDB read completion only - never the network - so it is not a boot blocker.
+- **Only overrides are stored, never baked defaults.** Persistence derives what to write purely from the public seam (each field's `default` plus `getAll`): a key is written only when its value differs from the field default. Unset keys (and keys set back to default) store nothing, so they resolve to the registered default on reload - and a future default change flows through to any key the user never diverged.
+- **Write** = subscribe to each section, rebuild that section's nested override map wholesale on every set/reset. **Read** = on `whenLoaded`, seed stored overrides back via `handle.set`, but skip any key the user already diverged during the load gap (never clobber an in-flight choice). Hydration snapshots the stored map first and suppresses re-persist while seeding, so a section cannot clobber its own not-yet-applied keys.
+- **Tests:** `persistence.test.ts` uses `fake-indexeddb` (fresh `IDBFactory()` per test, same restart pattern as the registry) to prove real round-trips: set-survives-restart, unset-keys-still-default, object values, reset-forgets, no-clobber-during-load-gap, plus an offline block that stubs every network transport to throw.
+
 ## Fragment convention (Yjs shared-type layout)
 
 Each document's content lives in named top-level Yjs shared types ("fragments") on `handle.doc`.
