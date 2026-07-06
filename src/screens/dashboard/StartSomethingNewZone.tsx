@@ -27,13 +27,17 @@ export default function StartSomethingNewZone() {
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          className="rounded-md bg-shell-text px-4 py-2 text-sm font-medium text-shell-surface"
+          disabled
+          aria-disabled="true"
+          className="cursor-not-allowed rounded-md bg-shell-text px-4 py-2 text-sm font-medium text-shell-surface disabled:opacity-40"
         >
           New round
         </button>
         <button
           type="button"
-          className="rounded-md border border-shell-border bg-shell-surface px-4 py-2 text-sm font-medium text-shell-text transition-colors hover:border-shell-text"
+          disabled
+          aria-disabled="true"
+          className="cursor-not-allowed rounded-md border border-shell-border bg-shell-surface px-4 py-2 text-sm font-medium text-shell-text disabled:opacity-40"
         >
           New block file
         </button>
