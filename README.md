@@ -79,6 +79,7 @@ npm install
 │   │   ├── columns.ts      Speech-column model (add/relabel/move/remove, observeColumns)
 │   │   ├── nodes.ts        Flow-node model: membership + vertical order, node-container contract
 │   │   └── canvas/         FlowSheetPanel (editable), FlowCanvas (render-only), ColumnControls, SpeechColumnNode, RfdSection (Reason For Decision region), column-nodes mapping, node-host (registration API + hosted child nodes), useColumnNodes, useColumns, and useFlowNodes hooks
+│   ├── timer/              Floating Timer widget (self-contained, session-state only): useCountdown engine, formatTime/parseTime, EditableTime, PrepTimer, SpeechTimer, TimerWidget
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
