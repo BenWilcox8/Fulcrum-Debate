@@ -11,7 +11,10 @@
  * The namespaced, typed preference *store core* (`./store`) is the pure,
  * in-memory foundation that feature settings sections register against; it is
  * free of React and Tauri so persistence and React bindings can attach at its
- * seams in later slices.
+ * seams. The reactive React bindings for that core live in `./react`:
+ * {@link PreferenceStoreProvider} shares one store, and {@link useSection} /
+ * {@link usePreferenceValue} give a component a live, typed read that
+ * re-renders when a value is set anywhere.
  */
 export { PreferencesProvider } from "./PreferencesProvider";
 export { usePreferences } from "./usePreferences";
@@ -26,3 +29,11 @@ export type {
   SectionSchema,
   SectionValues,
 } from "./store";
+
+export {
+  PreferenceStoreProvider,
+  usePreferenceStore,
+  useSection,
+  usePreferenceValue,
+} from "./react";
+export type { PreferenceStoreContextValue } from "./react";
