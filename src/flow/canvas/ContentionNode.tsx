@@ -1,0 +1,119 @@
+import { useEffect, useState } from "react";
+import type { NodeProps } from "@xyflow/react";
+
+import type { DocumentHandle } from "../../documents/core";
+import type { FlowSide } from "../columns";
+import { getColumn, observeColumns } from "../columns";
+import { observeNodes } from "../nodes";
+import { contentionContentFragment, listContentions } from "../contention";
+import { DocumentEditor } from "../../editor/react";
+import type { HostedFlowNode } from "./node-host";
+import { useFlowSheet } from "./flow-sheet-context";
+
+/**
+ * Per-side design-token classes for the contention container, mirroring the
+ * {@link ./SpeechColumnNode} colour convention (aff = blue, neg = red) so a
+ * contention reads as belonging to its column's side. Named tokens only, never
+ * raw hex - tests assert these class names, which is how "side-coloured" is
+ * checked behaviourally.
+ */
+const SIDE_CLASSES: Record<FlowSide, { container: string; header: string }> = {
+  aff: {
+    container: "bg-shell-surface border-aff-strong",
+    header: "text-aff-strong",
+  },
+  neg: {
+    container: "bg-shell-surface border-neg-strong",
+    header: "text-neg-strong",
+  },
+};
+
+/**
+ * Live header state for a contention: its `C#` label (its 1-based rank among the
+ * column's contentions) and its side (from its column). Both are pure
+ * derivations of the flow doc, observed so the label renumbers when a sibling
+ * contention is added/removed/reordered and the colour follows a side change.
+ * The rank-derived label is why the model stores no contention number: in-order
+ * flowing (`C1`, `C2`, ...) reads naturally, and a reorder relabels for free.
+ */
+function useContentionHeader(
+  handle: DocumentHandle | null,
+  columnId: string,
+  nodeId: string,
+): { label: string; side: FlowSide } {
+  const [state, setState] = useState<{ label: string; side: FlowSide }>({
+    label: "",
+    side: "aff",
+  });
+
+  useEffect(() => {
+    if (!handle || handle.closed) return;
+    const recompute = () => {
+      const rank = listContentions(handle, columnId).findIndex(
+        (n) => n.id === nodeId,
+      );
+      const side = getColumn(handle, columnId)?.side ?? "aff";
+      setState({ label: rank >= 0 ? `C${rank + 1}` : "", side });
+    };
+    // Rank rides the node list; side rides the column list. Both fire once
+    // immediately, covering the initial read.
+    const unobserveNodes = observeNodes(handle, recompute);
+    const unobserveColumns = observeColumns(handle, recompute);
+    return () => {
+      unobserveNodes();
+      unobserveColumns();
+    };
+  }, [handle, columnId, nodeId]);
+
+  return state;
+}
+
+/**
+ * The custom XYFlow node for one Contention container.
+ *
+ * A contention is a large, rounded, side-coloured panel with a `C#` header and
+ * an editable Tiptap argument-text surface bound to the contention's own
+ * per-node fragment ({@link contentionContentFragment}), so its text persists and
+ * reloads with the flow-sheet document. The handle comes from
+ * {@link ./flow-sheet-context} (XYFlow node `data` cannot carry it); with no
+ * provider the node still renders its chrome and simply omits the editor rather
+ * than throwing.
+ *
+ * The body is deliberately a distinct region ({@link contention-body}): the next
+ * slice nests subpoints inside a contention, and this container leaves that room
+ * without this slice implementing it.
+ */
+export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
+  const context = useFlowSheet();
+  const handle = context?.handle ?? null;
+  const { flowNodeId, columnId } = data;
+
+  const { label, side } = useContentionHeader(handle, columnId, flowNodeId);
+  const classes = SIDE_CLASSES[side];
+
+  return (
+    <div
+      data-testid="contention-node"
+      data-flow-node-id={flowNodeId}
+      data-side={side}
+      className={`flex h-full w-full flex-col gap-2 overflow-hidden rounded-xl border-2 p-card shadow-sm ${classes.container}`}
+    >
+      <div
+        data-testid="contention-label"
+        className={`text-sm font-semibold ${classes.header}`}
+      >
+        {label}
+      </div>
+      {/* Seam: the next slice nests subpoints in this body region. */}
+      <div data-contention-body data-testid="contention-body" className="min-h-0 flex-1">
+        {handle && (
+          <DocumentEditor
+            handle={handle}
+            fragment={contentionContentFragment(flowNodeId)}
+            className="h-full text-sm text-shell-text"
+          />
+        )}
+      </div>
+    </div>
+  );
+}

@@ -119,7 +119,10 @@ Reserved fragments:
 |---|---|---|---|
 | `flow-sheet` | `columns` | `Y.Array<Y.Map>` | `FLOW_COLUMNS_FRAGMENT` |
 | `flow-sheet` | `nodes` | `Y.Map<Y.Map>` | `FLOW_NODES_FRAGMENT` |
+| `flow-sheet` | `contention:<nodeId>` | `Y.XmlFragment` | `contentionContentFragment(nodeId)` |
 | `block-file` | `body` | `Y.XmlFragment` | `BLOCK_FILE_FRAGMENT` |
+
+The `contention:<nodeId>` row is a **family** of per-node fragments, one `XmlFragment` per contention keyed by its stable node id (not a single fixed name) - each contention's argument text is an independent Tiptap surface. Same "one fragment name binds to one type forever" rule applies: a given node id's name never re-types.
 
 ## Shared editor layer
 
@@ -143,6 +146,18 @@ Key gotchas:
 - Column id becomes the XYFlow node id; flow nodes reference their column via `parentId = columnId`.
 - Register node kinds via `FlowCanvas`'s `flowNodeTypes` prop (`FlowNodeRegistry`). An unregistered kind is skipped (no renderer), not an error.
 - `src/test/setup.ts` installs a no-op `ResizeObserver` stub (jsdom ships none) - XYFlow requires it.
+
+### Contention container node (`src/flow/contention.ts` + `src/flow/canvas/`)
+
+The first concrete flow-node kind: a large, rounded container a debater drops into a column while flowing by typing a `C#` trigger (`C1`, `C2`, ...), hosting an argument-text Tiptap surface. Slice 1/3 of the Contention & Subpoint Nodes PRD - the **container contract** the next slices (subpoint nesting, argument rows, collapsing, drag/strike) build on. Model re-exported from `src/flow`; the canvas layer from `src/flow/canvas`.
+
+- **Two-layer storage, both already owned - this module invents no new membership.** A contention *is* a `FlowNode` of kind `CONTENTION_KIND` (`"contention"`) in the `nodes` fragment (`addContention` is a thin named wrapper over `addNode`, `listContentions` a `listColumnNodes` filter), so it gets column-membership, ordering, reorder-safe identity and reload for free. Its **argument text** lives in its own top-level `XmlFragment` named `contentionContentFragment(nodeId)` = `contention:<nodeId>` - independent Tiptap surface per contention, keyed by the stable node id, so text survives reorder and reload and no two contentions share content.
+- **Label is derived from rank, not stored.** A contention's `C#` header is its 1-based index among the column's contentions (`ContentionNode`'s `useContentionHeader` observes `observeNodes`/`observeColumns` and renumbers live). The trigger's typed number is only the *gesture* - in-order flowing (`C1`, `C2`, ...) reads naturally and a reorder relabels for free, so the model stays free of a stored number.
+- **The C# trigger (keyboard-first, no dialog).** `parseContentionTrigger("C1")` → `1` (case-insensitive `^[Cc][1-9]\d*$`, 1-indexed, trims). `stepContentionTrigger(buffer, key)` (`contention-trigger.ts`) is the pure keystroke reducer: alphanumerics accumulate, **Enter commits** (fires the parsed number, so `C12` doesn't fire at `C1`), any other key abandons the token. `useContentionTrigger(handle, activeColumnId)` wires it to a **document-wide** keydown listener that **ignores editable targets** (`isContentEditable`/`INPUT`/`TEXTAREA` - so typing *inside* a contention or the column-label editor never spawns another), firing `addContention` on commit.
+- **Active column routes the trigger.** Clicking a `SpeechColumnNode` sets the flow sheet's **active column** (a neutral `ring-2` shows which); the trigger only fires into that column. Selection state + the handle live on `FlowSheetContext` (`flow-sheet-context.ts` holds the context + `useFlowSheet`; `FlowSheetProvider.tsx` owns the component - split per the repo's context convention and to satisfy `react-refresh/only-export-components`). **Why the context:** XYFlow node `data` must be a plain record, so a node component cannot receive the live `DocumentHandle` through it - the context carries the handle (for `ContentionNode`'s editor + rank) and the active-column setter out-of-band. `useFlowSheet` is provider-tolerant (returns `null`), so a bare canvas still paints.
+- **Wiring.** `FlowSheetPanel` wraps its `ColumnControls` + `FlowCanvas` in `FlowSheetProvider`, installs `useContentionTrigger`, and passes `CONTENTION_FLOW_NODE_REGISTRY` as `flowNodeTypes` - so `RoundScreen` (which renders `FlowSheetPanel`) gets contentions with no further wiring. `CONTENTION_NODE_HEIGHT = 160` (a taller slot than the default flow-node height) is the "large" in the container.
+- **Designed for nesting (next slice).** A contention is addressed purely by node id and its content fragment is derived from that id; subpoints add their own membership/content keyed off the same id without changing this contract - exactly as this module layered onto `nodes` without changing that contract.
+- **Tests:** `contention.test.ts` (`fake-indexeddb`) covers `parseContentionTrigger` accept/reject, node-scoped fragment naming, `addContention`/`listContentions`, and a real close/reopen round-trip (membership + argument text survive). `contention-trigger.test.ts` drives the pure reducer as keystroke transitions. `ContentionNode.test.tsx` renders through the real `FlowCanvas` + `FlowSheetProvider` (large/rounded/side-coloured container, rank labelling `C1`/`C2`, the mounted ProseMirror surface). `contention-flow-sheet.test.tsx` drives the whole trigger seam through `FlowSheetPanel` (click column → type `C1`+Enter → contention appears and persists; successive `C1`/`C2`; no-op with no active column).
 
 ## Block file (`src/blockfile/`)
 

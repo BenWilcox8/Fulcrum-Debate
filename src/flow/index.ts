@@ -35,3 +35,11 @@ export {
   type FlowNode,
   type AddNodeInput,
 } from "./nodes";
+export {
+  CONTENTION_KIND,
+  CONTENTION_CONTENT_FRAGMENT_PREFIX,
+  contentionContentFragment,
+  parseContentionTrigger,
+  addContention,
+  listContentions,
+} from "./contention";
