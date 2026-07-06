@@ -266,6 +266,17 @@ Slice 3 surfaces each card-cutting tool's declared settings schema as editable c
 - **`toolSettingsContributions(definitions)` (`src/settings/tools/`)** maps tool definitions → `SettingsContribution[]`, each `{ definition: toolSectionDefinition(def), panel: SchemaSettingsPanel }`. It lives on the Settings side (not `src/tools`, which stays React-free) and is spread into `SETTINGS_CONTRIBUTIONS`. The generic panel is contravariant in its schema, so contributions hold the **erased** `SettingsContribution` (the shell only ever invokes a panel with its own section's handle - the erasure is sound).
 - **Tests:** `SchemaSettingsPanel.test.tsx` covers each control type (text/number/checkbox/select) rendering, current-value display, description text, enumerated options, and live write-back via an independent `useSection` consumer. `toolSettingsContributions.test.tsx` covers the per-tool contribution shape and, over the real `SettingsScreen` + a tool registered on the same store, the three acceptance criteria: settings appear generated-from-schema, a UI edit is observed live by the consuming tool's `apply`, and the shell's reset restores declared defaults.
 
+### The registration contract, end to end (slice 4/4)
+
+A card-cutting tool is one `CardToolDefinition` (`src/tools/registry.ts`, re-exported from `src/tools`): `{ id, label, description?, settings, applyToSelection }`.
+`settings` is a `SectionSchema` (typed fields with defaults + render metadata); `applyToSelection(editor, settings)` transforms the active Tiptap selection using the live settings snapshot.
+A tool reaches both app surfaces the same way: register it on a `createCardToolRegistry(store)` and the **toolbar** renders it (`CardToolbar` over `useCardTools`); add it to `CARD_TOOL_DEFINITIONS` and its declared settings surface on the **Settings** screen (`toolSettingsContributions` → `SchemaSettingsPanel`).
+Both point at one namespaced store section (`toolSectionDefinition`, id `tool:<id>`), so a Settings edit is read live by the running tool and persists through the shared store.
+
+`tools.e2e.test.tsx` is the whole-stack closeout for the framework - it spans the three slices above composed the way the app ships them, with no mocks.
+Over a real block-file + card editor (the exact `blockFileExtensions` + `cardExtensions` + `cardCreate` preset), a genuinely *persistent* shared store (`openPreferenceStore`), the real `CardToolbar`, and the real `toolSettingsContributions` on the real `SettingsScreen`, it registers a demo `stamp` tool and drives the whole seam: the tool appears in the toolbar (enabled once a card is addressable at the selection), a click applies it to the live selection with its default setting, its declared setting appears generated-from-schema in Settings, a Settings edit is observed live by the next apply, and the changed setting survives a store restart (a freshly registered tool over the same backend reads the persisted value on its first apply).
+Follows the `settings.e2e` / `card.e2e` / `formatting.e2e` closeout precedent.
+
 ## ToC sidebar (`src/toc/`)
 
 Consumes `observeOutline` + `buildOutlineTree` from `src/editor/headings` - never re-derives outline structure.
