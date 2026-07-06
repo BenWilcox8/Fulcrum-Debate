@@ -180,7 +180,7 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
           readable (line-through, not removed). The clear control appears only
           while struck so an unstruck contention carries no strike chrome; it
           re-toggles the flag off. */}
-      {struck && (
+      {struck && !collapsed && (
         <button
           type="button"
           data-testid="contention-clear-strike"

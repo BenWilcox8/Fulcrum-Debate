@@ -71,8 +71,10 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
       adjacentNodeId: string | null,
     ) => {
       if (!handle || handle.closed) return;
-      crossApplyContention(handle, nodeId, toColumnId);
-      if (adjacentNodeId) setNodeStruck(handle, adjacentNodeId, true);
+      handle.doc.transact(() => {
+        crossApplyContention(handle, nodeId, toColumnId);
+        if (adjacentNodeId) setNodeStruck(handle, adjacentNodeId, true);
+      });
     },
     [handle],
   );
