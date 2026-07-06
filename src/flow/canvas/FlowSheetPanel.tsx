@@ -1,4 +1,7 @@
+import { useCallback } from "react";
+
 import type { DocumentHandle } from "../../documents/core";
+import { crossApplyContention } from "../cross-apply";
 import { ColumnControls } from "./ColumnControls";
 import { FlowCanvas } from "./FlowCanvas";
 import { CONTENTION_FLOW_NODE_REGISTRY } from "./contention-node-type";
@@ -53,6 +56,17 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
   useContentionTrigger(handle, context?.activeColumnId ?? null);
   useCollapseAllExceptActiveHotkey(collapse);
 
+  // Dragging a contention onto another column cross-applies it: a copy lands in
+  // the target column and a transparent arrow points from the original to the
+  // copy. The canvas resolves the drop geometry; this performs the copy.
+  const onNodeCrossColumnDrop = useCallback(
+    (nodeId: string, _fromColumnId: string, toColumnId: string) => {
+      if (!handle || handle.closed) return;
+      crossApplyContention(handle, nodeId, toColumnId);
+    },
+    [handle],
+  );
+
   return (
     <div className={`flex h-full w-full flex-col ${className ?? ""}`}>
       <ColumnControls handle={handle} className="border-b border-shell-border" />
@@ -71,6 +85,7 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
         <FlowCanvas
           handle={handle}
           flowNodeTypes={CONTENTION_FLOW_NODE_REGISTRY}
+          onNodeCrossColumnDrop={onNodeCrossColumnDrop}
         />
       </div>
     </div>

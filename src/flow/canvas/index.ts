@@ -43,6 +43,17 @@ export {
   type ColumnLayoutOptions,
 } from "./column-nodes";
 export { useFlowNodes } from "./useFlowNodes";
+export { useFlowEdges } from "./useFlowEdges";
+export {
+  flowEdgesToEdges,
+  CROSS_APPLICATION_EDGE_OPACITY,
+} from "./flow-edge";
+export {
+  columnAtX,
+  resolveNodeDropColumn,
+  type DropColumn,
+  type NodeDropInput,
+} from "./flow-drag";
 export { ContentionNode } from "./ContentionNode";
 export { SubpointNode, type SubpointNodeProps } from "./SubpointNode";
 export { useSubpointTrigger } from "./useSubpointTrigger";

@@ -106,6 +106,15 @@ export interface FlowNodeTypeDefinition {
    * later concern.
    */
   readonly height?: number;
+  /**
+   * Whether nodes of this kind can be dragged. Defaults to `false` (render-only,
+   * the original contract). A `true` kind is made XYFlow-draggable **and** has
+   * its column clip (`extent: "parent"`) dropped, so a debater can drag it onto
+   * another column - the cross-application gesture. Membership stays visual via
+   * `parentId`; the drop only *copies* the node, it never changes the source's
+   * column (see {@link ../cross-apply}).
+   */
+  readonly draggable?: boolean;
 }
 
 /**
@@ -179,8 +188,10 @@ export function flowNodeY(index: number, height: number): number {
  *   component to render, so an unknown/legacy kind degrades gracefully instead
  *   of crashing the surface.
  *
- * Nodes are render-only (non-draggable, non-selectable): this contract ships no
- * drag or editing gestures.
+ * Nodes are non-selectable, and non-draggable *unless* their kind declares
+ * {@link FlowNodeTypeDefinition.draggable} - a draggable kind is movable and has
+ * its column clip dropped so it can be dragged onto another column (the
+ * cross-application gesture).
  *
  * A node whose id is in `options.collapsedIds` is laid out at
  * {@link COLLAPSED_NODE_HEIGHT} (a single bar) instead of its kind's slot height,
@@ -202,17 +213,21 @@ export function flowNodesToNodes(
       const height = collapsedIds?.has(node.id)
         ? COLLAPSED_NODE_HEIGHT
         : def.height ?? FLOW_NODE_HEIGHT;
+      const draggable = def.draggable ?? false;
       out.push({
         id: node.id,
         type: node.kind,
         parentId: columnId,
         // Clip the node to its column's bounds - membership is visual, too.
-        extent: "parent",
+        // A draggable kind drops the clip so it can be dragged onto another
+        // column (the cross-application gesture); it still belongs to its column
+        // via parentId and rests at its computed in-column position.
+        ...(draggable ? {} : { extent: "parent" as const }),
         position: { x: FLOW_NODE_INSET_X, y },
         width: FLOW_NODE_WIDTH,
         height,
         data: { flowNodeId: node.id, columnId, kind: node.kind },
-        draggable: false,
+        draggable,
         selectable: false,
       });
       y += height + FLOW_NODE_GAP;

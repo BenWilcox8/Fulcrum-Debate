@@ -70,3 +70,15 @@ export {
   observeSubpoints,
   type FlowSubpoint,
 } from "./subpoint";
+export {
+  FLOW_EDGES_FRAGMENT,
+  CROSS_APPLICATION_EDGE_KIND,
+  addEdge,
+  listEdges,
+  getEdge,
+  removeEdge,
+  observeEdges,
+  type FlowEdge,
+  type AddEdgeInput,
+} from "./edges";
+export { crossApplyContention } from "./cross-apply";
