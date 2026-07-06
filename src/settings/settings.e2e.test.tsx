@@ -114,9 +114,11 @@ const formattingContribution: SettingsContribution = defineSettingsContribution(
  */
 function LivePreview() {
   const store = usePreferenceStore();
+  // Guaranteed non-null: SettingsProvider (LivePreview's parent) registers the section
+  // synchronously in its useState initializer before children render.
   const handle = store.getSection(
     FORMATTING_ID,
-  ) as SectionHandle<typeof formattingFields>;
+  )! as SectionHandle<typeof formattingFields>;
   const { fontSize } = useSection(handle);
   return <p data-testid="preview">Rendering at {fontSize}</p>;
 }
