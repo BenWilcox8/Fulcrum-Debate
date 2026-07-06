@@ -133,4 +133,17 @@ describe("SchemaSettingsPanel", () => {
     expect(screen.getByTestId("consume-mode")).toHaveTextContent("keep");
     expect(handle.get("mode")).toBe("keep");
   });
+
+  it("restores the stored value when a numeric field is cleared and blurred", () => {
+    const { handle } = renderPanel();
+    const input = screen.getByLabelText(/step size/i);
+
+    fireEvent.change(input, { target: { value: "" } });
+    expect(input).toHaveValue(null);
+
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue(2);
+    expect(handle.get("stepSize")).toBe(2);
+  });
 });
