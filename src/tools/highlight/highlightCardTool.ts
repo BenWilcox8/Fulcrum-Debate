@@ -51,6 +51,10 @@ export const DEFAULT_HIGHLIGHT_COLOR = "yellow";
  * The default scope the highlight-color rule is nested under: the block file's
  * `EditorContent` surface class, matching the formatting stylesheet's scope so
  * the highlighter color never leaks onto unrelated UI.
+ *
+ * Intentionally mirrors `DEFAULT_FORMATTING_SCOPE` in `src/formatting/css.ts`
+ * (a cross-module import to share one string would be worse coupling than the
+ * duplication). Keep the two in sync if the class name ever changes.
  */
 export const HIGHLIGHT_TOOL_SCOPE = ".block-file-editor";
 
@@ -74,7 +78,10 @@ export function highlightColorCss(
   color: string,
   scope: string = HIGHLIGHT_TOOL_SCOPE,
 ): string {
-  return `${scope} mark { background-color: ${color}; }`;
+  const safeColor = (HIGHLIGHT_COLORS as readonly string[]).includes(color)
+    ? color
+    : DEFAULT_HIGHLIGHT_COLOR;
+  return `${scope} mark { background-color: ${safeColor}; }`;
 }
 
 /**
