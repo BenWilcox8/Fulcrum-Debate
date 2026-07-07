@@ -66,16 +66,20 @@
  * reachable by name from the card's content expression, so they can never appear on
  * their own inside a section, and a region can never nest inside another region.
  *
- * ## Rendering: brackets and side hooks are structure + data attributes, no CSS
+ * ## Rendering: data-attribute hooks + small scoped CSS
  *
- * Like the side sections, this module ships **no CSS**. Each region serializes to an
- * element carrying `data-card-region="tag|tagline|cite|body"` - the stable hook a
- * later styling PR keys card styling off (e.g. the tagline's emphasis). The tag
- * additionally renders literal `[` and `]` text around a `data-card-tag-token`
- * span that holds the editable token, so the token is *stored bare* (free-form, no
- * brackets in the document text) yet always *renders bracketed*; `contentElement`
- * points HTML parsing back at that inner span so the brackets are never re-absorbed
- * as content on a round-trip.
+ * Each region serializes to an element carrying
+ * `data-card-region="tag|tagline|cite|body"` - the stable hook the formatting
+ * profile stylesheet (`src/formatting`) and live rendering slice key card styling off.
+ * The tag stores the token bare (free-form, no brackets in the document) and renders
+ * a single content hole (`["span", { "data-card-region": "tag" }, 0]`); the
+ * enclosing `[` `]` brackets are **CSS `::before`/`::after` pseudo-elements** on
+ * `.block-file-editor [data-card-region="tag"]` in `src/index.css`, not DOM text
+ * nodes.  This module also ships small scoped CSS for heading typography inside the
+ * editor.  **Never** add literal `[`/`]` text nodes beside the region's contentDOM -
+ * ProseMirror's input reconciliation loses characters typed into the region when
+ * decorative sibling text nodes are present (the silent-input-loss bug that prompted
+ * this design).
  *
  * ## How a feature editor installs this
  *
