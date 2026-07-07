@@ -90,3 +90,7 @@ export {
   setNodeStruck,
   toggleNodeStruck,
 } from "./strike";
+export {
+  appendFlowNodesToSpeechDoc,
+  type SendFlowResult,
+} from "./send-to-speech";

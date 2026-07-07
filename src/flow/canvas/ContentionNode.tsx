@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { EditorContent } from "@tiptap/react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
@@ -144,12 +144,30 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
   const context = useFlowSheet();
   const handle = context?.handle ?? null;
   const collapse = context?.collapse ?? null;
+  const selection = context?.selection ?? null;
   const { flowNodeId, columnId } = data;
 
   const { label, side } = useContentionHeader(handle, columnId, flowNodeId);
   const classes = SIDE_CLASSES[side];
   const collapsed = collapse?.isCollapsed(flowNodeId) ?? false;
   const struck = useNodeStruck(handle, flowNodeId);
+  const selected = selection?.isSelected(flowNodeId) ?? false;
+
+  // Shift+Click toggles this contention's membership in the send selection.
+  // Handled on mousedown (capture) so it wins over XYFlow's drag start and the
+  // editor's caret/text-selection, and swallowed again on the click so the
+  // header's collapse toggle never fires for the same gesture.
+  const onShiftMouseDown = (event: ReactMouseEvent) => {
+    if (!event.shiftKey) return;
+    event.preventDefault();
+    event.stopPropagation();
+    selection?.toggle(flowNodeId);
+  };
+  const swallowShiftClick = (event: ReactMouseEvent) => {
+    if (!event.shiftKey) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   // The raw editor is needed so the S# subpoint trigger can intercept keystrokes
   // and strip the typed token; the surface itself renders via EditorContent.
@@ -175,9 +193,14 @@ export function ContentionNode({ data }: NodeProps<HostedFlowNode>) {
       data-side={side}
       data-collapsed={collapsed || undefined}
       data-struck={struck ? "true" : undefined}
+      data-selected={selected || undefined}
+      onMouseDownCapture={onShiftMouseDown}
+      onClickCapture={swallowShiftClick}
       className={`relative flex h-full w-full flex-col overflow-hidden rounded-xl border-2 shadow-sm ${
         collapsed ? "" : "gap-2 p-card"
-      } ${struck ? "line-through decoration-2 opacity-70" : ""} ${classes.container}`}
+      } ${struck ? "line-through decoration-2 opacity-70" : ""} ${
+        selected ? "ring-2 ring-shell-text ring-offset-2 ring-offset-shell-surface" : ""
+      } ${classes.container}`}
     >
       {/* Struck = a non-destructive strike-through: the argument's text stays
           readable (line-through, not removed). The clear control appears only
