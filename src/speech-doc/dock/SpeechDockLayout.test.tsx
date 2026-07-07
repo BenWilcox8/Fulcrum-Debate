@@ -6,7 +6,7 @@
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { fireEvent, render, type RenderResult } from "@testing-library/react";
+import { act, fireEvent, render, type RenderResult } from "@testing-library/react";
 
 import { DocumentsProvider } from "../../documents/react";
 import { ActiveSpeechDocProvider } from "../ActiveSpeechDocProvider";
@@ -59,10 +59,15 @@ function memoryStorage(seed: Record<string, string> = {}): DockLayoutStorage & {
   };
 }
 
-function renderLayout(storage: DockLayoutStorage): RenderResult {
+function renderLayout(
+  storage: DockLayoutStorage,
+  options: { activeId?: string | null } = {},
+): RenderResult {
+  const store = createActiveSpeechDocStore();
+  if (options.activeId != null) store.setActiveId(options.activeId);
   return render(
     <DocumentsProvider>
-      <ActiveSpeechDocProvider store={createActiveSpeechDocStore()}>
+      <ActiveSpeechDocProvider store={store}>
         <SpeechDockLayout storage={storage}>
           <div data-testid="flow-pane">flow sheet</div>
         </SpeechDockLayout>
@@ -71,9 +76,14 @@ function renderLayout(storage: DockLayoutStorage): RenderResult {
   );
 }
 
+/** Renders the layout with a speech already active, so the split is open. */
+function renderOpenLayout(storage: DockLayoutStorage): RenderResult {
+  return renderLayout(storage, { activeId: "speech-1" });
+}
+
 describe("SpeechDockLayout", () => {
-  it("docks the speech pane beside the flow (side by default)", () => {
-    const view = renderLayout(memoryStorage());
+  it("docks the speech pane beside the flow when a speech is active (side by default)", () => {
+    const view = renderOpenLayout(memoryStorage());
     expect(view.getByTestId("flow-pane")).toBeTruthy();
     expect(view.getByTestId("speech-dock")).toBeTruthy();
     expect(view.getByTestId("split-dock").getAttribute("data-dock-position")).toBe(
@@ -85,7 +95,7 @@ describe("SpeechDockLayout", () => {
     const storage = memoryStorage({
       [DOCK_LAYOUT_STORAGE_KEY]: JSON.stringify({ position: "bottom", size: 0.4 }),
     });
-    const view = renderLayout(storage);
+    const view = renderOpenLayout(storage);
     expect(view.getByTestId("split-dock").getAttribute("data-dock-position")).toBe(
       "bottom",
     );
@@ -93,7 +103,7 @@ describe("SpeechDockLayout", () => {
 
   it("persists a position switch and reflects it live", () => {
     const storage = memoryStorage();
-    const view = renderLayout(storage);
+    const view = renderOpenLayout(storage);
     fireEvent.click(view.getByRole("button", { name: "Bottom" }));
 
     expect(view.getByTestId("split-dock").getAttribute("data-dock-position")).toBe(
@@ -106,7 +116,7 @@ describe("SpeechDockLayout", () => {
 
   it("persists a resize and restores it on a remount (reload)", () => {
     const storage = memoryStorage();
-    const first = renderLayout(storage);
+    const first = renderOpenLayout(storage);
 
     const before = Number(
       first.getByRole("separator").getAttribute("aria-valuenow"),
@@ -121,15 +131,72 @@ describe("SpeechDockLayout", () => {
     first.unmount();
 
     // Remount over the same storage as if after a reload.
-    const second = renderLayout(storage);
+    const second = renderOpenLayout(storage);
     expect(
       Number(second.getByRole("separator").getAttribute("aria-valuenow")),
     ).toBe(after);
   });
 
-  it("starts collapsed on a narrow viewport (flow gets full width; dock is one click away)", () => {
-    stubMatchMedia(true);
+  it("starts collapsed to a rail when nothing is docked (flow gets full width) - D2", () => {
+    // A roomy viewport but no active speech doc: the split must NOT consume ~40%
+    // of the width for an empty placeholder - the flow owns the space and the
+    // dock is a slim, one-click rail.
+    stubMatchMedia(false);
     const view = renderLayout(memoryStorage());
+
+    expect(view.queryByTestId("split-dock")).toBeNull();
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+    expect(view.getByTestId("flow-pane")).toBeTruthy();
+    expect(view.getByRole("button", { name: "Open speech dock" })).toBeTruthy();
+  });
+
+  it("auto-expands to the split the moment a speech becomes active", () => {
+    stubMatchMedia(false);
+    const store = createActiveSpeechDocStore();
+    const view = render(
+      <DocumentsProvider>
+        <ActiveSpeechDocProvider store={store}>
+          <SpeechDockLayout storage={memoryStorage()}>
+            <div data-testid="flow-pane">flow sheet</div>
+          </SpeechDockLayout>
+        </ActiveSpeechDocProvider>
+      </DocumentsProvider>,
+    );
+
+    // Empty -> rail.
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+
+    // A pipeline (or the picker) sets a speech active -> the dock expands.
+    act(() => store.setActiveId("speech-42"));
+    expect(view.getByTestId("speech-dock")).toBeTruthy();
+    expect(view.getByTestId("split-dock")).toBeTruthy();
+  });
+
+  it("does not auto-expand on a narrow viewport when activeId transitions null→non-null", () => {
+    stubMatchMedia(true);
+    const store = createActiveSpeechDocStore();
+    const view = render(
+      <DocumentsProvider>
+        <ActiveSpeechDocProvider store={store}>
+          <SpeechDockLayout storage={memoryStorage()}>
+            <div data-testid="flow-pane">flow sheet</div>
+          </SpeechDockLayout>
+        </ActiveSpeechDocProvider>
+      </DocumentsProvider>,
+    );
+
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+    expect(view.getByRole("button", { name: "Open speech dock" })).toBeTruthy();
+
+    act(() => store.setActiveId("speech-x"));
+
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+    expect(view.getByRole("button", { name: "Open speech dock" })).toBeTruthy();
+  });
+
+  it("starts collapsed on a narrow viewport even with an active speech", () => {
+    stubMatchMedia(true);
+    const view = renderOpenLayout(memoryStorage());
 
     // No side-by-side split on a narrow screen: the flow fills the space and the
     // dock is opened deliberately via the affordance.
@@ -141,15 +208,15 @@ describe("SpeechDockLayout", () => {
     expect(view.getByTestId("speech-dock")).toBeTruthy();
   });
 
-  it("stays open by default on a roomy viewport", () => {
+  it("stays open by default on a roomy viewport when a speech is active", () => {
     stubMatchMedia(false);
-    const view = renderLayout(memoryStorage());
+    const view = renderOpenLayout(memoryStorage());
     expect(view.getByTestId("speech-dock")).toBeTruthy();
     expect(view.getByTestId("split-dock")).toBeTruthy();
   });
 
   it("collapses to full-flow and re-opens (session-only, not persisted)", () => {
-    const view = renderLayout(memoryStorage());
+    const view = renderOpenLayout(memoryStorage());
     fireEvent.click(view.getByRole("button", { name: "Close speech dock" }));
 
     // Dock gone, flow still present, an affordance to bring it back.
