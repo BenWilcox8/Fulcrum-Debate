@@ -130,6 +130,24 @@
   cursor: grabbing;
 }
 
+/* The editing surface fills its padded box so the whole area (not just the
+ * lines of text) is a caret target - important in the split-screen dock, where
+ * the box spans the pane. The container already signals focus through its
+ * border (focus-within:border-shell-muted), so the contenteditable's default
+ * browser focus ring is redundant and reads like a form field - drop it. */
+.speech-doc-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.speech-doc-body .ProseMirror {
+  flex: 1 1 auto;
+}
+
+.speech-doc-body .ProseMirror:focus {
+  outline: none;
+}
+
 /* The speech doc highlights itself while a card hovers, and marks the exact
  * boundary the card will land at with a horizontal drop line. */
 .speech-doc-body .ProseMirror.is-card-drop-target,
