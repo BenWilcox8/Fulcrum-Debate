@@ -16,11 +16,11 @@ export const NARROW_WIDTH = 1024;
 /** Standard laptop height for ordinary screens. */
 export const STANDARD_HEIGHT = 900;
 /**
- * Extended height used only for the round/flow screen. A flow sheet is an
- * inherently tall surface: the app vertically centres the flow (XYFlow
- * `translateExtent` pins the vertical axis) so the column contentions render
- * below a short viewport's clipped pane. A taller viewport keeps every
- * contention on-canvas and interactable, at the same 1440 laptop width.
+ * Extended height used only for the round/flow screen. A flow sheet is
+ * vertically tall at volume: columns grow past the viewport as contentions
+ * accumulate, and while the canvas can scroll to reach them, a taller viewport
+ * keeps every contention on-canvas and interactable without scrolling, at the
+ * same 1440 laptop width.
  */
 export const FLOW_HEIGHT = 1400;
 

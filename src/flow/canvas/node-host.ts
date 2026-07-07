@@ -190,10 +190,9 @@ export function flowNodeY(index: number, height: number): number {
  * absent from the map (0 content).
  *
  * Pure over the already-laid-out flow nodes (the output of
- * {@link flowNodesToNodes}), so the canvas can grow each column to contain its
- * contentions instead of clipping the ones that overflow a fixed viewport-height
- * column. Nodes carry a definite `height` from the mapper; the
- * {@link FLOW_NODE_HEIGHT} fallback only guards a hypothetical unsized node.
+ * {@link flowNodesToNodes}). Nodes carry a definite `height` from the mapper;
+ * the {@link FLOW_NODE_HEIGHT} fallback only guards a hypothetical unsized
+ * node.
  */
 export function columnContentHeights(
   nodes: readonly HostedFlowNode[],
