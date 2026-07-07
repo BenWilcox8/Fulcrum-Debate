@@ -86,6 +86,8 @@ npm install
 │   ├── timer/              Floating Timer widget (self-contained, session-state only): useCountdown engine, formatTime/parseTime, EditableTime, PrepTimer, SpeechTimer, TimerWidget
 │   ├── speech-doc/         Speech doc editor, model, split-screen docking, and card-drag pipeline: document seam (useSpeechDocs, SPEECH_DOC_BODY_FRAGMENT), active-speech-doc store (createActiveSpeechDocStore, ActiveSpeechDocProvider, useActiveSpeechDoc), SpeechDocEditor component, and drag-a-card-into-speech pipeline (card-drag.ts, card-drop.ts, card-drag-transfer.ts)
 │   │   └── dock/           Split-screen docking layout (SpeechDockLayout, SpeechDock, SplitDock): dock-layout model + localStorage persistence (dock-layout.ts, dock-layout-storage.ts), resizable divider with pointer-capture drag and arrow-key resize (SplitDock), active-doc indication + speech selector (SpeechDock), and collapse state (SpeechDockLayout)
+│   ├── export/             Export & Sharing: pluggable ExportTarget boundary (target.ts), per-surface payload assembly (payload.ts), Email target (email-target.ts, mailto: via open_external IPC), SpeechDrop target (speechdrop-target.ts, RTF upload via speechdrop_upload Rust command), and RTF serializer (rtf.ts)
+│   │   └── react/          React layer: ExportButton component, useSpeechDropTarget hook, SpeechDropRoomPrompt modal (imported from src/export/react so the model index stays React-free)
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
