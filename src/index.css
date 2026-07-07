@@ -133,8 +133,9 @@
 /* The editing surface fills its padded box so the whole area (not just the
  * lines of text) is a caret target - important in the split-screen dock, where
  * the box spans the pane. The container already signals focus through its
- * border (focus-within:border-shell-muted), so the contenteditable's default
- * browser focus ring is redundant and reads like a form field - drop it. */
+ * border (focus-within:border-aff-strong + focus-within:ring-aff/40), so the
+ * contenteditable's default browser focus ring is redundant and reads like a
+ * form field - drop it. */
 .speech-doc-body {
   display: flex;
   flex-direction: column;
