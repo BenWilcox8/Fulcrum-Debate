@@ -89,3 +89,75 @@
   padding-top: 0.375rem;
   border-top: 1px solid var(--color-shell-border);
 }
+
+/* --- Drag a card into the speech doc -------------------------------- */
+/*
+ * The single-card drag-into-Speech-Doc pipeline (src/speech-doc/card-drag.ts +
+ * card-drop.ts). The block file renders a small grip handle on each card that
+ * starts an external HTML5 drag; the speech doc shows a drop indicator at the
+ * block boundary a hovering card will land at. Both are view-only chrome (widget
+ * decorations), so the schema/document ship no CSS.
+ */
+
+/* A card is the positioning context for its absolutely-placed drag handle. */
+.block-file-editor [data-card] {
+  position: relative;
+}
+
+.block-file-editor .card-drag-handle {
+  position: absolute;
+  left: -1.15rem;
+  top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  color: var(--color-shell-muted);
+  cursor: grab;
+  user-select: none;
+  line-height: 1;
+  font-size: 0.85rem;
+  opacity: 0.35;
+  transition: opacity 0.1s ease;
+}
+
+.block-file-editor [data-card]:hover .card-drag-handle,
+.block-file-editor .card-drag-handle:hover {
+  opacity: 1;
+}
+
+.block-file-editor .card-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* The speech doc highlights itself while a card hovers, and marks the exact
+ * boundary the card will land at with a horizontal drop line. */
+.speech-doc-body .ProseMirror.is-card-drop-target,
+.speech-doc-body .ProseMirror.is-card-drop-target * {
+  cursor: copy;
+}
+
+.speech-doc-body .ProseMirror.is-card-drop-target {
+  outline: 2px dashed var(--color-aff);
+  outline-offset: -2px;
+  border-radius: 0.25rem;
+}
+
+.speech-card-drop-indicator {
+  position: relative;
+  height: 0;
+  margin: 0;
+  border-top: 2px solid var(--color-aff-strong);
+  pointer-events: none;
+}
+
+.speech-card-drop-indicator::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: -3px;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--color-aff-strong);
+}

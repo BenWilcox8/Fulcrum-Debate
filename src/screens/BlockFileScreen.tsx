@@ -14,6 +14,8 @@ import { useBlockFile } from "../blockfile-workspace";
 import { BlockFileTocPanel } from "./BlockFileTocPanel";
 import { CardFormattingStyles } from "../formatting/react";
 import { CardToolbar, HighlightStyles, useCardTools } from "../tools/react";
+import { CardSpeechDrag } from "../speech-doc/card-drag";
+import { SpeechDockLayout } from "../speech-doc";
 
 /**
  * The block-file schema plus the card node model and its quick-create keyboard
@@ -24,7 +26,7 @@ import { CardToolbar, HighlightStyles, useCardTools } from "../tools/react";
  * be told its config changed on every render.
  */
 const BLOCK_FILE_PRESET: EditorPresetOptions = {
-  extensions: [...blockFileExtensions, ...cardExtensions, cardCreate],
+  extensions: [...blockFileExtensions, ...cardExtensions, cardCreate, CardSpeechDrag],
 };
 
 /**
@@ -122,38 +124,43 @@ export default function BlockFileScreen() {
       <div className="flex min-h-0 flex-1 gap-4">
         <BlockFileTocPanel editor={editor} scrollContainer={scrollContainer} />
 
-        {/* The editor column: the card-cutting toolbar sits at the top of the
-            editing surface (right of the ToC, above the scroll region) so it
-            never crowds the sidebar or the document. */}
-        <div className="flex min-h-0 flex-1 flex-col gap-2">
-          <CardToolbar editor={editor} tools={tools} />
+        {/* The editor column docks the Speech Doc editor alongside it, so a
+            debater can drag a card straight from the block file into the speech
+            (the single-card drag-into-Speech-Doc pipeline). The card-cutting
+            toolbar sits at the top of the editing surface (right of the ToC,
+            above the scroll region) so it never crowds the sidebar or the
+            document. */}
+        <SpeechDockLayout className="overflow-hidden rounded-lg border border-shell-border">
+          <div className="flex h-full min-h-0 min-w-0 flex-col gap-2 bg-shell-surface p-2">
+            <CardToolbar editor={editor} tools={tools} />
 
-          <div
-            ref={setScrollContainer}
-            className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card"
-          >
-            {error ? (
-              <div className="flex flex-col gap-2">
-                <p className="text-sm text-shell-muted">
-                  Could not open block file. {error.message}
-                </p>
-                <button
-                  onClick={retry}
-                  className="self-start rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm text-shell-text hover:bg-shell-bg"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
-              <>
-                {!ready && (
-                  <p className="text-sm text-shell-muted">Opening block file…</p>
-                )}
-                <EditorContent editor={editor} className="block-file-editor" />
-              </>
-            )}
+            <div
+              ref={setScrollContainer}
+              className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-shell-border bg-shell-surface p-card"
+            >
+              {error ? (
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm text-shell-muted">
+                    Could not open block file. {error.message}
+                  </p>
+                  <button
+                    onClick={retry}
+                    className="self-start rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm text-shell-text hover:bg-shell-bg"
+                  >
+                    Retry
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {!ready && (
+                    <p className="text-sm text-shell-muted">Opening block file…</p>
+                  )}
+                  <EditorContent editor={editor} className="block-file-editor" />
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </SpeechDockLayout>
       </div>
     </section>
   );
