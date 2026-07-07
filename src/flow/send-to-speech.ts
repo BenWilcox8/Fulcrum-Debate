@@ -36,9 +36,9 @@
 import * as Y from "yjs";
 
 import type { DocumentHandle } from "../documents/core";
-import { readFlowContainerTree } from "./canvas/flow-collapse";
-import { contentionContentFragment } from "./contention";
-import { subpointContentFragment } from "./subpoint";
+import { CONTENTION_KIND, contentionContentFragment } from "./contention";
+import { listNodes } from "./nodes";
+import { listSubpoints, subpointContentFragment } from "./subpoint";
 import { SPEECH_DOC_BODY_FRAGMENT } from "../speech-doc/speech-doc";
 
 /** The outcome of an {@link appendFlowNodesToSpeechDoc} append. */
@@ -86,8 +86,8 @@ function collectParagraphClones(
  *
  * `nodeIds` is the set of selected container ids (contentions and/or subpoints);
  * the append order is the flow's own reading order (columns, then contentions
- * top-to-bottom, then their subpoints - the order {@link readFlowContainerTree}
- * enumerates), regardless of the order the ids were selected in. Ids that no
+ * top-to-bottom, then their subpoints), regardless of the order the ids were
+ * selected in. Ids that no
  * longer resolve to a live container (e.g. a deleted node) are skipped. When no
  * selected container yields any non-empty paragraph, nothing is written and a
  * zero result is returned.
@@ -104,7 +104,16 @@ export function appendFlowNodesToSpeechDoc(
   const selected = new Set(nodeIds);
   if (selected.size === 0) return { nodeCount: 0, paragraphCount: 0 };
 
-  const { allIds, parentOf } = readFlowContainerTree(flowHandle);
+  const allIds: string[] = [];
+  const parentOf = new Map<string, string>();
+  for (const node of listNodes(flowHandle)) {
+    if (node.kind !== CONTENTION_KIND) continue;
+    allIds.push(node.id);
+    for (const subpoint of listSubpoints(flowHandle, node.id)) {
+      allIds.push(subpoint.id);
+      parentOf.set(subpoint.id, node.id);
+    }
+  }
   const fragmentNameFor = (id: string): string =>
     parentOf.has(id)
       ? subpointContentFragment(id)
