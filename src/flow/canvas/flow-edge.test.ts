@@ -24,14 +24,18 @@ describe("flowEdgesToEdges", () => {
     expect(e.target).toBe("b");
   });
 
-  it("styles the edge as a transparent arrow (low opacity + arrow marker)", () => {
+  it("styles the edge as a legible-but-lighter arrow (opacity + arrow marker)", () => {
     const [e] = flowEdgesToEdges([edge("e1", "a", "b")]);
-    // Unobtrusive: rendered well below full opacity.
+    // Lighter than primary content, but legible: the clash link is the point of
+    // the visual, so it must read clearly rather than sit near-invisible.
     expect(e.style?.opacity).toBe(CROSS_APPLICATION_EDGE_OPACITY);
-    expect(CROSS_APPLICATION_EDGE_OPACITY).toBeGreaterThan(0);
+    expect(CROSS_APPLICATION_EDGE_OPACITY).toBeGreaterThanOrEqual(0.5);
     expect(CROSS_APPLICATION_EDGE_OPACITY).toBeLessThan(1);
-    // An arrow head points at the copy.
+    // A clear arrowhead points at the copy so the direction of the link reads.
     expect(e.markerEnd).toMatchObject({ type: MarkerType.ArrowClosed });
+    const marker = e.markerEnd as { width?: number; height?: number };
+    expect(marker.width).toBeGreaterThanOrEqual(20);
+    expect(marker.height).toBeGreaterThanOrEqual(20);
   });
 
   it("is not interactive (a rendered annotation, not an editable connection)", () => {

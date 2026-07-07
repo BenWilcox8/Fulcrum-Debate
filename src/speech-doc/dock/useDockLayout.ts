@@ -59,7 +59,13 @@ export function useDockLayout(
 
   const setSize = useCallback(
     (size: number) => {
-      const next = { ...layout, size: clampDockSize(size) };
+      // The size belongs to the current edge only, so each orientation keeps its
+      // own remembered fraction (a side width and a bottom height are distinct
+      // preferences).
+      const next: DockLayout = {
+        ...layout,
+        sizes: { ...layout.sizes, [layout.position]: clampDockSize(size) },
+      };
       setLayout(next);
       save(next);
     },

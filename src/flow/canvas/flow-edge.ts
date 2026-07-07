@@ -20,10 +20,23 @@ import { MarkerType, type Edge } from "@xyflow/react";
 import type { FlowEdge } from "../edges";
 
 /**
- * Opacity of a cross-application arrow. Low enough to read as unobtrusive
- * ("transparent arrow") while staying clearly visible against the canvas.
+ * Opacity of a cross-application arrow. The clash link (source -> copy) is the
+ * whole point of the visual, so it must actually read: at the old 0.35 the line
+ * and its arrowhead were nearly invisible against the canvas. 0.65 keeps the
+ * arrow clearly lighter than primary content (full-opacity, side-coloured
+ * contentions) while making the link legible - the PRD's "transparent arrow"
+ * where legibility is the goal, not literal near-transparency.
  */
-export const CROSS_APPLICATION_EDGE_OPACITY = 0.35;
+export const CROSS_APPLICATION_EDGE_OPACITY = 0.65;
+
+/** Stroke width of a cross-application arrow's line. */
+const CROSS_APPLICATION_EDGE_STROKE_WIDTH = 2;
+
+/**
+ * Size (px) of the arrowhead marker. Bumped up so the arrowhead itself registers
+ * as an arrow at a glance, making the direction of the clash link obvious.
+ */
+const CROSS_APPLICATION_EDGE_MARKER_SIZE = 22;
 
 /** Stroke colour of a cross-application arrow (a muted shell token). */
 const CROSS_APPLICATION_EDGE_COLOR = "var(--color-shell-muted)";
@@ -44,14 +57,14 @@ export function flowEdgesToEdges(edges: readonly FlowEdge[]): Edge[] {
     type: "default",
     style: {
       stroke: CROSS_APPLICATION_EDGE_COLOR,
-      strokeWidth: 1.5,
+      strokeWidth: CROSS_APPLICATION_EDGE_STROKE_WIDTH,
       opacity: CROSS_APPLICATION_EDGE_OPACITY,
     },
     markerEnd: {
       type: MarkerType.ArrowClosed,
       color: CROSS_APPLICATION_EDGE_COLOR,
-      width: 16,
-      height: 16,
+      width: CROSS_APPLICATION_EDGE_MARKER_SIZE,
+      height: CROSS_APPLICATION_EDGE_MARKER_SIZE,
     },
     selectable: false,
     focusable: false,

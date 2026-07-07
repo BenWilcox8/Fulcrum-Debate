@@ -36,7 +36,11 @@ export function RfdSection({ handle, className }: RfdSectionProps) {
     <section
       aria-labelledby={headingId}
       data-testid="rfd-section"
-      className={`flex flex-col gap-2 border-t-2 border-shell-border bg-shell-surface px-card py-3 ${className ?? ""}`}
+      // `shrink-0` keeps the RFD at its usable floor when the flow sheet is short
+      // (e.g. a bottom-docked speech pane): without it the region is a flex child
+      // that collapses to a ~60px sliver as the canvas above claims the height.
+      // The canvas (which pans internally) absorbs the squeeze instead.
+      className={`flex shrink-0 flex-col gap-2 border-t-2 border-shell-border bg-shell-surface px-card py-3 ${className ?? ""}`}
     >
       <h3
         id={headingId}

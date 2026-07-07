@@ -4,6 +4,7 @@ import { useActiveSpeechDoc } from "../active-speech-doc-context";
 import { SpeechDock } from "./SpeechDock";
 import { SplitDock } from "./SplitDock";
 import { useDockLayout } from "./useDockLayout";
+import { dockSizeFor } from "./dock-layout";
 import type { DockLayoutStorage } from "./dock-layout-storage";
 
 /**
@@ -137,7 +138,7 @@ export function SpeechDockLayout({
     <SplitDock
       className={`min-h-0 min-w-0 flex-1 ${className ?? ""}`}
       position={layout.position}
-      size={layout.size}
+      size={dockSizeFor(layout)}
       onSizeChange={setSize}
       primary={children}
       secondary={

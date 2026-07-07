@@ -16,10 +16,12 @@
  */
 export {
   DEFAULT_DOCK_LAYOUT,
+  DEFAULT_DOCK_SIZES,
   DOCK_POSITIONS,
   MIN_DOCK_SIZE,
   MAX_DOCK_SIZE,
   clampDockSize,
+  dockSizeFor,
   normalizeDockLayout,
   type DockLayout,
   type DockPosition,

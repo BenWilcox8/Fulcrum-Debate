@@ -50,8 +50,14 @@ export function SpeechDock({ position, onPositionChange, onClose }: SpeechDockPr
       className={`flex h-full min-h-0 min-w-0 flex-col bg-shell-bg ${position === "bottom" ? "border-t border-shell-border" : "border-l border-shell-border"}`}
     >
       <header className="flex flex-col gap-2 border-b border-shell-border bg-shell-surface px-3 py-2">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+        {/* `flex-wrap` + a shrinkable left group keep every control reachable at
+            narrow dock widths (e.g. the 1024px three-pane block-file layout):
+            without it the intrinsic width of the speech <select> pushed the
+            position toggle and close button off the clipped (overflow-hidden)
+            dock pane. The right controls stay `shrink-0` so they are never the
+            ones that get cut, wrapping to a second line before that happens. */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-wide text-shell-muted">
               Speech
             </span>
@@ -65,7 +71,7 @@ export function SpeechDock({ position, onPositionChange, onClose }: SpeechDockPr
               onChange={(event) =>
                 setActiveId(event.target.value === "" ? null : event.target.value)
               }
-              className="rounded border border-shell-border bg-shell-surface px-2 py-1 text-sm text-shell-text"
+              className="min-w-0 flex-1 rounded border border-shell-border bg-shell-surface px-2 py-1 text-sm text-shell-text"
             >
               <option value="">Select a speech…</option>
               {speechDocs.map((doc) => (
@@ -76,7 +82,7 @@ export function SpeechDock({ position, onPositionChange, onClose }: SpeechDockPr
             </select>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <div
               role="group"
               aria-label="Dock position"

@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 
-import { DEFAULT_DOCK_LAYOUT, MAX_DOCK_SIZE } from "./dock-layout";
+import {
+  DEFAULT_DOCK_LAYOUT,
+  DEFAULT_DOCK_SIZES,
+  MAX_DOCK_SIZE,
+  type DockLayout,
+} from "./dock-layout";
 import {
   DOCK_LAYOUT_STORAGE_KEY,
   readDockLayout,
@@ -22,25 +27,27 @@ function memoryStorage(seed: Record<string, string> = {}): DockLayoutStorage & {
   };
 }
 
+const layout = (
+  position: DockLayout["position"],
+  sizes: Record<"side" | "bottom", number>,
+): DockLayout => ({ position, sizes });
+
 describe("dock-layout persistence", () => {
   it("round-trips a written layout through the same storage", () => {
     const storage = memoryStorage();
-    writeDockLayout({ position: "bottom", size: 0.35 }, storage);
-    expect(readDockLayout(storage)).toEqual({ position: "bottom", size: 0.35 });
+    const value = layout("bottom", { side: 0.4, bottom: 0.35 });
+    writeDockLayout(value, storage);
+    expect(readDockLayout(storage)).toEqual(value);
     // Persisted under the well-known key as JSON.
-    expect(JSON.parse(storage.data[DOCK_LAYOUT_STORAGE_KEY])).toEqual({
-      position: "bottom",
-      size: 0.35,
-    });
+    expect(JSON.parse(storage.data[DOCK_LAYOUT_STORAGE_KEY])).toEqual(value);
   });
 
   it("normalizes an out-of-range size before writing", () => {
     const storage = memoryStorage();
-    writeDockLayout({ position: "side", size: 3 }, storage);
-    expect(readDockLayout(storage)).toEqual({
-      position: "side",
-      size: MAX_DOCK_SIZE,
-    });
+    writeDockLayout(layout("side", { side: 3, bottom: 0.3 }), storage);
+    expect(readDockLayout(storage)).toEqual(
+      layout("side", { side: MAX_DOCK_SIZE, bottom: 0.3 }),
+    );
   });
 
   it("returns the default when nothing is stored", () => {
@@ -54,12 +61,25 @@ describe("dock-layout persistence", () => {
 
   it("normalizes a malformed but parseable stored value", () => {
     const storage = memoryStorage({
-      [DOCK_LAYOUT_STORAGE_KEY]: JSON.stringify({ position: "??", size: 0.3 }),
+      [DOCK_LAYOUT_STORAGE_KEY]: JSON.stringify({
+        position: "??",
+        sizes: { side: 0.5, bottom: 0.3 },
+      }),
     });
-    expect(readDockLayout(storage)).toEqual({
-      position: DEFAULT_DOCK_LAYOUT.position,
-      size: 0.3,
+    expect(readDockLayout(storage)).toEqual(
+      layout(DEFAULT_DOCK_LAYOUT.position, { side: 0.5, bottom: 0.3 }),
+    );
+  });
+
+  it("migrates a legacy single-size value onto its stored edge", () => {
+    // Old shape written before per-edge sizes: the size belongs to the persisted
+    // position; the other edge falls back to its default.
+    const storage = memoryStorage({
+      [DOCK_LAYOUT_STORAGE_KEY]: JSON.stringify({ position: "bottom", size: 0.5 }),
     });
+    expect(readDockLayout(storage)).toEqual(
+      layout("bottom", { side: DEFAULT_DOCK_SIZES.side, bottom: 0.5 }),
+    );
   });
 
   it("returns the default and never throws when storage is null", () => {
@@ -75,7 +95,7 @@ describe("dock-layout persistence", () => {
       },
     };
     expect(() =>
-      writeDockLayout({ position: "bottom", size: 0.5 }, throwing),
+      writeDockLayout(layout("bottom", { side: 0.4, bottom: 0.5 }), throwing),
     ).not.toThrow();
   });
 });
