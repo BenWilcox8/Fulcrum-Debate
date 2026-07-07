@@ -132,7 +132,8 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   await page.getByRole("button", { name: "Reset Aff prep timer" }).click();
   // Cycle the speech selector AC → NC (deterministic label).
   await page.getByRole("button", { name: "Advance to next speech" }).click();
-  await expect(page.getByRole("button", { name: "NC", exact: true })).toHaveAttribute("aria-pressed", "true");
+  // RoundScreen passes live column labels, so the Policy round uses "1NC" not the fallback "NC".
+  await expect(page.getByRole("button", { name: "1NC", exact: true })).toHaveAttribute("aria-pressed", "true");
   await h.shot("timer-speech-selector-nc");
 
   // --- 8. Create + dock a speech doc, then Send Flow into it ----------------

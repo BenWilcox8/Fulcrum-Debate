@@ -12,6 +12,15 @@ describe("TimerWidget", () => {
     expect(screen.getByRole("region", { name: /^speech timer$/i })).toBeInTheDocument();
   });
 
+  it("forwards round speech labels to the speech-timer selector", () => {
+    render(<TimerWidget speeches={["Con Case", "Pro FF"]} />);
+
+    const selector = screen.getByRole("group", { name: /select speech/i });
+    expect(within(selector).getByRole("button", { name: "Con Case" })).toBeInTheDocument();
+    expect(within(selector).getByRole("button", { name: "Pro FF" })).toBeInTheDocument();
+    expect(within(selector).queryByRole("button", { name: "AC" })).toBeNull();
+  });
+
   it("floats over the flow without blocking it: interactive card inside a pass-through overlay", () => {
     const { container } = render(<TimerWidget />);
 

@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { FlowSheetPanel } from "../flow/canvas";
+import { FlowSheetPanel, useColumns } from "../flow/canvas";
 import { TimerWidget } from "../timer";
 import { SpeechDockLayout } from "../speech-doc";
 import { useDocument } from "../documents/react";
@@ -20,6 +20,11 @@ export default function RoundScreen() {
   const { roundId } = useParams<{ roundId: string }>();
   const { handle } = useDocument(roundId);
   const { rounds, loading } = useRounds();
+  // The round's own speech columns drive the timer's speech selector, so it
+  // reflects the actual round structure (e.g. Public-Forum "Con Case"/"Pro FF")
+  // instead of the generic Policy default. Reading the labels here keeps the
+  // timer widget itself self-contained - it receives them as plain data.
+  const speeches = useColumns(handle).map((column) => column.label);
 
   const round = rounds.find((r) => r.id === roundId);
   const notFound = !loading && roundId != null && round == null;
@@ -69,7 +74,7 @@ export default function RoundScreen() {
           flowing. */}
       <SpeechDockLayout className="overflow-hidden rounded-lg border border-shell-border">
         <div className="h-full min-h-0 min-w-0 overflow-hidden bg-shell-surface">
-          <FlowSheetPanel handle={handle} overlay={<TimerWidget />} />
+          <FlowSheetPanel handle={handle} overlay={<TimerWidget speeches={speeches} />} />
         </div>
       </SpeechDockLayout>
     </section>

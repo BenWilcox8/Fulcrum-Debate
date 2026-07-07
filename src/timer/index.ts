@@ -3,9 +3,14 @@
  * speech timer, overlaid on the flow without blocking flow interactions. All
  * state is component/session state - nothing is persisted.
  */
-export { TimerWidget } from "./TimerWidget";
+export { TimerWidget, type TimerWidgetProps } from "./TimerWidget";
 export { PrepTimer, type PrepTimerProps, type TimerSide } from "./PrepTimer";
-export { SpeechTimer, SPEECH_OPTIONS, type SpeechLabel } from "./SpeechTimer";
+export {
+  SpeechTimer,
+  SPEECH_OPTIONS,
+  type SpeechLabel,
+  type SpeechTimerProps,
+} from "./SpeechTimer";
 export { EditableTime, type EditableTimeProps } from "./EditableTime";
 export { useCountdown, type Countdown } from "./useCountdown";
 export {
