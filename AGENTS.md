@@ -22,6 +22,7 @@ The app is strictly **local-first**: nothing in the boot/render path may await a
 - `npm run tauri build` - native production bundle (first Rust compile is slow).
 - `npm test` / `npm run test:watch` - Vitest + React Testing Library.
 - `npm run lint` - ESLint (flat config, `eslint.config.js`).
+- `npm run round:drive` - Playwright round-driver E2E harness (see "Round-driver E2E harness" below); requires `npx playwright install chromium` on first use.
 
 ## Hard product rule: local-first boot
 
@@ -695,3 +696,39 @@ No custom type scale; use Tailwind's built-in `text-xs` through `text-4xl`.
 `.github/workflows/ci.yml` runs two parallel jobs on pull requests and pushes to `main`:
 - **lint-and-test** - ESLint + Vitest on `ubuntu-latest`.
 - **tauri-build** - `npm run tauri build` on `macos-latest`. No code signing or artifact publishing; build failure fails CI.
+
+## Round-driver E2E harness (`e2e/`)
+
+The project's visual-regression backbone: a permanent Playwright asset that plays a COMPLETE, realistic debate round through the real UI headlessly and emits an ordered screenshot sequence.
+It is the "test by performing actual user actions" counterpart to the Vitest unit suite, not a replacement for it.
+
+### Running it
+
+- **`npm run round:drive`** launches the Vite dev server (via Playwright's `webServer`, reusing a running one locally) and drives one full round through real interactions.
+- **Screenshots land in `e2e/screenshots/`** (gitignored), chronologically named `NNN-<slug>-<viewport>.png` so the sequence reads top-to-bottom as the round unfolds (e.g. `009-after-cross-apply-and-strike-laptop.png`).
+  Every meaningful state has a `-laptop.png` at 1440 width; key states also have a `-narrow.png` at 1024 width.
+  The dir is wiped at the start of each run, so it always holds exactly one run's ordered set.
+- Playwright (chromium) is a **dev-dependency only** (`@playwright/test`); the browser is installed with `npx playwright install chromium`. Vitest is untouched (`vite.config.ts` scopes it to `src/**`; the harness lives in `e2e/` and never collides).
+
+### What it exercises (all through the real UI, no API shortcuts)
+
+Round setup -> flow arguments through every speech with real typing + Enter/Shift+Enter argument-row transitions + C#/S# triggers -> collapse/expand -> cross-application drag (copy + transparent arrow) and an adjacent-drop strike -> timer edit/start + speech-selector cycle -> shorthand expansion (a seeded abbreviation expands on the row transition) -> dock a speech doc (side and bottom) -> Send Flow (Shift+Click multi-select + Cmd/Ctrl+Enter) -> RFD -> block-file card + ToC bulk-send -> open the Email export flow (stops short of launching a mail app).
+
+### Structure
+
+- **`e2e/seed.ts`** - all fixed, realistic seed content (resolution, contentions, responses, RFD, a card). Deterministic by construction, so two runs flow the identical debate.
+- **`e2e/harness.ts`** - the `RoundHarness` wrapping the Playwright `Page` with real-gesture primitives and the screenshot machinery.
+- **`e2e/round-driver.spec.ts`** - the one ordered journey; assertions exist so the run **fails loudly** if the round cannot proceed (a contention never drops, the cross-apply copy never lands, ...), but the screenshot sequence is the product.
+- **`playwright.config.ts`** - one worker, no retries, fresh context per run (empty IndexedDB = clean local-first slate).
+
+### Hard-won gotchas (validated against the live app - keep these)
+
+- **XYFlow node activation is a *dispatched* `click`, not a positional click.** Column/contention nodes sit under the `react-flow__pane`, which intercepts hit-testing; a `force`/positional click lands on the pane, not the node. `el.dispatchEvent("click")` bubbles to React's delegated listener and fires the node's `onClick`. Shift-select likewise dispatches a `mousedown` with `shiftKey`.
+- **The C# contention trigger is a document-wide keydown that ignores editable targets**, so blur the column-label input (click the heading) before typing `C1`+Enter. The S# subpoint trigger fires from *inside* the contention editor.
+- **Editor focus has a race:** after `.ProseMirror` gains the focus class the first keystrokes are still dropped for a beat, so `focusEditor` settles ~160ms after focus lands - without it, leading words are eaten.
+- **Node drag is d3-drag (real *mouse* events, not pointer events)**, driven with a stepped `mouse.move`/`down`/`up` traversal; the drop resolves the target column + adjacent node geometrically (cross-apply copy + arrow, and strike when adjacent).
+- **The flow sheet is a vertically tall surface.** XYFlow's `translateExtent` pins the vertical axis and centres the flow, so on a short viewport the contentions render below the clipped pane and are unreachable. The round/flow screen therefore drives + screenshots at **1440x1400** (`FLOW_HEIGHT`) - same 1440 laptop width, extra height so every contention stays on-canvas; other screens use 1440x900 (`STANDARD_HEIGHT`). Narrow captures keep the phase height at 1024 width.
+- **Determinism:** an init-script neutralises the blinking text caret and all animation/transition; the harness never screenshots a running timer (timer shots are paused/edited states only). Two runs produce the identical **state sequence** (same ordered, named states) with identical content; the only run-to-run variance is negligible sub-pixel text anti-aliasing (a few hundred pixels at delta <= ~9), inherent to headless Chromium rasterisation - treat visual-regression comparisons with a small pixel tolerance, not byte-exact.
+- **App-level ordering note the harness surfaced:** `appendFlowNodesToSpeechDoc` (Send Flow) orders paragraphs by the flow `nodes` **`Y.Map` iteration order**, which depends on the run's random Yjs clientID - so a *multi-node* send's paragraph order is **not** stable run to run (the flow *display* order is stable, since it rides an explicit `order` field). The harness sends one contention per chord (still a real Shift+Click select + Cmd/Ctrl+Enter each) so the accumulation order is the fixed send order. A future fix would sort the append by reading order explicitly rather than trusting `Y.Map` iteration.
+- **Native HTML5 card drag** (block-file card -> docked speech doc) is not driven: Playwright cannot synthesise a native `DataTransfer` drag, matching the app's own "browser-verified only" note. The harness seeds a card and exercises the robust **ToC bulk-send** card->speech pipeline instead. The seeded card is fully filled (tag/tagline/cite/body) and its body highlighted via the real **Highlight** toolbar tool, so Auto Speech emits real spoken content and the `blockfile-toc-sent` screenshot shows delivered card content (bold tagline + cite + highlighted body) in the dock, not just the section heading.
+- **Empty card regions collapse to zero width and the caret cannot be moved between regions by keyboard**, so a normal `.click()` on an empty `[data-card-region]` is not actionable. `fillCardRegion` places the caret by clicking at explicit coordinates (the card's left edge at the region's vertical centre) via `page.mouse.click`, which ProseMirror maps to the nearest caret position inside that region.
