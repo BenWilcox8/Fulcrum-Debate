@@ -60,6 +60,13 @@ export interface ExportResult {
   ok: boolean;
   /** A short, human-readable line describing the outcome. */
   message: string;
+  /**
+   * Marks an *expected, non-error* outcome that happens to not hand off - most
+   * notably the user deliberately cancelling the flow. It still resolves
+   * `ok: false` (nothing was delivered), but the action renders it neutrally
+   * rather than in the error colour, since a cancel is not a failure.
+   */
+  neutral?: boolean;
 }
 
 /**

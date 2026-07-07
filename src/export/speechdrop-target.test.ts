@@ -83,6 +83,7 @@ describe("createSpeechDropTarget", () => {
 
     expect(upload).not.toHaveBeenCalled();
     expect(result.ok).toBe(false);
+    expect(result.neutral).toBe(true);
     expect(result.message).toMatch(/cancel/i);
   });
 
