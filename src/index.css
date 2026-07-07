@@ -68,6 +68,42 @@
   color: var(--color-neg-strong);
 }
 
+/* --- Block file headings --------------------------------------------- */
+/*
+ * Argument-section headings are level-1 headings (see
+ * src/blockfile/argument-sections.ts, BLOCK_SECTION_HEADING_LEVEL); nested
+ * headings may go deeper. Tailwind's preflight resets heading typography to
+ * inherit, so without these rules a heading is visually indistinguishable from
+ * body text - the ToC lists it, but the debater can't see the structure on the
+ * page. Give each level a descending, token-keyed treatment so the outline
+ * reads at a glance. Scoped to `.block-file-editor` so nothing leaks onto other
+ * surfaces.
+ */
+.block-file-editor :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--color-shell-text);
+  margin-top: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.block-file-editor h1 {
+  font-size: 1.25rem;
+}
+
+.block-file-editor h2 {
+  font-size: 1.1rem;
+}
+
+.block-file-editor h3 {
+  font-size: 1rem;
+}
+
+.block-file-editor :is(h4, h5, h6) {
+  font-size: 0.9rem;
+  color: var(--color-shell-muted);
+}
+
 /* --- Flow-node argument rows ----------------------------------------- */
 /*
  * A flow-node text surface (a contention or subpoint) renders its content as
@@ -98,6 +134,30 @@
  * block boundary a hovering card will land at. Both are view-only chrome (widget
  * decorations), so the schema/document ship no CSS.
  */
+
+/* --- Card tag brackets ----------------------------------------------- */
+/*
+ * The tactical tag (src/blockfile/card.ts, cardTag) stores its token bare and
+ * displays it bracketed. The brackets are CSS pseudo-elements, *not* DOM text
+ * nodes: a literal `[`/`]` text node beside the region's contentDOM breaks
+ * ProseMirror's input handling so the tag silently accepts no typed text and
+ * loses it on reload (see the cardTag docblock). Rendering them here keeps the
+ * region typable while still showing `[TAG]`. `user-select: none` keeps the
+ * brackets out of copied selections.
+ */
+.block-file-editor [data-card-region="tag"]::before,
+.block-file-editor [data-card-region="tag"]::after {
+  color: var(--color-shell-muted);
+  user-select: none;
+}
+
+.block-file-editor [data-card-region="tag"]::before {
+  content: "[";
+}
+
+.block-file-editor [data-card-region="tag"]::after {
+  content: "]";
+}
 
 /* A card is the positioning context for its absolutely-placed drag handle. */
 .block-file-editor [data-card] {

@@ -24,7 +24,7 @@ export interface ExportButtonProps {
 type ExportStatus =
   | { kind: "idle" }
   | { kind: "pending" }
-  | { kind: "done"; ok: boolean; message: string };
+  | { kind: "done"; ok: boolean; message: string; neutral?: boolean };
 
 /**
  * The **one-click Export action** mounted on the speech doc and block file
@@ -59,7 +59,12 @@ export function ExportButton({
       }
       setStatus({ kind: "pending" });
       const result = await target.export(payload);
-      setStatus({ kind: "done", ok: result.ok, message: result.message });
+      setStatus({
+        kind: "done",
+        ok: result.ok,
+        message: result.message,
+        neutral: result.neutral,
+      });
     },
     [buildPayload],
   );
@@ -85,7 +90,7 @@ export function ExportButton({
         role="status"
         aria-live="polite"
         className={`mt-1 min-h-[1.25rem] text-xs ${
-          status.kind === "done" && !status.ok
+          status.kind === "done" && !status.ok && !status.neutral
             ? "text-neg-strong"
             : "text-shell-muted"
         }`}

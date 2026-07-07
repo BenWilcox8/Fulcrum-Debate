@@ -139,31 +139,29 @@ const textRegionConfig = {
 
 /**
  * The tactical-tag region: a short, free-form label (`[T]`, `[NU]`, `[CP]`, ...)
- * the debater types. The token is stored bare; this node renders literal `[` and
- * `]` around it, so the tag always displays bracketed without the brackets ever
+ * the debater types. The token is stored bare; the enclosing brackets are display
+ * chrome rendered by CSS `::before` / `::after` on `[data-card-region="tag"]` (see
+ * src/index.css), so the tag always displays bracketed without the brackets ever
  * living in the document text. Accepts any token - it is deliberately not a fixed
  * enum.
  *
- * Serializes to `<span data-card-region="tag">[<span
- * data-card-tag-token>…</span>]</span>`; `contentElement` re-parses only the inner
- * token span so the brackets are not re-absorbed as content.
+ * The brackets are **deliberately CSS pseudo-elements, not DOM text nodes**: a
+ * literal `[`/`]` text node rendered as a sibling of the node's contentDOM breaks
+ * ProseMirror's input reconciliation for the region - typed characters land in the
+ * contentEditable DOM but never become a transaction, so the tag silently accepts
+ * nothing and loses the text on reload. Keeping the content hole as the node's sole
+ * child (like the tagline/cite regions) is what makes the tag typable. This matches
+ * how the side-region labels are rendered (CSS `::before`), not by injecting text.
+ *
+ * Serializes to `<span data-card-region="tag">…</span>`; the tag value round-trips
+ * as its bare text, exactly what every consumer (`readCardRegionText`, Auto Speech,
+ * export) already reads.
  */
 export const cardTag: Node = Node.create({
   name: CARD_TAG_NODE_NAME,
   ...textRegionConfig,
-  parseHTML: () => [
-    {
-      tag: 'span[data-card-region="tag"]',
-      contentElement: "span[data-card-tag-token]",
-    },
-  ],
-  renderHTML: () => [
-    "span",
-    { "data-card-region": "tag" },
-    "[",
-    ["span", { "data-card-tag-token": "" }, 0],
-    "]",
-  ],
+  parseHTML: () => [{ tag: 'span[data-card-region="tag"]' }],
+  renderHTML: () => ["span", { "data-card-region": "tag" }, 0],
 });
 
 /**

@@ -10,7 +10,7 @@ coverage
 *.log
 npm-debug.log*
 
-# E2E screenshots + ad-hoc driver scripts (tester artifacts)
+# E2E tester artifacts (screenshots + ad-hoc driver scripts)
 e2e-screenshots
 e2e-*.mjs
 
@@ -20,6 +20,3 @@ e2e-*.mjs
 .idea
 .vscode/*
 !.vscode/extensions.json
-
-# E2E test screenshots (tester)
-e2e-screenshots

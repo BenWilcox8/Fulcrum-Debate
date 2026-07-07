@@ -104,7 +104,8 @@ export function createSpeechDropTarget(
     async export(payload: ExportPayload): Promise<ExportResult> {
       const entered = await promptRoomCode(getLastRoomCode());
       if (entered === null) {
-        return { ok: false, message: "SpeechDrop upload cancelled." };
+        // A deliberate cancel is a clean no-op, not a failure - render neutral.
+        return { ok: false, neutral: true, message: "SpeechDrop upload cancelled." };
       }
       const roomCode = entered.trim();
       if (roomCode === "") {

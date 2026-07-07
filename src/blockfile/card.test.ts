@@ -168,14 +168,23 @@ describe("card node model", () => {
   });
 
   describe("tag region", () => {
-    it("renders bracketed around the token", async () => {
+    it("stores the token bare in a tag region span", async () => {
       const editor = insertCard(openEditor(await openHandle("tag-bracket")), {
         tag: "NU",
       });
-      // The brackets are structural chrome the node renders, not typed text.
-      expect(editor.getHTML()).toContain("[");
-      expect(editor.getHTML()).toContain("]");
-      expect(editor.getHTML()).toContain(">NU<");
+      // The brackets are CSS display chrome (::before/::after), not DOM text, so
+      // the serialized tag carries only the bare token - never literal brackets
+      // in the document. (A literal bracket text node beside the contentDOM would
+      // break ProseMirror input for the region; see the cardTag docblock.)
+      const html = editor.getHTML();
+      expect(html).toContain('data-card-region="tag"');
+      expect(html).toContain(">NU<");
+      const tagMarkup = html.slice(
+        html.indexOf('data-card-region="tag"'),
+        html.indexOf("</span>", html.indexOf('data-card-region="tag"')),
+      );
+      expect(tagMarkup).not.toContain("[");
+      expect(tagMarkup).not.toContain("]");
     });
 
     it("accepts any free-form 2-3 letter token, not a fixed enum", async () => {
