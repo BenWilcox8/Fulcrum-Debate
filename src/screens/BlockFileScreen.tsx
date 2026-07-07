@@ -16,8 +16,8 @@ import { CardFormattingStyles } from "../formatting/react";
 import { CardToolbar, HighlightStyles, useCardTools } from "../tools/react";
 import { CardSpeechDrag } from "../speech-doc/card-drag";
 import { SpeechDockLayout } from "../speech-doc";
-import { buildBlockFileExportPayload } from "../export";
-import { ExportButton } from "../export/react";
+import { buildBlockFileExportPayload, emailTarget } from "../export";
+import { ExportButton, useSpeechDropTarget } from "../export/react";
 
 /**
  * The block-file schema plus the card node model and its quick-create keyboard
@@ -82,6 +82,9 @@ export default function BlockFileScreen() {
   // so a bare subtree still paints the toolbar.
   const tools = useCardTools();
 
+  const { target: speechDropTarget, prompt: speechDropPrompt } =
+    useSpeechDropTarget();
+
   return (
     <section
       aria-labelledby="screen-heading"
@@ -115,6 +118,7 @@ export default function BlockFileScreen() {
         <div className="flex shrink-0 items-start gap-2">
           <ExportButton
             disabled={!ready || !handle}
+            targets={[emailTarget, speechDropTarget]}
             buildPayload={() =>
               handle ? buildBlockFileExportPayload(handle, "Block File") : null
             }
@@ -173,6 +177,7 @@ export default function BlockFileScreen() {
           </div>
         </SpeechDockLayout>
       </div>
+      {speechDropPrompt}
     </section>
   );
 }

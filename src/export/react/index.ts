@@ -6,3 +6,12 @@
 export { ExportButton } from "./ExportButton";
 export type { ExportButtonProps } from "./ExportButton";
 export { DEFAULT_EXPORT_TARGETS } from "../email-target";
+export {
+  useSpeechDropTarget,
+  type UseSpeechDropTargetOptions,
+  type UseSpeechDropTargetResult,
+} from "./useSpeechDropTarget";
+export {
+  SpeechDropRoomPrompt,
+  type SpeechDropRoomPromptProps,
+} from "./SpeechDropRoomPrompt";

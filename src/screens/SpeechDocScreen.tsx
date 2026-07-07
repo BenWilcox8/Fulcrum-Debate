@@ -1,8 +1,8 @@
 import { Link, useParams } from "react-router-dom";
 import { useDocument } from "../documents/react";
 import { SpeechDocEditor, useSpeechDocs } from "../speech-doc";
-import { buildSpeechDocExportPayload } from "../export";
-import { ExportButton } from "../export/react";
+import { buildSpeechDocExportPayload, emailTarget } from "../export";
+import { ExportButton, useSpeechDropTarget } from "../export/react";
 
 /**
  * A single speech doc's editor.
@@ -23,6 +23,8 @@ export default function SpeechDocScreen() {
   const { speechDocId } = useParams<{ speechDocId: string }>();
   const { handle, loaded } = useDocument(speechDocId);
   const { speechDocs, loading } = useSpeechDocs();
+  const { target: speechDropTarget, prompt: speechDropPrompt } =
+    useSpeechDropTarget();
 
   const speechDoc = speechDocs.find((s) => s.id === speechDocId);
   const notFound = !loading && speechDocId != null && speechDoc == null;
@@ -65,6 +67,7 @@ export default function SpeechDocScreen() {
         <ExportButton
           className="shrink-0"
           disabled={!handle || !loaded}
+          targets={[emailTarget, speechDropTarget]}
           buildPayload={() =>
             handle
               ? buildSpeechDocExportPayload(handle, speechDoc?.title)
@@ -72,6 +75,7 @@ export default function SpeechDocScreen() {
           }
         />
       </div>
+      {speechDropPrompt}
 
       <SpeechDocEditor
         handle={handle}

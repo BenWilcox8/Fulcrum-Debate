@@ -16,6 +16,7 @@ import {
   getPreferences,
   setPreferences,
   openExternal,
+  uploadToSpeechDrop,
   DEFAULT_PREFERENCES,
 } from "./index";
 
@@ -93,6 +94,32 @@ describe("ipc bridge", () => {
     expect(invoke).toHaveBeenCalledWith("open_external", {
       url: "mailto:?subject=Hi",
     });
+  });
+
+  it("uploadToSpeechDrop forwards the request to the speechdrop_upload command", async () => {
+    invoke.mockResolvedValue(undefined);
+    const request = {
+      roomCode: "aB3dEf",
+      fileName: "Speech.rtf",
+      contentType: "text/rtf",
+      contentBase64: "e30=",
+    };
+
+    await uploadToSpeechDrop(request);
+
+    expect(invoke).toHaveBeenCalledWith("speechdrop_upload", { request });
+  });
+
+  it("uploadToSpeechDrop rejects with the Rust-side failure message", async () => {
+    invoke.mockRejectedValue("That SpeechDrop room code wasn't found.");
+    await expect(
+      uploadToSpeechDrop({
+        roomCode: "zzz999",
+        fileName: "Speech.rtf",
+        contentType: "text/rtf",
+        contentBase64: "e30=",
+      }),
+    ).rejects.toBe("That SpeechDrop room code wasn't found.");
   });
 
   it("openExternal rejects when the Rust opener fails", async () => {

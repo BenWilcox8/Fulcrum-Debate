@@ -14,13 +14,15 @@ pub mod window_state;
 
 mod external;
 mod preferences;
+mod speechdrop;
 
 // Glob re-export so the `#[tauri::command]`-generated helper items travel with
 // the command functions; `generate_handler!` in `lib.rs` needs them to resolve
 // `commands::get_preferences` / `commands::set_preferences` /
-// `commands::open_external`.
+// `commands::open_external` / `commands::speechdrop_upload`.
 pub use external::*;
 pub use preferences::*;
+pub use speechdrop::*;
 
 use serde::Serialize;
 

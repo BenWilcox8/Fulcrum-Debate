@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SpeechDrop Export - Evidence</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --color-shell-bg: #f1f5f9;
+    --color-shell-surface: #ffffff;
+    --color-shell-border: #cbd5e1;
+    --color-shell-text: #0f172a;
+    --color-shell-muted: #64748b;
+    --color-aff-strong: #1d4ed8;
+    --color-aff: #3b82f6;
+  }
+</style>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+
+<h1 class="text-2xl font-bold text-gray-900 mb-2">SpeechDrop Export - Feature Evidence</h1>
+<p class="text-gray-500 mb-8 text-sm">Slice 2/2 of the Export &amp; Sharing PRD - SpeechDrop as a second pluggable target alongside Email.</p>
+
+<!-- Section 1: Both export buttons -->
+<section class="mb-8">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">1. Two Export Buttons (no action change)</h2>
+  <p class="text-sm text-gray-500 mb-4">Both screens pass <code class="bg-gray-200 px-1 rounded">targets={[emailTarget, speechDropTarget]}</code> to the existing ExportButton. One button per target renders automatically.</p>
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-sm text-gray-500 mr-2">Block File header:</span>
+      <button class="shrink-0 rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 hover:bg-gray-50">
+        Export to Email
+      </button>
+      <button class="shrink-0 rounded border border-blue-700 bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500">
+        Export to SpeechDrop
+      </button>
+    </div>
+    <p class="text-xs text-gray-400 mt-1">Feedback line appears here after export</p>
+  </div>
+</section>
+
+<!-- Section 2: Room code modal -->
+<section class="mb-8">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">2. Room Code Prompt Modal</h2>
+  <p class="text-sm text-gray-500 mb-4">Clicking "Export to SpeechDrop" opens this in-app modal. Last-used code seeds the input. Submitting uploads via the Rust <code class="bg-gray-200 px-1 rounded">speechdrop_upload</code> command.</p>
+  <div class="relative bg-gray-200 rounded-lg" style="height:320px;">
+    <div class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+      <div role="dialog" aria-modal="true" class="w-full max-w-sm rounded-lg border border-gray-300 bg-white p-6 shadow-lg mx-4">
+        <h2 class="text-lg font-semibold text-gray-900">Upload to SpeechDrop</h2>
+        <p class="mt-1 text-sm text-gray-500">Enter the room code for your round to drop this document in.</p>
+        <div class="mt-4 flex flex-col gap-3">
+          <label class="flex flex-col gap-1 text-sm font-medium text-gray-900">
+            Room code
+            <input
+              type="text"
+              value="ABC123"
+              class="rounded border border-gray-300 bg-white px-3 py-2 text-base tracking-wide text-gray-900 focus:border-blue-700 focus:outline-none"
+              readonly
+            />
+          </label>
+          <div class="mt-1 flex items-center justify-end gap-2">
+            <button class="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-900 hover:bg-gray-50">Cancel</button>
+            <button class="rounded border border-blue-700 bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-500">Upload</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: Security boundary -->
+<section class="mb-8">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">3. Rust Security Boundary</h2>
+  <p class="text-sm text-gray-500 mb-3">The web side never passes a URL - only <code class="bg-gray-200 px-1 rounded">{roomCode, fileName, contentType, contentBase64}</code>. The Rust command validates and builds the URL from a fixed base.</p>
+  <div class="bg-gray-900 text-green-400 rounded-lg p-4 text-sm font-mono overflow-x-auto">
+    <p class="text-gray-400 mb-2">// src-tauri/src/commands/speechdrop.rs (Rust unit tests all pass)</p>
+    <p><span class="text-yellow-300">validate_room_code</span>(<span class="text-green-300">"ABC123"</span>)  <span class="text-gray-500">// ✓ ok - 6-char alnum</span></p>
+    <p><span class="text-yellow-300">validate_room_code</span>(<span class="text-red-400">"../etc"</span>)  <span class="text-gray-500">// ✗ Err - path injection rejected</span></p>
+    <p><span class="text-yellow-300">is_allowed_mime</span>(<span class="text-green-300">"text/rtf"</span>)       <span class="text-gray-500">// ✓ accepted</span></p>
+    <p><span class="text-yellow-300">is_allowed_mime</span>(<span class="text-red-400">"text/html"</span>)      <span class="text-gray-500">// ✗ blocked</span></p>
+    <p class="mt-2 text-gray-400">// Two-request CSRF flow: GET /{room}/index → POST /{room}/upload</p>
+    <p class="text-gray-400">// Host-locked to https://speechdrop.net</p>
+  </div>
+</section>
+
+<!-- Section 4: RTF conversion -->
+<section class="mb-8">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">4. RTF Formatting Preservation</h2>
+  <p class="text-sm text-gray-500 mb-3">SpeechDrop rejects <code class="bg-gray-200 px-1 rounded">text/html</code> but accepts <code class="bg-gray-200 px-1 rounded">text/rtf</code>. The target converts the payload's HTML to RTF via <code class="bg-gray-200 px-1 rounded">htmlToRtf</code> - preserving bold, underline, highlight, and headings.</p>
+  <div class="grid grid-cols-2 gap-4">
+    <div>
+      <p class="text-xs font-medium text-gray-500 mb-1">Input HTML (payload.html)</p>
+      <div class="bg-gray-900 text-green-400 rounded p-3 text-xs font-mono">
+        &lt;h1&gt;Affirmative&lt;/h1&gt;<br/>
+        &lt;p&gt;&lt;strong&gt;Smith 24&lt;/strong&gt; &lt;u&gt;the evidence&lt;/u&gt;&lt;/p&gt;<br/>
+        &lt;p&gt;&lt;mark&gt;highlighted text&lt;/mark&gt;&lt;/p&gt;
+      </div>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-gray-500 mb-1">Output RTF (uploaded as .rtf)</p>
+      <div class="bg-gray-900 text-yellow-300 rounded p-3 text-xs font-mono">
+        {\rtf1\ansi ...<br/>
+        {\colortbl;\red255\green255\blue0;}<br/>
+        \b Affirmative\b0\par<br/>
+        {\b Smith 24} {\ul the evidence}\par<br/>
+        {\highlight1 highlighted text}\par}
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 5: Test results summary -->
+<section class="mb-4">
+  <h2 class="text-lg font-semibold text-gray-800 mb-3">5. Test Results</h2>
+  <div class="grid grid-cols-2 gap-4">
+    <div class="bg-white rounded-lg border border-green-200 p-4">
+      <p class="text-green-700 font-semibold text-sm mb-2">JS Tests: 40/40 ✓</p>
+      <ul class="text-xs text-gray-600 space-y-1">
+        <li>✓ rtf.test.ts (9 tests) - HTML→RTF conversion</li>
+        <li>✓ speechdrop-target.test.ts (9 tests) - target boundary</li>
+        <li>✓ speechdrop-room-storage.test.ts (7 tests) - localStorage</li>
+        <li>✓ useSpeechDropTarget.test.tsx (4 tests) - React hook</li>
+        <li>✓ ipc/index.test.ts (11 tests incl. uploadToSpeechDrop)</li>
+      </ul>
+    </div>
+    <div class="bg-white rounded-lg border border-green-200 p-4">
+      <p class="text-green-700 font-semibold text-sm mb-2">Rust Tests: 10/10 ✓</p>
+      <ul class="text-xs text-gray-600 space-y-1">
+        <li>✓ validate_room_code (5 tests) incl. injection rejection</li>
+        <li>✓ is_allowed_mime (1 test) - MIME allowlist</li>
+        <li>✓ classify_upload_response (4 tests) - 200/404/400</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
