@@ -91,7 +91,7 @@ describe("SpeechDockLayout", () => {
     );
   });
 
-  it("renders the bottom position from a persisted preference", () => {
+  it("migrates a legacy single-size persisted preference and renders the bottom position", () => {
     const storage = memoryStorage({
       [DOCK_LAYOUT_STORAGE_KEY]: JSON.stringify({ position: "bottom", size: 0.4 }),
     });

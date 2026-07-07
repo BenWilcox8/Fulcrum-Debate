@@ -39,6 +39,7 @@ describe("RfdSection", () => {
     const section = getByTestId("rfd-section");
     expect(section.tagName).toBe("SECTION");
     expect(section.className).toContain("border-t-2");
+    expect(section.className).toContain("shrink-0");
     expect(
       getByRole("heading", { name: /reason for decision/i }),
     ).toBeTruthy();
