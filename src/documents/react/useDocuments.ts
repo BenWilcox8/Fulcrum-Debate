@@ -37,6 +37,15 @@ export function useDocuments(): UseDocumentsResult {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // A closed service can transiently sit in context during a StrictMode /
+    // remount cycle: the provider closes the old service, then re-renders with a
+    // fresh one, and this child effect can run in between. `subscribe` throws on
+    // a closed service, so bail out and wait for the provider's fresh service to
+    // arrive (which re-runs this effect). This mirrors the dashboard's
+    // ResumeRecentZone guard and keeps a reload that lands directly on a
+    // document screen from crashing the tree.
+    if (service.closed) return;
+
     let active = true;
 
     const refresh = () => {

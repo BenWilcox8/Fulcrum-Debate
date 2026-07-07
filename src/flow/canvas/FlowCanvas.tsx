@@ -225,12 +225,31 @@ export function FlowCanvas({
     [flowNodeTypes],
   );
 
+  // A freshly-created round has no speech columns yet: rather than a blank
+  // canvas, show a quiet hint pointing at the column-controls strip above.
+  // Gated on a live handle so it never shows before the document opens, and it
+  // clears the moment the first column lands. Positioned in the lower-centre so
+  // it stays clear of the floating timer widget (which pins to the top-right).
+  const showEmptyHint = handle != null && columnNodes.length === 0;
+
   return (
     <div
       ref={wrapperRef}
       data-testid="flow-canvas"
-      className={`h-full w-full bg-shell-bg ${className ?? ""}`}
+      className={`relative h-full w-full bg-shell-bg ${className ?? ""}`}
     >
+      {showEmptyHint && (
+        <div className="pointer-events-none absolute inset-x-0 top-[60%] z-10 flex -translate-y-1/2 justify-center px-6">
+          <div className="max-w-xs text-center">
+            <p className="text-sm font-medium text-shell-text">
+              No speech columns yet
+            </p>
+            <p className="mt-1 text-xs text-shell-muted">
+              Add a column above (e.g. 1AC) to start flowing this round.
+            </p>
+          </div>
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}

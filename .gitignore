@@ -10,6 +10,10 @@ coverage
 *.log
 npm-debug.log*
 
+# E2E screenshots + ad-hoc driver scripts (tester artifacts)
+e2e-screenshots
+e2e-*.mjs
+
 # Editor / OS
 .DS_Store
 *.local

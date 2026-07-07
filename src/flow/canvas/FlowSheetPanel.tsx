@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, type ReactNode } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
 import { crossApplyContention } from "../cross-apply";
@@ -25,6 +25,15 @@ export interface FlowSheetPanelProps {
   handle: DocumentHandle | null;
   /** Class applied to the panel's outer wrapper. */
   className?: string;
+  /**
+   * Optional floating overlay (e.g. the round's {@link TimerWidget}) rendered
+   * over the **canvas region only** - above the flow columns but clear of the
+   * column-controls strip at the top and the RFD region at the bottom, so it
+   * never covers those chrome controls. The canvas wrapper is the positioning
+   * context; an overlay is expected to be `absolute` + `pointer-events-none`
+   * outside its own interactive card so it does not block flowing.
+   */
+  overlay?: ReactNode;
 }
 
 /**
@@ -45,10 +54,18 @@ export interface FlowSheetPanelProps {
  * Decision region at the end of the flow, visually delineated from the speech
  * columns and persisted in the same flow document.
  */
-export function FlowSheetPanel({ handle, className }: FlowSheetPanelProps) {
+export function FlowSheetPanel({
+  handle,
+  className,
+  overlay,
+}: FlowSheetPanelProps) {
   return (
     <FlowSheetProvider handle={handle}>
-      <FlowSheetPanelBody handle={handle} className={className} />
+      <FlowSheetPanelBody
+        handle={handle}
+        className={className}
+        overlay={overlay}
+      />
     </FlowSheetProvider>
   );
 }
@@ -57,7 +74,7 @@ export function FlowSheetPanel({ handle, className }: FlowSheetPanelProps) {
  * The panel's inner body, rendered inside the {@link FlowSheetProvider} so it can
  * read the active-column selection and drive the trigger against it.
  */
-function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
+function FlowSheetPanelBody({ handle, className, overlay }: FlowSheetPanelProps) {
   const context = useFlowSheet();
   const collapse = context?.collapse ?? null;
   useContentionTrigger(handle, context?.activeColumnId ?? null);
@@ -100,12 +117,16 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
         </button>
         <SendToSpeechControl />
       </div>
-      <div className="min-h-0 flex-1">
+      {/* The canvas is the overlay's positioning context, so a floating widget
+          (the timers) covers only the flow columns - never the controls strip
+          above or the RFD region below. */}
+      <div className="relative min-h-0 flex-1">
         <FlowCanvas
           handle={handle}
           flowNodeTypes={CONTENTION_FLOW_NODE_REGISTRY}
           onNodeCrossColumnDrop={onNodeCrossColumnDrop}
         />
+        {overlay}
       </div>
       <RfdSection handle={handle} />
     </div>
