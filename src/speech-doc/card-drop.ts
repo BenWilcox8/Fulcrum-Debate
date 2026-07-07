@@ -135,12 +135,13 @@ export function handleSpeechCardDragOver(
   return true;
 }
 
-/** `dragleave`/`dragend` handler: clear the drop indicator when the card leaves. */
+/** `dragleave` handler: clear the drop indicator when the card genuinely leaves the editor. */
 export function handleSpeechCardDragLeave(
   view: EditorView,
   event: DragEvent,
 ): boolean {
   if (!hasCardSpeechDrag(event.dataTransfer)) return false;
+  if (event.relatedTarget && view.dom.contains(event.relatedTarget as Node)) return false;
   setDropPos(view, null);
   return false;
 }
@@ -258,7 +259,6 @@ export const SpeechCardDrop = Extension.create<SpeechCardDropOptions>({
           handleDOMEvents: {
             dragover: (view, event) => handleSpeechCardDragOver(view, event),
             dragleave: (view, event) => handleSpeechCardDragLeave(view, event),
-            dragend: (view, event) => handleSpeechCardDragLeave(view, event),
             drop: (view, event) => handleSpeechCardDrop(view, event, onDrop),
           },
         },
