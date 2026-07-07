@@ -42,6 +42,32 @@ export {
   type SpeechDocEditorProps,
 } from "./SpeechDocEditor";
 export {
+  CARD_SPEECH_DRAG_MIME,
+  writeCardSpeechBlocks,
+  readCardSpeechBlocks,
+  hasCardSpeechDrag,
+} from "./card-drag-transfer";
+export {
+  CardSpeechDrag,
+  buildCardSpeechDragData,
+  cardSpeechDragPluginKey,
+  CARD_DRAG_HANDLE_ATTR,
+  type CardSpeechDragData,
+  type CardSpeechDragOptions,
+} from "./card-drag";
+export {
+  SpeechCardDrop,
+  snapDropPos,
+  resolveSpeechDropPos,
+  insertSpeechBlocksAt,
+  handleSpeechCardDragOver,
+  handleSpeechCardDragLeave,
+  handleSpeechCardDrop,
+  speechCardDropPluginKey,
+  type SpeechCardDropOptions,
+  type SpeechCardDropInfo,
+} from "./card-drop";
+export {
   SpeechDockLayout,
   SpeechDock,
   SplitDock,

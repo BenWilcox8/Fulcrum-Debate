@@ -1,8 +1,22 @@
 import { useEffect } from "react";
 import type { DocumentHandle } from "../documents/core";
+import type { EditorPresetOptions } from "../editor/preset";
 import { DocumentEditor } from "../editor/react";
 import { SPEECH_DOC_BODY_FRAGMENT } from "./speech-doc";
 import { useActiveSpeechDoc } from "./active-speech-doc-context";
+import { SpeechCardDrop } from "./card-drop";
+
+/**
+ * The speech doc editor's preset: the shared surface plus the card-drop extension,
+ * so a card dragged from the block file can be dropped in at a precise position.
+ *
+ * A module-level constant so its reference is stable across renders, per the
+ * {@link ../editor/react.useDocumentEditor | useDocumentEditor} stable-preset
+ * contract.
+ */
+const SPEECH_DOC_PRESET: EditorPresetOptions = {
+  extensions: [SpeechCardDrop],
+};
 
 /** Props for {@link SpeechDocEditor}. */
 export interface SpeechDocEditorProps {
@@ -52,6 +66,7 @@ export function SpeechDocEditor({ handle, docId, className }: SpeechDocEditorPro
       <DocumentEditor
         handle={handle}
         fragment={SPEECH_DOC_BODY_FRAGMENT}
+        preset={SPEECH_DOC_PRESET}
         className="speech-doc-body min-h-full rounded border border-shell-border bg-shell-surface px-4 py-3 text-shell-text focus-within:border-shell-muted"
       />
     </div>

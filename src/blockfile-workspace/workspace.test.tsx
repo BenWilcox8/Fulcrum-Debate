@@ -181,12 +181,13 @@ describe("useBlockFile error and retry", () => {
   it("retries and recovers after a transient failure", async () => {
     const service = openDocumentService();
     const realList = service.list.bind(service);
-    let calls = 0;
-    vi.spyOn(service, "list").mockImplementation(() => {
-      calls++;
-      if (calls === 1) return Promise.reject(new Error("transient"));
-      return realList();
-    });
+    // Fail every `list` until we flip `recovered` (the screen docks the speech
+    // editor, which is a second `list` consumer, so keying the failure to a call
+    // count would be coupled to which feature reads the registry first).
+    let recovered = false;
+    vi.spyOn(service, "list").mockImplementation(() =>
+      recovered ? realList() : Promise.reject(new Error("transient")),
+    );
 
     renderScreenWithService(service);
 
@@ -194,6 +195,7 @@ describe("useBlockFile error and retry", () => {
       expect(screen.getByRole("button", { name: /retry/i })).toBeInTheDocument();
     });
 
+    recovered = true;
     fireEvent.click(screen.getByRole("button", { name: /retry/i }));
 
     await waitFor(() => {
