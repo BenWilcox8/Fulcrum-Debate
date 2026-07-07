@@ -92,7 +92,7 @@ export function SpeechDockLayout({
   // closed while a speech stayed active.
   const previousActiveId = useRef(activeId);
   useEffect(() => {
-    if (activeId != null && previousActiveId.current == null) {
+    if (activeId != null && previousActiveId.current == null && !isNarrowViewport()) {
       setOpen(true);
     }
     previousActiveId.current = activeId;

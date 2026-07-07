@@ -127,9 +127,11 @@ export function TimerWidget({ speeches, positionStorage }: TimerWidgetProps = {}
         handle.releasePointerCapture(upEvent.pointerId);
         window.removeEventListener("pointermove", move);
         window.removeEventListener("pointerup", up);
+        window.removeEventListener("pointercancel", up);
       };
       window.addEventListener("pointermove", move);
       window.addEventListener("pointerup", up);
+      window.addEventListener("pointercancel", up);
     },
     [setPosition],
   );
