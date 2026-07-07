@@ -114,8 +114,9 @@ export function ColumnControls({ handle, className }: ColumnControlsProps) {
       {columns.length > 0 && (
         // Cap the list height and scroll it: a full round accumulates many
         // speech columns, and an uncapped list grows unbounded, pushing the
-        // flow canvas below it off-screen. Bounding it here keeps the canvas
-        // the dominant region at any column count (heavy-volume layout).
+        // flow canvas below it off-screen (acute on short/narrow viewports,
+        // where it squeezed the flow to a thin strip). Bounding it here keeps
+        // the canvas the dominant region at any column count.
         <ul className="flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
           {columns.map((column, index) => (
             <ColumnRow

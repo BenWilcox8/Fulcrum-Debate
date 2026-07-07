@@ -5,7 +5,7 @@
 // space.
 import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { fireEvent, render, type RenderResult } from "@testing-library/react";
 
 import { DocumentsProvider } from "../../documents/react";
@@ -20,6 +20,31 @@ import {
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
 });
+
+afterEach(() => {
+  // Remove any matchMedia stub a test installed so others see jsdom's default.
+  delete (window as unknown as { matchMedia?: unknown }).matchMedia;
+});
+
+/**
+ * Stub `window.matchMedia` (absent in jsdom) to report the viewport as narrow or
+ * roomy, so the narrow-aware dock default is testable without a real browser.
+ */
+function stubMatchMedia(narrow: boolean): void {
+  (window as unknown as { matchMedia: (q: string) => MediaQueryList }).matchMedia = (
+    query: string,
+  ) =>
+    ({
+      matches: narrow && /max-width/.test(query),
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      onchange: null,
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList;
+}
 
 function memoryStorage(seed: Record<string, string> = {}): DockLayoutStorage & {
   data: Record<string, string>;
@@ -100,6 +125,27 @@ describe("SpeechDockLayout", () => {
     expect(
       Number(second.getByRole("separator").getAttribute("aria-valuenow")),
     ).toBe(after);
+  });
+
+  it("starts collapsed on a narrow viewport (flow gets full width; dock is one click away)", () => {
+    stubMatchMedia(true);
+    const view = renderLayout(memoryStorage());
+
+    // No side-by-side split on a narrow screen: the flow fills the space and the
+    // dock is opened deliberately via the affordance.
+    expect(view.queryByTestId("split-dock")).toBeNull();
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+    expect(view.getByTestId("flow-pane")).toBeTruthy();
+
+    fireEvent.click(view.getByRole("button", { name: "Open speech dock" }));
+    expect(view.getByTestId("speech-dock")).toBeTruthy();
+  });
+
+  it("stays open by default on a roomy viewport", () => {
+    stubMatchMedia(false);
+    const view = renderLayout(memoryStorage());
+    expect(view.getByTestId("speech-dock")).toBeTruthy();
+    expect(view.getByTestId("split-dock")).toBeTruthy();
   });
 
   it("collapses to full-flow and re-opens (session-only, not persisted)", () => {

@@ -5,6 +5,31 @@ import { SplitDock } from "./SplitDock";
 import { useDockLayout } from "./useDockLayout";
 import type { DockLayoutStorage } from "./dock-layout-storage";
 
+/**
+ * Below this viewport width a side-by-side split leaves neither the flow nor the
+ * dock enough room (a 40% dock on a 1024px screen starves the 5-column flow so
+ * the timer widget overlaps its columns), so the dock starts *collapsed* there -
+ * the flow gets the full width and the debater opens the dock deliberately via
+ * the "Open speech dock" button. This is the initial default only; the dock is
+ * always openable. On wider viewports the dock keeps its open-by-default
+ * behaviour. 1100px is the smallest width at which a usable flow (~700px) and a
+ * usable speech editor (~320px) coexist side by side.
+ */
+export const NARROW_DOCK_BREAKPOINT = 1100;
+
+/**
+ * Whether the viewport is too narrow for a comfortable side-by-side dock, read
+ * once synchronously. Guarded so a non-browser environment (jsdom in unit tests,
+ * where `matchMedia` is absent) resolves to "not narrow" - preserving the
+ * open-by-default behaviour the dock tests assert.
+ */
+function isNarrowViewport(breakpoint = NARROW_DOCK_BREAKPOINT): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia(`(max-width: ${breakpoint - 1}px)`).matches;
+}
+
 /** Props for {@link SpeechDockLayout}. */
 export interface SpeechDockLayoutProps {
   /** The main pane - the flow sheet (with its timer overlay) fills this. */
@@ -40,7 +65,9 @@ export function SpeechDockLayout({
   className,
 }: SpeechDockLayoutProps) {
   const { layout, setPosition, setSize } = useDockLayout(storage);
-  const [open, setOpen] = useState(true);
+  // Open by default on roomy viewports; collapsed by default when the viewport
+  // is too narrow for a comfortable side split (see NARROW_DOCK_BREAKPOINT).
+  const [open, setOpen] = useState(() => !isNarrowViewport());
 
   if (!open) {
     return (
