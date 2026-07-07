@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
-  PanOnScrollMode,
   applyNodeChanges,
   type Node,
   type NodeChange,
@@ -25,7 +24,7 @@ import {
 import {
   FLOW_NODE_WIDTH,
   FLOW_NODE_HEIGHT,
-  columnContentHeights,
+
   registryToNodeTypes,
   type FlowNodeRegistry,
   type HostedFlowNode,
@@ -42,13 +41,14 @@ const BASE_NODE_TYPES: NodeTypes = {
 /** A stable empty registry so omitting `flowNodeTypes` never re-renders. */
 const EMPTY_REGISTRY: FlowNodeRegistry = [];
 
+/** Horizontal reach of the pan extent, in flow px (both directions). */
+const HORIZONTAL_PAN_REACH = 100_000;
+
 /**
- * A large finite horizontal pan bound, kept off `Infinity` so every column stays
- * reachable. The vertical bound is computed per-render from the tallest column
- * (see {@link FlowCanvas}) so a column that grows past the viewport can be
- * scrolled to, while a sheet that fits stays pinned at the top.
+ * Extra vertical breathing room (px) added below the tallest column's content
+ * so the last contention/subpoint is not flush against the pannable bottom.
  */
-const HORIZONTAL_PAN_BOUND = 100_000;
+const CANVAS_BOTTOM_PADDING = 48;
 
 /** Props for {@link FlowCanvas}. */
 export interface FlowCanvasProps {
@@ -89,11 +89,15 @@ export interface FlowCanvasProps {
 
 /**
  * The flow-sheet canvas: an XYFlow surface rendering one side-coloured column
- * per flow-doc speech column, in document order. Each column grows to contain
- * its stacked contentions (viewport height is the floor so empty columns still
- * fill the surface). The canvas pans horizontally across more columns than fit
- * the viewport and vertically down a column that has grown past it; the
- * transparent cross-application arrows between columns are also rendered here.
+ * per flow-doc speech column, in document order, that pans horizontally across
+ * more columns than fit the viewport and vertically down through a densely-
+ * flowed column that overflows it, hosting the flow nodes (contentions) inside
+ * those columns and the transparent cross-application arrows between them.
+ *
+ * Columns fill the viewport height when their content is short and grow past it
+ * when a column accumulates more contentions/subpoints than fit, so nothing is
+ * clipped away unreachable; the vertical pan extent opens up exactly as far as
+ * the tallest column overflows.
  *
  * Columns, nodes, and edges come straight from the flow-sheet document model
  * (live through the `observe*` seams); the canvas is a view over that model and
@@ -141,47 +145,39 @@ export function FlowCanvas({
   // collapsed node lays out as a bar and its column reflows - see ./flow-collapse.
   const collapsedIds = useFlowSheet()?.collapse.collapsedNodeIds;
 
-  const columnNodes = useColumnNodes(handle, height);
   const flowNodes = useFlowNodes(handle, flowNodeTypes, collapsedIds);
-  const edges = useFlowEdges(handle);
 
-  // The pixel height each column's stacked contentions occupy. A column with
-  // more content than the viewport must *grow* to contain it (and the canvas
-  // must let the user scroll to reach it) - otherwise every contention past the
-  // first is clipped below the fold. The viewport height is the floor so a
-  // short/empty column still fills the surface top-to-bottom.
-  const viewportHeight = height ?? DEFAULT_COLUMN_HEIGHT;
-  const contentHeights = useMemo(
-    () => columnContentHeights(flowNodes),
-    [flowNodes],
-  );
-  const sizedColumnNodes = useMemo(
-    () =>
-      columnNodes.map((column) => {
-        const grown = Math.max(
-          viewportHeight,
-          contentHeights.get(column.id) ?? 0,
-        );
-        return grown === column.height ? column : { ...column, height: grown };
-      }),
-    [columnNodes, contentHeights, viewportHeight],
-  );
-
-  // The tallest column bounds vertical panning: pinned at the top when the sheet
-  // fits, scrollable down to the bottom of the tallest column when it does not.
-  const maxColumnHeight = useMemo(() => {
-    let max = viewportHeight;
-    for (const bottom of contentHeights.values()) {
+  // How tall the tallest column's stacked content is. A densely-flowed column
+  // (6+ contentions, subpoints) is far taller than the viewport, so the columns
+  // must grow to contain their nodes and the canvas must pan vertically to reach
+  // the ones below the fold. When content is short this is 0, so columns simply
+  // fill the viewport as before (no vertical scroll).
+  const contentHeight = useMemo(() => {
+    let max = 0;
+    for (const node of flowNodes) {
+      const bottom = (node.position?.y ?? 0) + (node.height ?? FLOW_NODE_HEIGHT);
       if (bottom > max) max = bottom;
     }
-    return max;
-  }, [contentHeights, viewportHeight]);
-  const translateExtent = useMemo<[[number, number], [number, number]]>(
+    return max > 0 ? max + CANVAS_BOTTOM_PADDING : 0;
+  }, [flowNodes]);
+
+  const viewportHeight = height ?? DEFAULT_COLUMN_HEIGHT;
+  // Columns fill the viewport, but grow past it when their content overflows so
+  // nothing is clipped away with no way to reach it.
+  const columnHeight = Math.max(viewportHeight, contentHeight);
+
+  const columnNodes = useColumnNodes(handle, columnHeight);
+  const edges = useFlowEdges(handle);
+
+  // Pan extent: horizontal is free (walk across more columns than fit); vertical
+  // opens up exactly as far as the tallest column overflows the viewport, so a
+  // dense sheet can be scrolled top-to-bottom while a short one stays pinned.
+  const panExtent = useMemo<[[number, number], [number, number]]>(
     () => [
-      [-HORIZONTAL_PAN_BOUND, 0],
-      [HORIZONTAL_PAN_BOUND, maxColumnHeight],
+      [-HORIZONTAL_PAN_REACH, 0],
+      [HORIZONTAL_PAN_REACH, columnHeight],
     ],
-    [maxColumnHeight],
+    [columnHeight],
   );
 
   // Parents must precede their children in the node array (XYFlow requirement),
@@ -189,8 +185,8 @@ export function FlowCanvas({
   // the document-authoritative layout - the single source of truth for where a
   // node rests.
   const docNodes = useMemo<Node[]>(
-    () => [...sizedColumnNodes, ...flowNodes],
-    [sizedColumnNodes, flowNodes],
+    () => [...columnNodes, ...flowNodes],
+    [columnNodes, flowNodes],
   );
 
   // Locally-controlled node state so a drag is smooth. It is re-seeded from the
@@ -299,14 +295,13 @@ export function FlowCanvas({
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onNodeDragStop={onNodeDragStop}
-        // Free scroll/drag panning: sideways across speech columns and down a
-        // column that has grown past the viewport with contentions. The
-        // translate extent (computed from the tallest column) is what keeps the
-        // sheet pinned at the top until there is actually overflow to reach.
+        // Free 2D navigation: scroll/drag pans across columns (horizontal) and
+        // down through a densely-flowed column (vertical). The vertical reach is
+        // bounded by `panExtent` to exactly the tallest column's overflow, so a
+        // short sheet cannot be dragged off its top edge.
         panOnScroll
-        panOnScrollMode={PanOnScrollMode.Free}
         panOnDrag
-        translateExtent={translateExtent}
+        translateExtent={panExtent}
         // Lock zoom so column heights stay 1:1 with the viewport.
         zoomOnScroll={false}
         zoomOnPinch={false}

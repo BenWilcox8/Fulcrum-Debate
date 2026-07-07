@@ -68,7 +68,7 @@ export function ColumnControls({ handle, className }: ColumnControlsProps) {
   return (
     <div
       data-testid="column-controls"
-      className={`flex flex-col gap-3 bg-shell-surface p-card text-shell-text ${className ?? ""}`}
+      className={`flex flex-col gap-2 bg-shell-surface px-card py-3 text-shell-text ${className ?? ""}`}
     >
       <form
         className="flex flex-wrap items-center gap-2"
@@ -112,7 +112,11 @@ export function ColumnControls({ handle, className }: ColumnControlsProps) {
       </form>
 
       {columns.length > 0 && (
-        <ul className="flex flex-col gap-2">
+        // Cap the list height and scroll it: a full round accumulates many
+        // speech columns, and an uncapped list grows unbounded, pushing the
+        // flow canvas below it off-screen. Bounding it here keeps the canvas
+        // the dominant region at any column count (heavy-volume layout).
+        <ul className="flex max-h-44 flex-col gap-2 overflow-y-auto pr-1">
           {columns.map((column, index) => (
             <ColumnRow
               key={column.id}
