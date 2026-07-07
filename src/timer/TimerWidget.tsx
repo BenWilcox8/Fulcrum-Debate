@@ -116,7 +116,7 @@ export function TimerWidget({ speeches, positionStorage }: TimerWidgetProps = {}
     observer?.observe(wrapper);
     observer?.observe(card);
     return () => observer?.disconnect();
-  }, [position, collapsed]);
+  }, [position, collapsed, setPosition]);
 
   const onDragPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
