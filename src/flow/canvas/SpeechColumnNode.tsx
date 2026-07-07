@@ -53,7 +53,7 @@ export function SpeechColumnNode({
       data-side={data.side}
       data-active={active || undefined}
       onClick={() => context?.setActiveColumnId(id)}
-      className={`flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-lg border ${classes.column} ${
+      className={`pointer-events-auto flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-lg border ${classes.column} ${
         active ? "ring-2 ring-shell-text" : ""
       }`}
     >

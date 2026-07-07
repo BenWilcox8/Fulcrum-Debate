@@ -46,6 +46,19 @@ describe("SpeechColumnNode", () => {
     expect(aff.className).not.toEqual(neg.className);
   });
 
+  it("keeps pointer events enabled so the click-to-activate handler fires", () => {
+    // XYFlow gives a non-selectable, non-draggable node wrapper
+    // `pointer-events: none`; without an explicit `pointer-events-auto` the
+    // column's onClick never fires in a real browser and no active column can
+    // be chosen (the C# trigger then has nowhere to land). This class is the
+    // guard for that interaction - jsdom has no layout so only its presence is
+    // assertable here; the behaviour was verified in the browser.
+    renderNode({ label: "1AC", side: "aff" });
+    expect(screen.getByTestId("speech-column").className).toContain(
+      "pointer-events-auto",
+    );
+  });
+
   it("exposes an empty body region as the seam for future flow nodes", () => {
     const { container } = renderNode({ label: "1AC", side: "aff" });
     const body = container.querySelector("[data-column-body]");
