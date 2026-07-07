@@ -20,7 +20,6 @@ import {
  * sequence.
  */
 test("drives a full debate round through the real UI", async ({ page }) => {
-  RoundHarness.prepareScreenshotDir();
   await page.setViewportSize({ width: LAPTOP_WIDTH, height: STANDARD_HEIGHT });
   // Determinism: kill the blinking text caret and all animation/transition so
   // two runs produce byte-identical captures of the same state. Runs on every
@@ -42,6 +41,7 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   // screenshot sequence to disk; `round:vrt` (ROUND_VRT=1) asserts each state
   // against the committed baseline. The journey below is identical either way.
   const mode = process.env.ROUND_VRT ? "vrt" : "capture";
+  if (mode !== "vrt") RoundHarness.prepareScreenshotDir();
   const h = new RoundHarness(page, { mode });
 
   // --- 1. Boot + round setup -----------------------------------------------
