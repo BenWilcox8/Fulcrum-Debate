@@ -116,7 +116,7 @@ export const SPEECHES: readonly SpeechSeed[] = [
       {
         rows: [
           {
-            lead: "Extend competitiveness - the neg drops the freight-cost warrant.",
+            lead: "aff case controls the internal link to every impact",
             responses: ["Dropped offense flows aff and is conceded true."],
           },
           {
@@ -161,15 +161,6 @@ export const SPEECHES: readonly SpeechSeed[] = [
     ],
   },
 ];
-
-/** A body line that begins with a shorthand abbreviation, to prove expansion. */
-export const SHORTHAND_LINE = {
-  /** Typed verbatim; the leading token `aff` expands on the row transition. */
-  typed: "aff case controls the internal link to every impact",
-  /** The abbreviation exercised and what it expands to (for assertions/labels). */
-  abbreviation: "aff",
-  expansion: "affirmative",
-} as const;
 
 /** Deterministic prep-timer value the harness edits the aff clock to. */
 export const PREP_TIME = "2:30";

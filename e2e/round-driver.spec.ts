@@ -3,7 +3,6 @@ import { RoundHarness, LAPTOP_WIDTH, STANDARD_HEIGHT, FLOW_HEIGHT } from "./harn
 import {
   SPEECHES,
   RESOLUTION,
-  SHORTHAND_LINE,
   PREP_TIME,
   RFD_TEXT,
   BLOCK_CARD,
@@ -97,15 +96,17 @@ test("drives a full debate round through the real UI", async ({ page }) => {
 
   // --- 6. Shorthand: type an abbreviation, transition, watch it expand ------
   // Flow the 1AR's first contention by hand so we can screenshot before/after
-  // the expansion. `aff` is a seeded default abbreviation → `affirmative`.
+  // the expansion. The seed lead starts with `aff`, a seeded default
+  // abbreviation that expands to `affirmative` on the row transition.
   const arNodeId = await h.dropContention(2);
   const arBody = h.contentionBody(arNodeId);
   await h.focusEditor(arBody);
-  await page.keyboard.type(SHORTHAND_LINE.typed);
-  await expect(arBody).toContainText(SHORTHAND_LINE.abbreviation);
+  const arRow0 = SPEECHES[2].contentions[0].rows[0];
+  await page.keyboard.type(arRow0.lead);
+  await expect(arBody).toContainText("aff");
   await h.shot("shorthand-before-expand");
   await page.keyboard.press("Enter"); // the row transition runs the expansion
-  await expect(arBody).toContainText(SHORTHAND_LINE.expansion);
+  await expect(arBody).toContainText("affirmative");
   await h.shot("shorthand-after-expand", { narrow: true });
 
   // Finish the rest of the 1AR / 2NR / 2AR so the flow reads as a full round.
@@ -184,12 +185,12 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   // --- 10. Block file: seed a card, ToC bulk-send into the speech doc -------
   await h.setPhaseHeight(STANDARD_HEIGHT); // back to the standard laptop height
   await page.goto("/#/blocks");
-  await page.waitForTimeout(800);
   // A heading defines an argument section the ToC can send. Scope the editor
   // locator to the block-file editor (`.block-file-editor` is the EditorContent
   // wrapper class); a bare `.ProseMirror` could match the speech dock's editor.
   const blockEditor = page.locator(".block-file-editor .ProseMirror").first();
-  await blockEditor.click();
+  await blockEditor.waitFor();
+  await h.focusEditor(blockEditor);
   await page.keyboard.press("Home");
   await page.keyboard.type("# Freight and logistics");
   await page.keyboard.press("Enter");
