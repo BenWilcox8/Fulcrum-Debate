@@ -57,23 +57,60 @@ describe("createEmailTarget", () => {
     expect(result.message).toMatch(/email draft/i);
   });
 
-  it("reports failure without throwing when the opener rejects", async () => {
-    const openUrl = vi.fn().mockRejectedValue(new Error("no mail app"));
+  it("reports a friendly failure without leaking the raw error, and logs it", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const error = new Error("no mail app");
+    const openUrl = vi.fn().mockRejectedValue(error);
     const target = createEmailTarget(openUrl);
 
     const result = await target.export(payload);
 
     expect(result.ok).toBe(false);
-    expect(result.message).toContain("no mail app");
+    // Friendly, fixed line - the raw error text is NOT interpolated into it.
+    expect(result.message).toMatch(/could not open your mail app/i);
+    expect(result.message).not.toContain("no mail app");
+    // The raw error is logged for diagnosis instead.
+    expect(consoleError).toHaveBeenCalledWith("Email export failed:", error);
+    consoleError.mockRestore();
   });
 
-  it("tolerates a non-Error rejection", async () => {
+  it("sanitizes the no-Tauri-IPC (plain browser) exception", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    // This is the exact exception the real `invoke` throws in a plain browser,
+    // where `window.__TAURI_INTERNALS__` is undefined - it must never reach the UI.
+    const tauriError = new TypeError(
+      "Cannot read properties of undefined (reading 'invoke')",
+    );
+    const openUrl = vi.fn().mockRejectedValue(tauriError);
+    const target = createEmailTarget(openUrl);
+
+    const result = await target.export(payload);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toMatch(/could not open your mail app/i);
+    // None of the raw TypeError's guts leak to the user.
+    expect(result.message).not.toMatch(/invoke|undefined|reading|Cannot read/i);
+    expect(consoleError).toHaveBeenCalledWith("Email export failed:", tauriError);
+    consoleError.mockRestore();
+  });
+
+  it("tolerates a non-Error rejection without leaking it", async () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
     const openUrl = vi.fn().mockRejectedValue("boom");
     const target = createEmailTarget(openUrl);
 
     const result = await target.export(payload);
 
     expect(result.ok).toBe(false);
-    expect(result.message).toContain("boom");
+    expect(result.message).toMatch(/could not open your mail app/i);
+    expect(result.message).not.toContain("boom");
+    expect(consoleError).toHaveBeenCalledWith("Email export failed:", "boom");
+    consoleError.mockRestore();
   });
 });

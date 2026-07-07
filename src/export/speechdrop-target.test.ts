@@ -5,7 +5,7 @@
  * path the PRD calls out: a cancelled prompt, an empty code, a network failure,
  * and a bad room code (the message the transport rejects with is surfaced).
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createSpeechDropTarget, SPEECHDROP_UPLOAD_MIME } from "./speechdrop-target";
 import type { ExportPayload } from "./target";
@@ -24,6 +24,15 @@ function decodeBase64Utf8(b64: string): string {
 }
 
 describe("createSpeechDropTarget", () => {
+  // The error paths log the raw failure via console.error (kept out of the UI);
+  // silence it so the intentional error-path tests don't clutter test output.
+  beforeEach(() => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("prompts for the room code, uploads an RTF file, and reports success", async () => {
     const upload = vi.fn().mockResolvedValue(undefined);
     const promptRoomCode = vi.fn().mockResolvedValue("aB3dEf");

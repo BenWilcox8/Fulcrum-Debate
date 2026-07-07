@@ -12,6 +12,25 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 
+/**
+ * Whether the Tauri IPC bridge is present - i.e. we are running inside the
+ * desktop shell rather than a plain browser (the dev server, a webview preview,
+ * or the E2E harness). Tauri injects `__TAURI_INTERNALS__` onto `window`; without
+ * it, `invoke` dereferences `undefined` and throws a raw
+ * `Cannot read properties of undefined (reading 'invoke')` TypeError.
+ *
+ * The outbound-hand-off commands ({@link openExternal}, {@link uploadToSpeechDrop})
+ * guard on this so that in a browser they reject with a readable, user-facing
+ * reason instead of leaking that internal TypeError to the export failure line.
+ */
+export function isTauriAvailable(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+/** The friendly reason surfaced when an OS/network hand-off is attempted outside the desktop app. */
+const NO_TAURI_MESSAGE =
+  "This action is only available in the Fulcrum desktop app.";
+
 /** Reply from the {@link ping} command; mirrors the Rust `Pong` struct. */
 export interface Pong {
   message: string;
@@ -107,6 +126,7 @@ export function setPreferences(preferences: Preferences): Promise<Preferences> {
  * application finishes.
  */
 export function openExternal(url: string): Promise<void> {
+  if (!isTauriAvailable()) return Promise.reject(new Error(NO_TAURI_MESSAGE));
   return invoke<void>("open_external", { url });
 }
 
@@ -140,5 +160,6 @@ export interface SpeechDropUploadRequest {
 export function uploadToSpeechDrop(
   request: SpeechDropUploadRequest,
 ): Promise<void> {
+  if (!isTauriAvailable()) return Promise.reject(new Error(NO_TAURI_MESSAGE));
   return invoke<void>("speechdrop_upload", { request });
 }

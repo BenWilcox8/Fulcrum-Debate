@@ -126,6 +126,12 @@ export function createSpeechDropTarget(
           message: `Uploaded to SpeechDrop room ${roomCode}.`,
         };
       } catch (error) {
+        // Log the raw error for diagnosis; surface only its message, which is a
+        // curated Rust-side failure string (bad room code, offline, …) or the
+        // IPC layer's friendly "desktop app only" guard - never a raw internal
+        // exception, since the IPC boundary rejects the plain-browser case with a
+        // readable reason before `invoke` can throw its TypeError.
+        console.error("SpeechDrop export failed:", error);
         const reason = error instanceof Error ? error.message : String(error);
         return {
           ok: false,
