@@ -109,6 +109,11 @@ describe("SpeechTimer", () => {
     // index out of bounds.
     rerender(<SpeechTimer speeches={["Con Case", "Pro Case"]} />);
     expect(speechLabel()).toHaveTextContent("Con Case");
+
+    // Advancing from the clamped position must step from index 0, not the stale
+    // out-of-range index, so the next speech is index 1 ("Pro Case"), not 0.
+    fireEvent.click(screen.getByRole("button", { name: "Advance to next speech" }));
+    expect(speechLabel()).toHaveTextContent("Pro Case");
   });
 
   it("plays, resets, and edits like the prep timers", () => {

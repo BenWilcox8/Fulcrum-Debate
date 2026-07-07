@@ -57,7 +57,8 @@ export function SpeechTimer({ speeches }: SpeechTimerProps = {}) {
   // out of bounds.
   const activeIndex = selected < options.length ? selected : 0;
   const label = options[activeIndex];
-  const advance = () => setSelected((index) => (index + 1) % options.length);
+  const advance = () =>
+    setSelected((index) => ((index < options.length ? index : 0) + 1) % options.length);
 
   return (
     <section
