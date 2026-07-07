@@ -106,6 +106,11 @@ export interface FlowCanvasProps {
  * dropped node snaps back to its computed slot and any newly-copied node appears
  * in place.
  *
+ * When a live handle has zero columns, an empty-state hint is overlaid in the
+ * lower-centre of the canvas pointing the user at the column-controls strip.
+ * It is gated on `handle != null` so it never shows before the document opens,
+ * and clears the moment the first column lands.
+ *
  * Local-first: the surface renders with no async gate. Columns/nodes/edges are
  * populated by the observers once IndexedDB has loaded into the doc, so nothing
  * here awaits a network resource - the offline-boot rule holds.

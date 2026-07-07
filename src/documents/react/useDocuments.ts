@@ -30,6 +30,11 @@ export interface UseDocumentsResult {
  * consumers or by a tracked document's own edits. The mutations are stable
  * callbacks; each triggers the same subscription, so the list stays current
  * without any manual refresh.
+ *
+ * Safe to use in screens loaded via a direct URL (e.g. `/#/rounds/:id`): the
+ * effect guards against a transiently-closed service that can appear during a
+ * StrictMode/remount swap inside {@link DocumentsProvider}, so a direct-URL
+ * reload never crashes the tree.
  */
 export function useDocuments(): UseDocumentsResult {
   const service = useDocumentService();
