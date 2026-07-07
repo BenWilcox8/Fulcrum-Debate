@@ -88,11 +88,12 @@ export interface FlowCanvasProps {
 }
 
 /**
- * The flow-sheet canvas: an XYFlow surface rendering one full-height, side-
- * coloured column per flow-doc speech column, in document order, that pans
- * horizontally across more columns than fit the viewport, hosting the flow nodes
- * (contentions) inside those columns and the transparent cross-application
- * arrows between them.
+ * The flow-sheet canvas: an XYFlow surface rendering one side-coloured column
+ * per flow-doc speech column, in document order. Each column grows to contain
+ * its stacked contentions (viewport height is the floor so empty columns still
+ * fill the surface). The canvas pans horizontally across more columns than fit
+ * the viewport and vertically down a column that has grown past it; the
+ * transparent cross-application arrows between columns are also rendered here.
  *
  * Columns, nodes, and edges come straight from the flow-sheet document model
  * (live through the `observe*` seams); the canvas is a view over that model and
