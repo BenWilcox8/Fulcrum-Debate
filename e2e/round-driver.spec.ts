@@ -38,7 +38,11 @@ test("drives a full debate round through the real UI", async ({ page }) => {
     if (document.head) apply();
     else document.addEventListener("DOMContentLoaded", apply);
   });
-  const h = new RoundHarness(page);
+  // One round script, two sinks: `round:drive` (default) writes the ordered
+  // screenshot sequence to disk; `round:vrt` (ROUND_VRT=1) asserts each state
+  // against the committed baseline. The journey below is identical either way.
+  const mode = process.env.ROUND_VRT ? "vrt" : "capture";
+  const h = new RoundHarness(page, { mode });
 
   // --- 1. Boot + round setup -----------------------------------------------
   await h.boot();

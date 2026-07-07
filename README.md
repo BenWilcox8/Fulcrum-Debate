@@ -33,6 +33,8 @@ npm install
 | `npm run test:watch` | Run the tests in watch mode. |
 | `npm run lint` | Lint the TypeScript / React sources with ESLint. |
 | `npm run round:drive` | Run the Playwright round-driver E2E harness (see `e2e/`). Requires `npx playwright install chromium` on first use. |
+| `npm run round:vrt` | Visual-regression check: replay the round and assert every state against the committed baselines (see "Visual-regression baselines"). |
+| `npm run round:vrt:update` | Regenerate the committed baselines from the current UI (only when a UI change is intentional). |
 
 ## Project layout
 
@@ -92,13 +94,47 @@ npm install
 │   └── test/               Test setup (Vitest + Testing Library)
 ├── e2e/                    Playwright round-driver E2E harness (visual-regression backbone)
 │   ├── seed.ts             Fixed, realistic seed content (resolution, contentions, card)
-│   ├── harness.ts          RoundHarness: real-gesture primitives + screenshot machinery
-│   └── round-driver.spec.ts  The one ordered full-round journey
+│   ├── harness.ts          RoundHarness: real-gesture primitives + capture/vrt screenshot machinery
+│   ├── round-driver.spec.ts  The one ordered full-round journey (capture or VRT mode)
+│   └── baselines/          Committed VRT baselines, per platform (e.g. baselines/darwin/)
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
 │       └── commands/       Tauri command handlers (Rust half of the IPC seam)
 └── .github/                CI workflows (lint, tests, and Tauri desktop build)
 ```
+
+## Visual-regression baselines
+
+The round-driver harness (`e2e/`) doubles as a visual-regression (VRT) safety net: the *same* ordered debate-round journey that `npm run round:drive` screenshots can instead assert each state against a committed baseline image, so a UI regression on any of the covered screens fails loudly.
+
+- **`npm run round:drive`** - capture mode. Writes the ordered `NNN-<slug>-<viewport>.png` sequence to `e2e/screenshots/` (gitignored) for a human to eyeball. Nothing is asserted pixel-wise.
+- **`npm run round:vrt`** - check mode (`ROUND_VRT=1`). Replays the identical journey and asserts every state against `e2e/baselines/<platform>/…` via Playwright's `toHaveScreenshot`. Fails on any drift beyond a tight threshold.
+
+There is one round script (`e2e/round-driver.spec.ts` + `RoundHarness`); the two modes differ only in where a captured state goes, so the harness stays the single source of truth for the journey.
+
+**This check is opt-in and is deliberately NOT wired into CI as a blocking gate.** Run it locally when touching UI. (Promoting it to CI is a possible follow-up - see the note below.)
+
+### Determinism
+
+Pixel comparison is only useful if it is reliable. The check pins rendering so two runs are identical:
+
+- Fixed viewport per phase, `deviceScaleFactor: 1`, and Chromium launched with `--force-color-profile=srgb --font-render-hinting=none --disable-lcd-text` (font hinting/subpixel LCD is the biggest source of per-run glyph jitter).
+- All CSS animation/transition disabled and the text caret hidden (an init script in the spec, plus `animations: "disabled"` / `caret: "hide"` in the config).
+- A fresh browser context per run (empty IndexedDB), fixed seed content, one worker, no retries.
+- The threshold is tight and targeted, **not** a loose global escape hatch: `threshold: 0.2` absorbs sub-pixel anti-aliasing and `maxDiffPixels: 120` swallows the small residual, while the genuinely nondeterministic region - the timer's live clock digits - is **masked** at the call site (every `.tabular-nums` element; that class is used app-wide only by the timer). Masking just the digits keeps the timer widget's position and layout (and everything else) in the comparison.
+
+Baselines are platform-rendered (font rasterisation differs by OS), so they live under `e2e/baselines/<platform>/` and the darwin set only matches a darwin run.
+
+### Updating baselines when the UI changes on purpose
+
+When you intentionally change a covered screen, the VRT will (correctly) fail until you refresh the baselines. Do this deliberately:
+
+1. Make and review your UI change.
+2. Regenerate the baselines: `npm run round:vrt:update`.
+3. **Review the image diff before committing.** Open the changed files under `e2e/baselines/<platform>/` (or inspect the Playwright diff artifacts in `test-results/`) and confirm every pixel change is one you intended - the whole point of the baseline is that an *unexpected* change is caught, so a blind re-baseline defeats it.
+4. Commit the updated baseline PNGs alongside the code change, so the review shows the intended visual delta.
+
+Never regenerate baselines to "make the check pass" without step 3.
 
 ## Continuous integration
 

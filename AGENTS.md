@@ -721,6 +721,17 @@ It is the "test by performing actual user actions" counterpart to the Vitest uni
   The dir is wiped at the start of each run, so it always holds exactly one run's ordered set.
 - Playwright (chromium) is a **dev-dependency only** (`@playwright/test`); the browser is installed with `npx playwright install chromium`. Vitest is untouched (`vite.config.ts` scopes it to `src/**`; the harness lives in `e2e/` and never collides).
 
+### Visual-regression mode (`npm run round:vrt`) - same journey, two sinks
+
+The harness doubles as a pixel-level visual-regression (VRT) check on top of the exact same round script - do **not** fork the journey to add VRT.
+
+- **One script, a `ShotMode`.** `RoundHarness`'s constructor takes `{ mode?: "capture" | "vrt" }` (default `"capture"`). `shot()` funnels through a private `capture(name)`: in `"capture"` mode it writes the PNG to `e2e/screenshots/` (the `round:drive` artifact); in `"vrt"` mode it asserts `expect(page).toHaveScreenshot(name, { mask })` against the committed baseline. `round-driver.spec.ts` picks the mode from the `ROUND_VRT` env var, so `npm run round:vrt` (= `ROUND_VRT=1 …`) and `npm run round:drive` run the identical journey. **The two subclasses (`NarrowRoundHarness`, `PfRoundHarness`) fully override `shot()` with their own counters/dirs, so they are unaffected by the base capture/vrt split.**
+- **Baselines are committed, per platform.** `snapshotPathTemplate: "e2e/baselines/{platform}/{arg}{ext}"` → `e2e/baselines/darwin/NNN-<slug>-<viewport>.png`. This path is **not** gitignored (unlike `e2e/screenshots`), so baselines travel with the code. Font rasterisation is OS-specific, so the darwin set only matches a darwin run; a future CI-on-Linux promotion regenerates its own `baselines/linux/`.
+- **Regenerate intentionally:** `npm run round:vrt:update` (`--update-snapshots`). Review the image diff before committing - a blind re-baseline defeats the check. Documented for humans in the README ("Visual-regression baselines").
+- **Determinism knobs (config):** `deviceScaleFactor: 1` + Chromium `--force-color-profile=srgb --font-render-hinting=none --disable-lcd-text` (font hinting/LCD subpixel is the top jitter source), plus the spec's animation/caret-kill init script and `expect.toHaveScreenshot: { animations: "disabled", caret: "hide", scale: "css", threshold: 0.2, maxDiffPixels: 120 }`. Proven: two consecutive `round:vrt` runs pass; a 1px header-border probe (`border-b` → `border-b-2`) fails with ~4551 differing pixels - clear separation, so `maxDiffPixels: 120` is neither flaky nor blind.
+- **The mask is targeted, not a global threshold.** The only genuinely nondeterministic on-screen region is the timer's live clock digits, so `capture()` masks `[page.locator(".tabular-nums")]` - a class used app-wide **only** by the timer's `EditableTime` value displays. Masking just the digits (three magenta boxes) keeps the timer widget's *position and layout* (the draggable-timer / dock-proportion fixes) fully in the comparison. If you add another surface that uses `tabular-nums`, either scope the mask or the new digits will be excluded too.
+- **Opt-in only:** `round:vrt` is a local script and is **not** wired into blocking CI (`.github/workflows/ci.yml` is unchanged). Promoting it is a deliberate follow-up (it would need a Linux baseline set and a decision on flake tolerance).
+
 ### What it exercises (all through the real UI, no API shortcuts)
 
 Round setup -> flow arguments through every speech with real typing + Enter/Shift+Enter argument-row transitions + C#/S# triggers -> collapse/expand -> cross-application drag (copy + transparent arrow) and an adjacent-drop strike -> timer edit/start + speech-selector cycle -> shorthand expansion (a seeded abbreviation expands on the row transition) -> dock a speech doc (side and bottom) -> Send Flow (Shift+Click multi-select + Cmd/Ctrl+Enter) -> RFD -> block-file card + ToC bulk-send -> open the Email export flow (stops short of launching a mail app).
@@ -728,9 +739,10 @@ Round setup -> flow arguments through every speech with real typing + Enter/Shif
 ### Structure
 
 - **`e2e/seed.ts`** - all fixed, realistic seed content (resolution, contentions, responses, RFD, a card). Deterministic by construction, so two runs flow the identical debate.
-- **`e2e/harness.ts`** - the `RoundHarness` wrapping the Playwright `Page` with real-gesture primitives and the screenshot machinery.
-- **`e2e/round-driver.spec.ts`** - the one ordered journey; assertions exist so the run **fails loudly** if the round cannot proceed (a contention never drops, the cross-apply copy never lands, ...), but the screenshot sequence is the product.
-- **`playwright.config.ts`** - one worker, no retries, fresh context per run (empty IndexedDB = clean local-first slate).
+- **`e2e/harness.ts`** - the `RoundHarness` wrapping the Playwright `Page` with real-gesture primitives and the capture/vrt screenshot machinery (see "Visual-regression mode").
+- **`e2e/round-driver.spec.ts`** - the one ordered journey (runs in capture or VRT mode via `ROUND_VRT`); assertions exist so the run **fails loudly** if the round cannot proceed (a contention never drops, the cross-apply copy never lands, ...), but the screenshot sequence / baseline comparison is the product.
+- **`e2e/baselines/<platform>/`** - the committed VRT baselines (not gitignored).
+- **`playwright.config.ts`** - one worker, no retries, fresh context per run (empty IndexedDB = clean local-first slate), plus the VRT determinism/threshold config and `snapshotPathTemplate`.
 
 ### Narrow-viewport variant (`e2e/narrow-round.spec.ts` + `e2e/narrow-harness.ts`)
 
