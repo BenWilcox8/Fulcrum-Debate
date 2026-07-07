@@ -4,6 +4,7 @@ import type { FlowNode } from "../nodes";
 import {
   flowNodesToNodes,
   flowNodeY,
+  columnContentHeights,
   registryToNodeTypes,
   FLOW_NODE_HEIGHT,
   FLOW_NODE_INSET_X,
@@ -11,6 +12,7 @@ import {
   FLOW_NODE_TOP_INSET,
   FLOW_NODE_GAP,
   COLLAPSED_NODE_HEIGHT,
+  COLUMN_CONTENT_BOTTOM_PADDING,
   type ColumnFlowNodes,
   type FlowNodeComponent,
   type FlowNodeRegistry,
@@ -235,6 +237,70 @@ describe("flowNodeY", () => {
     expect(flowNodeY(2, FLOW_NODE_HEIGHT)).toBe(
       FLOW_NODE_TOP_INSET + 2 * (FLOW_NODE_HEIGHT + FLOW_NODE_GAP),
     );
+  });
+});
+
+describe("columnContentHeights", () => {
+  const tallRegistry: FlowNodeRegistry = [
+    { kind: "stub", component: Stub, height: 160 },
+  ];
+
+  it("measures each column to the bottom of its lowest node plus padding", () => {
+    const groups: ColumnFlowNodes[] = [
+      {
+        columnId: "col-1",
+        nodes: [node("a", "col-1", "stub"), node("b", "col-1", "stub")],
+      },
+    ];
+    const nodes = flowNodesToNodes(groups, tallRegistry);
+    const heights = columnContentHeights(nodes);
+    // Two 160px slots stacked: last node's bottom + padding.
+    const lastBottom = flowNodeY(1, 160) + 160 + COLUMN_CONTENT_BOTTOM_PADDING;
+    expect(heights.get("col-1")).toBe(lastBottom);
+  });
+
+  it("keys heights per column independently", () => {
+    const groups: ColumnFlowNodes[] = [
+      { columnId: "col-1", nodes: [node("a", "col-1", "stub")] },
+      {
+        columnId: "col-2",
+        nodes: [node("b", "col-2", "stub"), node("c", "col-2", "stub")],
+      },
+    ];
+    const heights = columnContentHeights(
+      flowNodesToNodes(groups, tallRegistry),
+    );
+    expect(heights.get("col-1")).toBe(
+      flowNodeY(0, 160) + 160 + COLUMN_CONTENT_BOTTOM_PADDING,
+    );
+    expect(heights.get("col-2")).toBe(
+      flowNodeY(1, 160) + 160 + COLUMN_CONTENT_BOTTOM_PADDING,
+    );
+    expect(heights.get("col-2")).toBeGreaterThan(heights.get("col-1")!);
+  });
+
+  it("reflects a collapsed node's shorter slot", () => {
+    const groups: ColumnFlowNodes[] = [
+      {
+        columnId: "col-1",
+        nodes: [node("a", "col-1", "stub"), node("b", "col-1", "stub")],
+      },
+    ];
+    const collapsed = columnContentHeights(
+      flowNodesToNodes(groups, tallRegistry, {
+        collapsedIds: new Set(["a"]),
+      }),
+    );
+    const expanded = columnContentHeights(flowNodesToNodes(groups, tallRegistry));
+    expect(collapsed.get("col-1")).toBeLessThan(expanded.get("col-1")!);
+  });
+
+  it("has no entry for a column with no hosted nodes", () => {
+    const heights = columnContentHeights(
+      flowNodesToNodes([{ columnId: "col-1", nodes: [] }], tallRegistry),
+    );
+    expect(heights.has("col-1")).toBe(false);
+    expect(columnContentHeights([]).size).toBe(0);
   });
 });
 
