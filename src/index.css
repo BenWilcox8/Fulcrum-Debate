@@ -205,6 +205,55 @@
   flex: 1 1 auto;
 }
 
+/*
+ * Vertical rhythm for the speech body. A speech doc accumulates content from
+ * several distinct appends - Send Flow chords and ToC bulk-sends (see
+ * src/flow/send-to-speech.ts, src/blockfile/toc-speech.ts) - and Tailwind's
+ * preflight resets paragraph margins to 0, so without spacing the appended
+ * paragraphs stack into one undifferentiated wall of text and distinct sends are
+ * impossible to tell apart. Give each block breathing room so every appended
+ * argument reads as its own unit.
+ */
+.speech-doc-body .ProseMirror > * + * {
+  margin-top: 0.6rem;
+}
+
+.speech-doc-body .ProseMirror p {
+  line-height: 1.5;
+}
+
+/*
+ * Preserved Auto-Speech section headers (see src/speech/transform.ts) arrive as
+ * heading nodes, but - like the block file - Tailwind's preflight strips heading
+ * typography, so a header rendered identically to body text while the tagline
+ * below it is bold, inverting the hierarchy. Restyle headings so a preserved
+ * header outranks the bold tagline and opens its section. Scoped to
+ * `.speech-doc-body` so nothing leaks onto other surfaces.
+ */
+.speech-doc-body .ProseMirror :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-shell-text);
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
+.speech-doc-body .ProseMirror :is(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
+}
+
+.speech-doc-body .ProseMirror h1 {
+  font-size: 1.3rem;
+}
+
+.speech-doc-body .ProseMirror h2 {
+  font-size: 1.15rem;
+}
+
+.speech-doc-body .ProseMirror :is(h3, h4, h5, h6) {
+  font-size: 1.05rem;
+}
+
 .speech-doc-body .ProseMirror:focus {
   outline: none;
 }

@@ -43,8 +43,12 @@ export function mailtoUrl(payload: ExportPayload): string {
  * the assertion.
  *
  * `export` never throws for an expected failure: if the opener cannot be launched
- * it resolves `{ ok: false }` with a readable reason, so the Export action can
- * surface non-intrusive feedback rather than crashing.
+ * it resolves `{ ok: false }` with a **friendly, fixed** message, so the Export
+ * action can surface non-intrusive feedback rather than crashing. The raw error -
+ * which may be an internal exception like the plain-browser
+ * `Cannot read properties of undefined (reading 'invoke')` when the Tauri IPC
+ * bridge is absent - is logged to the console and never interpolated into the
+ * user-facing line.
  */
 export function createEmailTarget(openUrl: OpenUrl = openExternal): ExportTarget {
   return {
@@ -55,10 +59,13 @@ export function createEmailTarget(openUrl: OpenUrl = openExternal): ExportTarget
         await openUrl(mailtoUrl(payload));
         return { ok: true, message: "Opened an email draft in your mail app." };
       } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
+        // Keep the raw exception out of the UI: log it for diagnosis and show
+        // only a friendly, fixed line. Interpolating `error.message` here is what
+        // leaked the raw `invoke` TypeError to the user in the browser preview.
+        console.error("Email export failed:", error);
         return {
           ok: false,
-          message: `Could not open your mail app. ${reason}`.trim(),
+          message: "Could not open your mail app. Check that a mail app is set up on this device.",
         };
       }
     },
