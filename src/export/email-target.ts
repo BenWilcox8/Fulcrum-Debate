@@ -31,11 +31,10 @@ export type OpenUrl = (url: string) => Promise<void>;
 
 /** Builds the `mailto:` draft URL for a payload (subject + plain-text body). */
 export function mailtoUrl(payload: ExportPayload): string {
-  const params = new URLSearchParams();
-  if (payload.subject) params.set("subject", payload.subject);
-  if (payload.text) params.set("body", payload.text);
-  const query = params.toString();
-  return query ? `mailto:?${query}` : "mailto:";
+  const parts: string[] = [];
+  if (payload.subject) parts.push("subject=" + encodeURIComponent(payload.subject));
+  if (payload.text) parts.push("body=" + encodeURIComponent(payload.text));
+  return parts.length > 0 ? `mailto:?${parts.join("&")}` : "mailto:";
 }
 
 /**

@@ -14,7 +14,17 @@
 //! no extra plugin or capability entry - like every app-crate command, it is not
 //! gated by the Tauri v2 ACL.
 
+const ALLOWED_SCHEMES: &[&str] = &["mailto:", "https://", "http://"];
+
+fn has_allowed_scheme(url: &str) -> bool {
+    let lower = url.to_lowercase();
+    ALLOWED_SCHEMES.iter().any(|s| lower.starts_with(s))
+}
+
 /// Opens `url` in the operating system's default handler for its scheme.
+///
+/// Only `mailto:`, `https://`, and `http://` URLs are accepted; any other
+/// scheme returns an error without spawning a process.
 ///
 /// Returns `Ok(())` once the opener process has been spawned; an `Err(String)`
 /// carries a human-readable reason the web side can surface as export feedback.
@@ -22,6 +32,9 @@
 /// the target application to finish, so this returns promptly.
 #[tauri::command]
 pub fn open_external(url: String) -> Result<(), String> {
+    if !has_allowed_scheme(&url) {
+        return Err(format!("URL scheme not permitted: {url}"));
+    }
     open_url(&url).map_err(|error| error.to_string())
 }
 

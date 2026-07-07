@@ -21,13 +21,16 @@ describe("mailtoUrl", () => {
     const url = mailtoUrl(payload);
 
     expect(url.startsWith("mailto:?")).toBe(true);
-    const params = new URLSearchParams(url.slice("mailto:?".length));
-    expect(params.get("subject")).toBe("My 1AC");
-    expect(params.get("body")).toBe(
-      "1AC\n\nContention one: warming is real.",
-    );
+    // RFC 6068 requires percent-encoding; spaces must be %20, not +.
+    expect(url).toContain("subject=My%201AC");
+    expect(url).not.toContain("subject=My+1AC");
+    expect(url).toContain("body=1AC");
     // The rich HTML is never smuggled into the mailto body.
     expect(url).not.toContain("<strong>");
+    // Round-trip via URLSearchParams must still decode correctly.
+    const params = new URLSearchParams(url.slice("mailto:?".length));
+    expect(params.get("subject")).toBe("My 1AC");
+    expect(params.get("body")).toBe("1AC\n\nContention one: warming is real.");
   });
 
   it("omits empty fields", () => {

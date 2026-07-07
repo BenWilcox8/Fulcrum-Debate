@@ -21,7 +21,7 @@ import { ExportButton } from "../export/react";
  */
 export default function SpeechDocScreen() {
   const { speechDocId } = useParams<{ speechDocId: string }>();
-  const { handle } = useDocument(speechDocId);
+  const { handle, loaded } = useDocument(speechDocId);
   const { speechDocs, loading } = useSpeechDocs();
 
   const speechDoc = speechDocs.find((s) => s.id === speechDocId);
@@ -64,7 +64,7 @@ export default function SpeechDocScreen() {
 
         <ExportButton
           className="shrink-0"
-          disabled={!handle}
+          disabled={!handle || !loaded}
           buildPayload={() =>
             handle
               ? buildSpeechDocExportPayload(handle, speechDoc?.title)
