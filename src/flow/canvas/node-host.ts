@@ -66,6 +66,13 @@ export const COLLAPSED_NODE_HEIGHT = 40;
 export const FLOW_NODE_GAP = 8;
 
 /**
+ * Breathing room left below a column's last flow node when sizing the column to
+ * its content, in px. So a grown column does not end flush against its final
+ * contention.
+ */
+export const COLUMN_CONTENT_BOTTOM_PADDING = FLOW_NODE_GAP;
+
+/**
  * The data XYFlow carries on a hosted flow node. XYFlow requires node data to be
  * a plain record; this is the node's identity snapshot (its id lives on the node
  * `id` too - the canonical handle). A node kind reads its own *content* from the
@@ -173,6 +180,35 @@ export function registryToNodeTypes(registry: FlowNodeRegistry): NodeTypes {
  */
 export function flowNodeY(index: number, height: number): number {
   return FLOW_NODE_TOP_INSET + index * (height + FLOW_NODE_GAP);
+}
+
+/**
+ * The column-relative pixel height each column's stacked flow nodes actually
+ * occupy, keyed by column id (the nodes' `parentId`). For each column it is the
+ * bottom edge of its lowest node ({@link HostedFlowNode.position}.y + height)
+ * plus {@link COLUMN_CONTENT_BOTTOM_PADDING}; a column with no hosted nodes is
+ * absent from the map (0 content).
+ *
+ * Pure over the already-laid-out flow nodes (the output of
+ * {@link flowNodesToNodes}), so the canvas can grow each column to contain its
+ * contentions instead of clipping the ones that overflow a fixed viewport-height
+ * column. Nodes carry a definite `height` from the mapper; the
+ * {@link FLOW_NODE_HEIGHT} fallback only guards a hypothetical unsized node.
+ */
+export function columnContentHeights(
+  nodes: readonly HostedFlowNode[],
+): Map<string, number> {
+  const heights = new Map<string, number>();
+  for (const node of nodes) {
+    const parentId = node.parentId;
+    if (!parentId) continue;
+    const bottom =
+      node.position.y +
+      (node.height ?? FLOW_NODE_HEIGHT) +
+      COLUMN_CONTENT_BOTTOM_PADDING;
+    if (bottom > (heights.get(parentId) ?? 0)) heights.set(parentId, bottom);
+  }
+  return heights;
 }
 
 /**

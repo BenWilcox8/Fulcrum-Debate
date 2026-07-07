@@ -6,13 +6,12 @@ import {
   type Node,
   type NodeChange,
   type NodeTypes,
-  type Viewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import type { DocumentHandle } from "../../documents/core";
 import { SpeechColumnNode } from "./SpeechColumnNode";
-import { SPEECH_COLUMN_NODE_TYPE } from "./column-nodes";
+import { SPEECH_COLUMN_NODE_TYPE, DEFAULT_COLUMN_HEIGHT } from "./column-nodes";
 import { useColumnNodes } from "./useColumnNodes";
 import { useFlowNodes } from "./useFlowNodes";
 import { useFlowEdges } from "./useFlowEdges";
@@ -26,6 +25,7 @@ import {
 import {
   FLOW_NODE_WIDTH,
   FLOW_NODE_HEIGHT,
+  columnContentHeights,
   registryToNodeTypes,
   type FlowNodeRegistry,
   type HostedFlowNode,
@@ -43,16 +43,12 @@ const BASE_NODE_TYPES: NodeTypes = {
 const EMPTY_REGISTRY: FlowNodeRegistry = [];
 
 /**
- * Horizontal pan bounds passed to `translateExtent`. A large finite x-range
- * keeps every column reachable without relying on `Infinity`. The Y values are
- * `0` for both points so the extent never conflicts with the controlled
- * `viewport` prop (which already pins vertical position at 0). Vertical pinning
- * is the `viewport` prop's job, not this constant's.
+ * A large finite horizontal pan bound, kept off `Infinity` so every column stays
+ * reachable. The vertical bound is computed per-render from the tallest column
+ * (see {@link FlowCanvas}) so a column that grows past the viewport can be
+ * scrolled to, while a sheet that fits stays pinned at the top.
  */
-const HORIZONTAL_PAN_EXTENT: [[number, number], [number, number]] = [
-  [-100_000, 0],
-  [100_000, 0],
-];
+const HORIZONTAL_PAN_BOUND = 100_000;
 
 /** Props for {@link FlowCanvas}. */
 export interface FlowCanvasProps {
@@ -126,17 +122,6 @@ export function FlowCanvas({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | undefined>(undefined);
 
-  // The vertical viewport is pinned to 0 (and zoom to 1) so full-height columns
-  // always fill the canvas top-to-bottom; only the horizontal offset is free,
-  // which is what lets the canvas pan across more columns than fit. This is a
-  // *controlled* viewport rather than a `translateExtent` clamp because a
-  // degenerate `[0, 0]` vertical extent lets XYFlow's transform drift on resize
-  // (e.g. when the speech dock collapses), pushing every column down off-canvas.
-  const [viewportX, setViewportX] = useState(0);
-  const onViewportChange = useCallback((next: Viewport) => {
-    setViewportX(next.x);
-  }, []);
-
   // Measure the viewport so columns fill it top-to-bottom. Purely a rendering
   // concern; it never gates when columns appear.
   useEffect(() => {
@@ -159,13 +144,52 @@ export function FlowCanvas({
   const flowNodes = useFlowNodes(handle, flowNodeTypes, collapsedIds);
   const edges = useFlowEdges(handle);
 
+  // The pixel height each column's stacked contentions occupy. A column with
+  // more content than the viewport must *grow* to contain it (and the canvas
+  // must let the user scroll to reach it) - otherwise every contention past the
+  // first is clipped below the fold. The viewport height is the floor so a
+  // short/empty column still fills the surface top-to-bottom.
+  const viewportHeight = height ?? DEFAULT_COLUMN_HEIGHT;
+  const contentHeights = useMemo(
+    () => columnContentHeights(flowNodes),
+    [flowNodes],
+  );
+  const sizedColumnNodes = useMemo(
+    () =>
+      columnNodes.map((column) => {
+        const grown = Math.max(
+          viewportHeight,
+          contentHeights.get(column.id) ?? 0,
+        );
+        return grown === column.height ? column : { ...column, height: grown };
+      }),
+    [columnNodes, contentHeights, viewportHeight],
+  );
+
+  // The tallest column bounds vertical panning: pinned at the top when the sheet
+  // fits, scrollable down to the bottom of the tallest column when it does not.
+  const maxColumnHeight = useMemo(() => {
+    let max = viewportHeight;
+    for (const bottom of contentHeights.values()) {
+      if (bottom > max) max = bottom;
+    }
+    return max;
+  }, [contentHeights, viewportHeight]);
+  const translateExtent = useMemo<[[number, number], [number, number]]>(
+    () => [
+      [-HORIZONTAL_PAN_BOUND, 0],
+      [HORIZONTAL_PAN_BOUND, maxColumnHeight],
+    ],
+    [maxColumnHeight],
+  );
+
   // Parents must precede their children in the node array (XYFlow requirement),
   // so column nodes come first, then the flow nodes hosted inside them. This is
   // the document-authoritative layout - the single source of truth for where a
   // node rests.
   const docNodes = useMemo<Node[]>(
-    () => [...columnNodes, ...flowNodes],
-    [columnNodes, flowNodes],
+    () => [...sizedColumnNodes, ...flowNodes],
+    [sizedColumnNodes, flowNodes],
   );
 
   // Locally-controlled node state so a drag is smooth. It is re-seeded from the
@@ -274,16 +298,14 @@ export function FlowCanvas({
         nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onNodeDragStop={onNodeDragStop}
-        // Horizontal-only navigation: scroll pans sideways, vertical is pinned
-        // so full-height columns stay fully in view.
+        // Free scroll/drag panning: sideways across speech columns and down a
+        // column that has grown past the viewport with contentions. The
+        // translate extent (computed from the tallest column) is what keeps the
+        // sheet pinned at the top until there is actually overflow to reach.
         panOnScroll
-        panOnScrollMode={PanOnScrollMode.Horizontal}
+        panOnScrollMode={PanOnScrollMode.Free}
         panOnDrag
-        translateExtent={HORIZONTAL_PAN_EXTENT}
-        // Controlled viewport: keep the vertical offset pinned at 0 and the zoom
-        // at 1 while letting horizontal panning update `x`. See {@link viewportX}.
-        viewport={{ x: viewportX, y: 0, zoom: 1 }}
-        onViewportChange={onViewportChange}
+        translateExtent={translateExtent}
         // Lock zoom so column heights stay 1:1 with the viewport.
         zoomOnScroll={false}
         zoomOnPinch={false}
