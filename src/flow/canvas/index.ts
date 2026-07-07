@@ -84,6 +84,8 @@ export {
   type ContentionTriggerStep,
 } from "./contention-trigger";
 export { useFlowCollapse, type FlowCollapseState } from "./useFlowCollapse";
+export { useFlowSelection, type FlowSelectionState } from "./useFlowSelection";
+export { SendToSpeechControl } from "./SendToSpeechControl";
 export {
   collapseTargets,
   readFlowContainerTree,

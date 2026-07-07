@@ -21,6 +21,7 @@ import { createContext, useContext } from "react";
 
 import type { DocumentHandle } from "../../documents/core";
 import type { FlowCollapseState } from "./useFlowCollapse";
+import type { FlowSelectionState } from "./useFlowSelection";
 
 /** The value carried by {@link FlowSheetContext}. */
 export interface FlowSheetContextValue {
@@ -39,6 +40,12 @@ export interface FlowSheetContextValue {
    * operation. Never persisted (see {@link ./flow-collapse}).
    */
   readonly collapse: FlowCollapseState;
+  /**
+   * The transient multi-selection of flow containers a debater has Shift+Clicked
+   * to send into the active speech doc. Never persisted (see
+   * {@link ./useFlowSelection}).
+   */
+  readonly selection: FlowSelectionState;
 }
 
 /**

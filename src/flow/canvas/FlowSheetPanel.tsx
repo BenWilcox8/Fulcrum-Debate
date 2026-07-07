@@ -9,6 +9,7 @@ import { RfdSection } from "./RfdSection";
 import { CONTENTION_FLOW_NODE_REGISTRY } from "./contention-node-type";
 import { FlowSheetProvider } from "./FlowSheetProvider";
 import { useFlowSheet } from "./flow-sheet-context";
+import { SendToSpeechControl } from "./SendToSpeechControl";
 import { useContentionTrigger } from "./useContentionTrigger";
 import {
   useCollapseAllExceptActiveHotkey,
@@ -97,6 +98,7 @@ function FlowSheetPanelBody({ handle, className }: FlowSheetPanelProps) {
         >
           Collapse all except active
         </button>
+        <SendToSpeechControl />
       </div>
       <div className="min-h-0 flex-1">
         <FlowCanvas

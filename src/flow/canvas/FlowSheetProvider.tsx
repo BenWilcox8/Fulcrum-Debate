@@ -10,6 +10,7 @@ import {
 } from "./flow-sheet-context";
 import { readFlowContainerTree } from "./flow-collapse";
 import { useFlowCollapse } from "./useFlowCollapse";
+import { useFlowSelection } from "./useFlowSelection";
 
 /** Props for {@link FlowSheetProvider}. */
 export interface FlowSheetProviderProps {
@@ -30,6 +31,7 @@ export function FlowSheetProvider({
 }: FlowSheetProviderProps) {
   const [activeColumnId, setActiveColumnId] = useState<string | null>(null);
   const collapse = useFlowCollapse(handle);
+  const selection = useFlowSelection();
 
   useEffect(() => {
     if (!handle) return;
@@ -57,8 +59,8 @@ export function FlowSheetProvider({
   }, [handle, clearActiveNodeIfAbsent]);
 
   const value = useMemo<FlowSheetContextValue>(
-    () => ({ handle, activeColumnId, setActiveColumnId, collapse }),
-    [handle, activeColumnId, collapse],
+    () => ({ handle, activeColumnId, setActiveColumnId, collapse, selection }),
+    [handle, activeColumnId, collapse, selection],
   );
 
   return (

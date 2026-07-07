@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 
 import { EditorContent } from "@tiptap/react";
 import type { DocumentHandle } from "../../documents/core";
@@ -62,8 +62,24 @@ export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
   const context = useFlowSheet();
   const handle = context?.handle ?? null;
   const collapse = context?.collapse ?? null;
+  const selection = context?.selection ?? null;
   const label = useSubpointHeader(handle, contentionId, subpointId);
   const collapsed = collapse?.isCollapsed(subpointId) ?? false;
+  const selected = selection?.isSelected(subpointId) ?? false;
+
+  // Shift+Click toggles this subpoint's membership in the send selection - same
+  // gesture as the contention (mousedown-capture wins over caret/collapse).
+  const onShiftMouseDown = (event: ReactMouseEvent) => {
+    if (!event.shiftKey) return;
+    event.preventDefault();
+    event.stopPropagation();
+    selection?.toggle(subpointId);
+  };
+  const swallowShiftClick = (event: ReactMouseEvent) => {
+    if (!event.shiftKey) return;
+    event.preventDefault();
+    event.stopPropagation();
+  };
   const editor = useFlowNodeEditor(handle, subpointContentFragment(subpointId));
   // Scope-gated shorthand expansion on this subpoint's Enter / Shift+Enter.
   useSurfaceShorthand(editor, "flow");
@@ -81,9 +97,12 @@ export function SubpointNode({ contentionId, subpointId }: SubpointNodeProps) {
       data-testid="subpoint-node"
       data-flow-node-id={subpointId}
       data-collapsed={collapsed || undefined}
+      data-selected={selected || undefined}
+      onMouseDownCapture={onShiftMouseDown}
+      onClickCapture={swallowShiftClick}
       className={`ml-4 flex flex-col rounded-md border-l-2 border-shell-border bg-shell-text pl-3 pr-2 py-2 text-shell-surface shadow-sm ${
         collapsed ? "" : "gap-1"
-      }`}
+      } ${selected ? "ring-2 ring-shell-surface ring-offset-2 ring-offset-shell-text" : ""}`}
     >
       <button
         type="button"
