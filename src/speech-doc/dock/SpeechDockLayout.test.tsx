@@ -172,6 +172,28 @@ describe("SpeechDockLayout", () => {
     expect(view.getByTestId("split-dock")).toBeTruthy();
   });
 
+  it("does not auto-expand on a narrow viewport when activeId transitions null→non-null", () => {
+    stubMatchMedia(true);
+    const store = createActiveSpeechDocStore();
+    const view = render(
+      <DocumentsProvider>
+        <ActiveSpeechDocProvider store={store}>
+          <SpeechDockLayout storage={memoryStorage()}>
+            <div data-testid="flow-pane">flow sheet</div>
+          </SpeechDockLayout>
+        </ActiveSpeechDocProvider>
+      </DocumentsProvider>,
+    );
+
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+    expect(view.getByRole("button", { name: "Open speech dock" })).toBeTruthy();
+
+    act(() => store.setActiveId("speech-x"));
+
+    expect(view.queryByTestId("speech-dock")).toBeNull();
+    expect(view.getByRole("button", { name: "Open speech dock" })).toBeTruthy();
+  });
+
   it("starts collapsed on a narrow viewport even with an active speech", () => {
     stubMatchMedia(true);
     const view = renderOpenLayout(memoryStorage());

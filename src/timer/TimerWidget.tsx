@@ -2,7 +2,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from "react";
 
 import { PrepTimer } from "./PrepTimer";
 import { SpeechTimer } from "./SpeechTimer";
-import { timerOffsetPx, timerPositionFromPointer } from "./timer-position";
+import { clampFraction, timerOffsetPx, timerPositionFromPointer } from "./timer-position";
 import type { TimerPositionStorage } from "./timer-position-storage";
 import { useTimerPosition } from "./useTimerPosition";
 
@@ -57,30 +57,62 @@ export function TimerWidget({ speeches, positionStorage }: TimerWidgetProps = {}
   // so it never flashes at the wrong spot).
   const [offset, setOffset] = useState<{ left: number; top: number } | null>(null);
 
+  // Tracks the previous collapsed state so we can distinguish a collapse-driven
+  // card-height change from a genuine container resize.
+  const prevCollapsedRef = useRef(collapsed);
+  // Tracks the last measured card height so we can reconstruct the on-screen top
+  // pixel before a collapse-driven height change occurs.
+  const prevCardHeightRef = useRef<number | null>(null);
+
   // Measure the container + card and resolve the fractional position to pixels.
-  // Runs after layout (so refs are populated) and whenever the position changes;
-  // a ResizeObserver keeps it correct as the canvas resizes.
+  // Runs after layout (so refs are populated) and whenever position or collapsed
+  // changes; a ResizeObserver keeps it correct as the canvas resizes.
   useLayoutEffect(() => {
     const wrapper = wrapperRef.current;
     const card = cardRef.current;
     if (!wrapper || !card) return;
 
-    const measure = () => {
-      const cw = wrapper.clientWidth;
-      const ch = wrapper.clientHeight;
-      const cardRect = card.getBoundingClientRect();
+    const collapseToggled = prevCollapsedRef.current !== collapsed;
+    prevCollapsedRef.current = collapsed;
+
+    const cw = wrapper.clientWidth;
+    const ch = wrapper.clientHeight;
+    const cardRect = card.getBoundingClientRect();
+    const cardH = cardRect.height;
+    const cardW = cardRect.width;
+
+    // When the collapse state toggles, the card height changes but the container
+    // does not - re-derive position.y so the card's on-screen top stays constant.
+    // A bottom-parked card that grows on expand is clamped to y=1 (shifts up just
+    // enough to stay in view). For the default y=0 the math resolves to 0 with no
+    // setPosition call, so the top-right path is unchanged.
+    if (collapseToggled && prevCardHeightRef.current !== null) {
+      const currentTopPx = position.y * Math.max(0, ch - prevCardHeightRef.current);
+      const newTravelY = Math.max(0, ch - cardH);
+      const newY = newTravelY > 0 ? clampFraction(currentTopPx / newTravelY, 0) : 0;
+      prevCardHeightRef.current = cardH;
+      if (newY !== position.y) {
+        setPosition({ x: position.x, y: newY });
+        // position change triggers another effect run that sets up the observer
+        return;
+      }
+    }
+
+    prevCardHeightRef.current = cardH;
+    setOffset(timerOffsetPx(position, { width: cw, height: ch }, { width: cardW, height: cardH }));
+
+    const remeasure = () => {
+      const rw = wrapper.clientWidth;
+      const rh = wrapper.clientHeight;
+      const rRect = card.getBoundingClientRect();
+      prevCardHeightRef.current = rRect.height;
       setOffset(
-        timerOffsetPx(
-          position,
-          { width: cw, height: ch },
-          { width: cardRect.width, height: cardRect.height },
-        ),
+        timerOffsetPx(position, { width: rw, height: rh }, { width: rRect.width, height: rRect.height }),
       );
     };
-    measure();
 
     const observer =
-      typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(remeasure) : null;
     observer?.observe(wrapper);
     observer?.observe(card);
     return () => observer?.disconnect();
