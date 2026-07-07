@@ -35,6 +35,20 @@ describe("TimerWidget", () => {
     expect(within(card).getAllByRole("region").length).toBeGreaterThanOrEqual(3);
   });
 
+  it("exposes a draggable header handle and positions the card absolutely (so it can be moved clear of the flow)", () => {
+    render(<TimerWidget positionStorage={null} />);
+
+    // The card floats via absolute positioning (not a fixed flex pin), so a drag
+    // can relocate it; the header is the grab handle.
+    const card = screen.getByRole("region", { name: /^timers$/i });
+    expect(card).toHaveStyle({ position: "absolute" });
+
+    const handle = screen.getByTestId("timer-drag-handle");
+    expect(handle.className).toContain("cursor-grab");
+    // The handle hosts the collapse toggle but is itself the drag surface.
+    expect(within(handle).getByRole("button", { name: /collapse timers/i })).toBeInTheDocument();
+  });
+
   it("collapses to a compact bar so the flow beneath is reachable, then re-expands", () => {
     render(<TimerWidget />);
 

@@ -55,6 +55,12 @@ test("drives a full debate round through the real UI", async ({ page }) => {
     await h.addColumn(speech.label, speech.side);
   }
   await expect(page.locator("[data-testid=speech-column]")).toHaveCount(SPEECHES.length);
+  // The floating timer defaults to the top-right, where it sits over the
+  // rightmost columns (and hard-blocks clicking into them). Drag it by its
+  // header down over the whitespace below the columns - the real "float without
+  // blocking" gesture (divergence D1) - so every column stays clear and
+  // reachable for the rest of the round. The placement persists.
+  await h.parkTimer("bottom-right");
   await h.shot("columns-added", { narrow: true });
 
   // --- 2. Flow the 1AC (contentions, responses, a subpoint) ----------------
@@ -144,7 +150,9 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   await page.goto(roundUrl);
   await page.getByRole("form", { name: "Add speech column" }).waitFor();
 
-  // The dock is open by default; pick our speech as the active doc.
+  // An empty dock collapses to a slim rail so the flow keeps the full width
+  // (divergence D2); open it, then pick our speech as the active doc.
+  await h.openSpeechDock();
   const dockSelect = page.getByRole("combobox", { name: "Active speech doc" });
   await dockSelect.selectOption({ label: "Speech 1" });
   await expect(page.getByTestId("active-speech-doc-indicator")).toContainText("Speech 1");
@@ -216,7 +224,9 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   await h.shot("blockfile-card", { narrow: true });
 
   // Make our speech the active doc in the block-file dock, tick the section,
-  // and bulk-send.
+  // and bulk-send. The block-file dock also collapses to a rail when empty, so
+  // open it first (divergence D2).
+  await h.openSpeechDock();
   const blockDockSelect = page.getByRole("combobox", { name: "Active speech doc" });
   await blockDockSelect.selectOption({ label: "Speech 1" });
   const includeBox = page.getByRole("checkbox", { name: /Include .* in speech/i }).first();

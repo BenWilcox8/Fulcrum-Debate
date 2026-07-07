@@ -357,4 +357,58 @@ export class RoundHarness {
     await this.page.keyboard.press(`${mod}+Enter`);
     await this.page.waitForTimeout(400);
   }
+
+  // --- Speech dock ----------------------------------------------------------
+
+  /**
+   * Open the speech dock if it is currently the collapsed rail. An empty dock
+   * (no speech active) collapses to a slim rail so the flow keeps the full width
+   * (divergence D2), so before docking a speech we click the rail's affordance.
+   * A no-op when the dock is already open.
+   */
+  async openSpeechDock(): Promise<void> {
+    const open = this.page.getByRole("button", { name: "Open speech dock" });
+    if (await open.count()) {
+      await open.first().click();
+      await this.page.waitForTimeout(200);
+    }
+  }
+
+  // --- Floating timer -------------------------------------------------------
+
+  /**
+   * Drag the floating timer clear of the flow columns by its header handle -
+   * the real gesture that makes the widget "float over the flow WITHOUT blocking
+   * flow interactions" (divergence D1). The flow is a full-bleed, pannable
+   * column grid, so a fixed top-right pin always sits over some column's header +
+   * first contention (and hard-blocks clicking the rightmost column); dragging it
+   * over the whitespace below the (short) columns leaves every column reachable,
+   * and the placement persists. `corner` picks the target corner of the canvas;
+   * the drag clamps so the card always stays fully in view.
+   *
+   * Uses a stepped real-mouse traversal - Chromium raises the matching pointer
+   * events for mouse input, which is what the widget's drag handler listens for.
+   */
+  async parkTimer(
+    corner: "bottom-right" | "bottom-left" | "top-left" | "top-right" = "bottom-right",
+  ): Promise<void> {
+    const wrapper = this.page.locator("[data-testid=rf__wrapper]").first();
+    const wb = await wrapper.boundingBox();
+    const handle = this.page.getByTestId("timer-drag-handle");
+    const hb = await handle.boundingBox();
+    if (!wb || !hb) throw new Error("cannot locate the timer handle or canvas");
+    const margin = 24;
+    const sx = hb.x + hb.width / 2;
+    const sy = hb.y + hb.height / 2;
+    const tx = corner.includes("right") ? wb.x + wb.width - margin : wb.x + margin;
+    const ty = corner.includes("bottom") ? wb.y + wb.height - margin : wb.y + margin;
+    await this.page.mouse.move(sx, sy);
+    await this.page.mouse.down();
+    for (let i = 1; i <= 10; i += 1) {
+      await this.page.mouse.move(sx + ((tx - sx) * i) / 10, sy + ((ty - sy) * i) / 10, { steps: 2 });
+      await this.page.waitForTimeout(20);
+    }
+    await this.page.mouse.up();
+    await this.page.waitForTimeout(300);
+  }
 }

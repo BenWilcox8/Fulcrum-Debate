@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReactFlow,
   applyNodeChanges,
+  useReactFlow,
   type Node,
   type NodeChange,
   type NodeTypes,
@@ -37,6 +38,33 @@ import {
 const BASE_NODE_TYPES: NodeTypes = {
   [SPEECH_COLUMN_NODE_TYPE]: SpeechColumnNode,
 };
+
+/**
+ * Pins the flow content to the top of the canvas whenever the measured viewport
+ * height changes (first measurement, a window resize, or the speech dock opening
+ * / switching edge).
+ *
+ * XYFlow does **not** re-clamp its pan transform when the container resizes: the
+ * first render measures nothing (`height` is the fallback), so the initial
+ * `translateExtent` is short and XYFlow parks the viewport partway down; once the
+ * real height arrives the columns grow but the stale transform stays, leaving a
+ * large empty band above the columns (worst after the dock toggles the canvas
+ * width mid-session). Re-homing the vertical pan to `y = 0` on every height
+ * change keeps the sheet top-aligned. It fires only on a *viewport* resize, not
+ * on content growth, so scrolling down a densely-flowed sheet (the vertical
+ * scroll-at-volume behaviour) is preserved; the horizontal pan is kept as-is.
+ */
+function PinViewportToTop({ viewportHeight }: { viewportHeight: number }) {
+  const { getViewport, setViewport } = useReactFlow();
+  const previous = useRef<number | null>(null);
+  useEffect(() => {
+    if (previous.current === viewportHeight) return;
+    previous.current = viewportHeight;
+    const { x, zoom } = getViewport();
+    setViewport({ x, y: 0, zoom });
+  }, [viewportHeight, getViewport, setViewport]);
+  return null;
+}
 
 /** A stable empty registry so omitting `flowNodeTypes` never re-renders. */
 const EMPTY_REGISTRY: FlowNodeRegistry = [];
@@ -314,7 +342,9 @@ export function FlowCanvas({
         elementsSelectable={false}
         // Keep all columns mounted regardless of measurement (jsdom has none).
         onlyRenderVisibleElements={false}
-      />
+      >
+        <PinViewportToTop viewportHeight={viewportHeight} />
+      </ReactFlow>
     </div>
   );
 }
