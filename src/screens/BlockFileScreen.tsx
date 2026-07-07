@@ -16,6 +16,8 @@ import { CardFormattingStyles } from "../formatting/react";
 import { CardToolbar, HighlightStyles, useCardTools } from "../tools/react";
 import { CardSpeechDrag } from "../speech-doc/card-drag";
 import { SpeechDockLayout } from "../speech-doc";
+import { buildBlockFileExportPayload } from "../export";
+import { ExportButton } from "../export/react";
 
 /**
  * The block-file schema plus the card node model and its quick-create keyboard
@@ -110,15 +112,24 @@ export default function BlockFileScreen() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => editor && insertCard(editor)}
-          disabled={!editor}
-          title={`New card (${CARD_CREATE_SHORTCUT_HINT})`}
-          className="shrink-0 rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm font-medium text-shell-text hover:bg-shell-bg disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          New card
-        </button>
+        <div className="flex shrink-0 items-start gap-2">
+          <ExportButton
+            disabled={!ready || !handle}
+            buildPayload={() =>
+              handle ? buildBlockFileExportPayload(handle, "Block File") : null
+            }
+          />
+
+          <button
+            type="button"
+            onClick={() => editor && insertCard(editor)}
+            disabled={!editor}
+            title={`New card (${CARD_CREATE_SHORTCUT_HINT})`}
+            className="shrink-0 rounded border border-shell-border bg-shell-surface px-3 py-1.5 text-sm font-medium text-shell-text hover:bg-shell-bg disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            New card
+          </button>
+        </div>
       </div>
 
       <div className="flex min-h-0 flex-1 gap-4">

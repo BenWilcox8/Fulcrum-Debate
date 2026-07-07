@@ -1,6 +1,8 @@
 import { Link, useParams } from "react-router-dom";
 import { useDocument } from "../documents/react";
 import { SpeechDocEditor, useSpeechDocs } from "../speech-doc";
+import { buildSpeechDocExportPayload } from "../export";
+import { ExportButton } from "../export/react";
 
 /**
  * A single speech doc's editor.
@@ -44,19 +46,31 @@ export default function SpeechDocScreen() {
       aria-labelledby="screen-heading"
       className="flex flex-1 min-h-0 flex-col gap-4"
     >
-      <div className="flex flex-col gap-1">
-        <Link
-          to="/speeches"
-          className="text-xs font-medium text-shell-muted hover:text-shell-text"
-        >
-          ← All speeches
-        </Link>
-        <h2
-          id="screen-heading"
-          className="text-2xl font-semibold tracking-tight text-shell-text"
-        >
-          {speechDoc?.title ?? "Speech"}
-        </h2>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <Link
+            to="/speeches"
+            className="text-xs font-medium text-shell-muted hover:text-shell-text"
+          >
+            ← All speeches
+          </Link>
+          <h2
+            id="screen-heading"
+            className="text-2xl font-semibold tracking-tight text-shell-text"
+          >
+            {speechDoc?.title ?? "Speech"}
+          </h2>
+        </div>
+
+        <ExportButton
+          className="shrink-0"
+          disabled={!handle}
+          buildPayload={() =>
+            handle
+              ? buildSpeechDocExportPayload(handle, speechDoc?.title)
+              : null
+          }
+        />
       </div>
 
       <SpeechDocEditor
