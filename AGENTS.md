@@ -22,6 +22,7 @@ The app is strictly **local-first**: nothing in the boot/render path may await a
 - `npm run tauri build` - native production bundle (first Rust compile is slow).
 - `npm test` / `npm run test:watch` - Vitest + React Testing Library.
 - `npm run lint` - ESLint (flat config, `eslint.config.js`).
+- `npm run round:drive` - Playwright round-driver E2E harness (see "Round-driver E2E harness" below); requires `npx playwright install chromium` on first use.
 
 ## Hard product rule: local-first boot
 

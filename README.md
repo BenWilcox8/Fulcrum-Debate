@@ -32,6 +32,7 @@ npm install
 | `npm test` | Run the unit test suite once (Vitest + React Testing Library). |
 | `npm run test:watch` | Run the tests in watch mode. |
 | `npm run lint` | Lint the TypeScript / React sources with ESLint. |
+| `npm run round:drive` | Run the Playwright round-driver E2E harness (see `e2e/`). Requires `npx playwright install chromium` on first use. |
 
 ## Project layout
 
@@ -89,6 +90,10 @@ npm install
 │   ├── export/             Export & Sharing: pluggable ExportTarget boundary (target.ts), per-surface payload assembly (payload.ts), Email target (email-target.ts, mailto: via open_external IPC), SpeechDrop target (speechdrop-target.ts, RTF upload via speechdrop_upload Rust command), and RTF serializer (rtf.ts)
 │   │   └── react/          React layer: ExportButton component, useSpeechDropTarget hook, SpeechDropRoomPrompt modal (imported from src/export/react so the model index stays React-free)
 │   └── test/               Test setup (Vitest + Testing Library)
+├── e2e/                    Playwright round-driver E2E harness (visual-regression backbone)
+│   ├── seed.ts             Fixed, realistic seed content (resolution, contentions, card)
+│   ├── harness.ts          RoundHarness: real-gesture primitives + screenshot machinery
+│   └── round-driver.spec.ts  The one ordered full-round journey
 ├── src-tauri/              Rust desktop shell (Tauri v2)
 │   └── src/
 │       └── commands/       Tauri command handlers (Rust half of the IPC seam)
