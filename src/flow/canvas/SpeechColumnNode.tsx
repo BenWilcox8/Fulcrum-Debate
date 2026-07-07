@@ -53,6 +53,10 @@ export function SpeechColumnNode({
       data-side={data.side}
       data-active={active || undefined}
       onClick={() => context?.setActiveColumnId(id)}
+      // `pointer-events-auto` is required: XYFlow sets `pointer-events: none`
+      // on non-selectable, non-draggable node wrappers, and `.react-flow__pane`
+      // overlays them with `pointer-events: auto`. Without this class the
+      // column's onClick never fires in a real browser.
       className={`pointer-events-auto flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-lg border ${classes.column} ${
         active ? "ring-2 ring-shell-text" : ""
       }`}

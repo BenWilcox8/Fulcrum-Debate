@@ -43,10 +43,11 @@ const BASE_NODE_TYPES: NodeTypes = {
 const EMPTY_REGISTRY: FlowNodeRegistry = [];
 
 /**
- * Vertical panning is pinned to 0 so full-height columns always fill the
- * viewport top-to-bottom; only the horizontal axis is free, which is what lets
- * the canvas pan across more columns than fit. A large finite horizontal extent
- * keeps every column reachable without relying on `Infinity`.
+ * Horizontal pan bounds passed to `translateExtent`. A large finite x-range
+ * keeps every column reachable without relying on `Infinity`. The Y values are
+ * `0` for both points so the extent never conflicts with the controlled
+ * `viewport` prop (which already pins vertical position at 0). Vertical pinning
+ * is the `viewport` prop's job, not this constant's.
  */
 const HORIZONTAL_PAN_EXTENT: [[number, number], [number, number]] = [
   [-100_000, 0],
