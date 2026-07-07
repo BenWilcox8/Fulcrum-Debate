@@ -61,15 +61,13 @@ export function TimerWidget({ speeches }: TimerWidgetProps = {}) {
             {collapsed ? "▾" : "▴"}
           </button>
         </div>
-        {!collapsed && (
-          <>
-            <div className="flex gap-2">
-              <PrepTimer side="aff" />
-              <PrepTimer side="neg" />
-            </div>
-            <SpeechTimer speeches={speeches} />
-          </>
-        )}
+        <div className={collapsed ? "hidden" : "flex flex-col gap-2"} data-testid="timer-body">
+          <div className="flex gap-2">
+            <PrepTimer side="aff" />
+            <PrepTimer side="neg" />
+          </div>
+          <SpeechTimer speeches={speeches} />
+        </div>
       </section>
     </div>
   );

@@ -267,4 +267,5 @@ test("drives a full debate round at narrow width", async ({ page }) => {
   } else {
     console.log("\nNo horizontal overflow at any state. ✓");
   }
+  expect(offenders, JSON.stringify(offenders)).toHaveLength(0);
 });

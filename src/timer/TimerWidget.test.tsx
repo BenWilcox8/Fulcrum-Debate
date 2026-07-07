@@ -44,14 +44,15 @@ describe("TimerWidget", () => {
     // Collapsing hides the timers (reclaiming the space over the flow) while the
     // card itself stays as a small labelled bar with an expand control.
     fireEvent.click(screen.getByRole("button", { name: /collapse timers/i }));
-    expect(screen.queryByRole("region", { name: /aff prep timer/i })).not.toBeInTheDocument();
+    const timerBody = screen.getByTestId("timer-body");
+    expect(timerBody).toHaveClass("hidden");
     const collapseToggle = screen.getByRole("button", { name: /expand timers/i });
     expect(collapseToggle).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByRole("region", { name: /^timers$/i })).toHaveAttribute("data-collapsed", "true");
 
     // Expanding brings the timers back.
     fireEvent.click(collapseToggle);
-    expect(screen.getByRole("region", { name: /aff prep timer/i })).toBeInTheDocument();
+    expect(timerBody).not.toHaveClass("hidden");
     expect(screen.getByRole("button", { name: /collapse timers/i })).toHaveAttribute("aria-expanded", "true");
   });
 });
