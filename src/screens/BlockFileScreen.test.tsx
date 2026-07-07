@@ -178,3 +178,12 @@ describe("Block File screen - live evidence formatting", () => {
     expect(css()).toContain("font-size: 22pt");
   });
 });
+
+describe("Block File screen - export", () => {
+  it("offers a one-click Export action once the editor is ready", async () => {
+    renderShellAt("/blocks");
+
+    const button = await screen.findByRole("button", { name: /export to email/i });
+    expect(button).toBeInTheDocument();
+  });
+});

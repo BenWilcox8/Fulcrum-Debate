@@ -9,7 +9,8 @@ pub fn run() {
             commands::window_state::save_window_geometry,
             commands::window_state::load_window_geometry,
             commands::get_preferences,
-            commands::set_preferences
+            commands::set_preferences,
+            commands::open_external
         ])
         .setup(|app| {
             // Restore the saved window geometry before the window is shown so it

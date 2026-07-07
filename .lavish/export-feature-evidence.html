@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Export & Sharing - Feature Evidence</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #0f172a; padding: 2rem; }
+    h1 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; }
+    h2 { font-size: 0.875rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.75rem; }
+    .section { margin-bottom: 2rem; }
+    .card { background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 1.5rem; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .header-text h3 { font-size: 1.125rem; font-weight: 700; }
+    .header-text p { font-size: 0.875rem; color: #64748b; margin-top: 0.25rem; }
+    .header-actions { display: flex; gap: 0.5rem; align-items: flex-start; }
+    .export-group { display: flex; flex-direction: column; }
+    .btn-row { display: flex; align-items: center; gap: 0.5rem; }
+    button {
+      border: 1px solid #cbd5e1;
+      background: white;
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #0f172a;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover { background: #f1f5f9; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { font-size: 0.75rem; margin-top: 0.25rem; min-height: 1.25rem; color: #64748b; }
+    .status.error { color: #b91c1c; }
+    .status.success { color: #64748b; }
+    .badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+    .badge.pass { background: #dcfce7; color: #166534; }
+    .badge.info { background: #dbeafe; color: #1d4ed8; }
+    .test-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.875rem; }
+    .test-row:last-child { border-bottom: none; }
+    .test-name { flex: 1; color: #475569; }
+    .divider { height: 1px; background: #e2e8f0; margin: 1rem 0; }
+    .payload-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 1rem; font-family: monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; color: #334155; margin-top: 0.75rem; }
+    .surface-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<h1>Export &amp; Sharing - Slice 1/2: Email Target</h1>
+
+<div class="section">
+  <h2>Block File Screen - Export button (enabled)</h2>
+  <div class="card">
+    <div class="header">
+      <div class="header-text">
+        <h3>Block File</h3>
+        <p>Cut cards and organize prepared blocks. Affirmative evidence sits above the negative, in one continuous document.</p>
+      </div>
+      <div class="header-actions">
+        <div class="export-group">
+          <div class="btn-row">
+            <button type="button">Export to Email</button>
+          </div>
+          <p class="status" role="status" aria-live="polite"></p>
+        </div>
+        <button type="button">New card</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Speech Doc Screen - Export button (enabled)</h2>
+  <div class="card">
+    <div class="header">
+      <div class="header-text">
+        <h3>1AC</h3>
+        <p style="font-size:0.875rem; color:#64748b; margin-top:0.25rem">Speech document</p>
+      </div>
+      <div class="header-actions">
+        <div class="export-group">
+          <div class="btn-row">
+            <button type="button">Export to Email</button>
+          </div>
+          <p class="status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Export feedback states (role="status" aria-live)</h2>
+  <div class="card">
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+      <div>
+        <div class="surface-label">Idle (default)</div>
+        <div class="export-group">
+          <div class="btn-row"><button type="button">Export to Email</button></div>
+          <p class="status" role="status"></p>
+        </div>
+      </div>
+      <div>
+        <div class="surface-label">Success (ok: true)</div>
+        <div class="export-group">
+          <div class="btn-row"><button type="button" disabled>Export to Email</button></div>
+          <p class="status success" role="status">Email draft opened. Check your mail client.</p>
+        </div>
+      </div>
+      <div>
+        <div class="surface-label">Failure (ok: false, no throw)</div>
+        <div class="export-group">
+          <div class="btn-row"><button type="button">Export to Email</button></div>
+          <p class="status error" role="status">Could not open mail client.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Payload assembly (per-surface, headless editor)</h2>
+  <div class="card">
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <div>
+        <div class="surface-label">Speech doc payload</div>
+        <div class="payload-box">subject: "My Speech"
+html: "&lt;!doctype html&gt;&lt;html&gt;&lt;body&gt;
+  &lt;h1&gt;Introduction&lt;/h1&gt;
+  &lt;p&gt;&lt;strong&gt;Growth solves warming.&lt;/strong&gt;
+     Chen 24 writes...&lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;"
+text: "Introduction\n\nGrowth solves warming.\nChen 24 writes..."</div>
+      </div>
+      <div>
+        <div class="surface-label">Block file payload</div>
+        <div class="payload-box">subject: "Block File"
+html: "&lt;!doctype html&gt;&lt;html&gt;&lt;body&gt;
+  &lt;p&gt;[T]&lt;/p&gt;
+  &lt;p&gt;&lt;strong&gt;Growth solves warming&lt;/strong&gt;&lt;/p&gt;
+  &lt;p&gt;Chen 24&lt;/p&gt;
+  &lt;p&gt;&lt;mark&gt;The evidence shows...&lt;/mark&gt;&lt;/p&gt;
+&lt;/body&gt;&lt;/html&gt;"
+text: "[T]\nGrowth solves warming\nChen 24\nThe evidence shows..."</div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <p style="font-size:0.8rem; color:#64748b">Email target: <code>mailto:?subject=…&amp;body=…</code> (plain text per RFC 6068) via <code>open_external</code> Tauri IPC → OS default mail client. HTML payload reserved for SpeechDrop (slice 2).</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Pluggable target boundary (SpeechDrop ready)</h2>
+  <div class="card">
+    <div style="font-family: monospace; font-size: 0.8rem; color: #334155; line-height: 1.6;">
+      <div style="color:#64748b">// target.ts - the seam SpeechDrop adds to next slice</div>
+      <div><span style="color:#7c3aed">interface</span> <span style="color:#0284c7">ExportPayload</span> { subject: string; html: string; text: string; }</div>
+      <div><span style="color:#7c3aed">interface</span> <span style="color:#0284c7">ExportResult</span> { ok: boolean; message: string; }</div>
+      <div><span style="color:#7c3aed">interface</span> <span style="color:#0284c7">ExportTarget</span> { id: string; label: string; export(p: ExportPayload): Promise&lt;ExportResult&gt;; }</div>
+      <br/>
+      <div style="color:#64748b">// email-target.ts</div>
+      <div><span style="color:#7c3aed">const</span> DEFAULT_EXPORT_TARGETS = [emailTarget];</div>
+      <br/>
+      <div style="color:#64748b">// Adding SpeechDrop next slice = add one entry, zero action changes</div>
+      <div><span style="color:#7c3aed">const</span> DEFAULT_EXPORT_TARGETS = [emailTarget, <span style="color:#16a34a">speechDropTarget</span>];</div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Test results (39 tests, all passing)</h2>
+  <div class="card">
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/email-target.test.ts - mailtoUrl encodes subject and body</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/email-target.test.ts - reports failure without throwing</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/payload.test.ts - speech doc: rich formatting as semantic HTML</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/payload.test.ts - block file: card anatomy + body marks preserved</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/react/ExportButton.test.tsx - assembles payload on click</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/react/ExportButton.test.tsx - reports failure non-intrusively</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/export/react/ExportButton.test.tsx - one button per target (pluggability)</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/ipc/index.test.ts - openExternal forwards url to open_external command</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/ipc/index.test.ts - openExternal rejects when Rust opener fails</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/screens/BlockFileScreen.test.tsx - offers Export action once editor ready</span></div>
+    <div class="test-row"><span class="badge pass">✓ PASS</span><span class="test-name">src/speech-doc/speech-doc.integration.test.tsx - one-click Export on speech doc screen</span></div>
+  </div>
+</div>
+
+</body>
+</html>

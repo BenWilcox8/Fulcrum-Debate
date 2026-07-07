@@ -15,6 +15,7 @@ import {
   loadWindowGeometry,
   getPreferences,
   setPreferences,
+  openExternal,
   DEFAULT_PREFERENCES,
 } from "./index";
 
@@ -82,5 +83,21 @@ describe("ipc bridge", () => {
       preferences: { theme: "dark" },
     });
     expect(result).toEqual({ theme: "dark" });
+  });
+
+  it("openExternal forwards the url to the open_external command", async () => {
+    invoke.mockResolvedValue(undefined);
+
+    await openExternal("mailto:?subject=Hi");
+
+    expect(invoke).toHaveBeenCalledWith("open_external", {
+      url: "mailto:?subject=Hi",
+    });
+  });
+
+  it("openExternal rejects when the Rust opener fails", async () => {
+    invoke.mockRejectedValue("no opener");
+
+    await expect(openExternal("mailto:")).rejects.toBe("no opener");
   });
 });

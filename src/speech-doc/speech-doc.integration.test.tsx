@@ -141,6 +141,22 @@ describe("speech-doc lifecycle integration", () => {
     });
   });
 
+  it("offers a one-click Export action on the speech doc screen", async () => {
+    let speechId = "";
+
+    await withHarness(async ({ createSpeechDoc }) => {
+      await act(async () => {
+        speechId = await createSpeechDoc("Exportable speech");
+      });
+    });
+
+    renderShellAt(`/speeches/${speechId}`);
+
+    expect(
+      await screen.findByRole("button", { name: /export to email/i }),
+    ).toBeInTheDocument();
+  });
+
   it("makes the opened speech doc identifiable as the active speech doc", async () => {
     let speechId = "";
 

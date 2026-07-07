@@ -12,11 +12,14 @@
 
 pub mod window_state;
 
+mod external;
 mod preferences;
 
 // Glob re-export so the `#[tauri::command]`-generated helper items travel with
 // the command functions; `generate_handler!` in `lib.rs` needs them to resolve
-// `commands::get_preferences` / `commands::set_preferences`.
+// `commands::get_preferences` / `commands::set_preferences` /
+// `commands::open_external`.
+pub use external::*;
 pub use preferences::*;
 
 use serde::Serialize;

@@ -93,3 +93,19 @@ export function getPreferences(): Promise<Preferences> {
 export function setPreferences(preferences: Preferences): Promise<Preferences> {
   return invoke<Preferences>("set_preferences", { preferences });
 }
+
+/**
+ * Hands `url` to the operating system's default handler for its scheme via the
+ * Rust `open_external` command.
+ *
+ * This is the outbound hand-off boundary the Export feature's Email target uses
+ * to open a `mailto:` draft in the user's mail client: the app never speaks a
+ * protocol itself, it asks the OS to open the URL, so the draft is composed
+ * locally and the user stays in control of sending. Rejects with the Rust-side
+ * error string when the opener could not be launched, so a caller can surface a
+ * failure. Resolves once the opener process is spawned - not when the target
+ * application finishes.
+ */
+export function openExternal(url: string): Promise<void> {
+  return invoke<void>("open_external", { url });
+}
