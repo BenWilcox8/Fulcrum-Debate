@@ -5,13 +5,31 @@ import { EditableTime } from "./EditableTime";
 import { useCountdown } from "./useCountdown";
 
 /**
- * The ordered speech labels the selector cycles through. `>` is not a speech -
- * it is the advance affordance rendered after the labels - so it lives in the
- * component, not this list.
+ * The default speech labels the selector cycles through when a caller supplies
+ * no round-specific set - a generic Policy/LD shorthand (Aff/Neg Constructive,
+ * Cross-Ex, Aff Rebuttal). `>` is not a speech - it is the advance affordance
+ * rendered after the labels - so it lives in the component, not this list.
+ *
+ * When the timer is mounted for a real round, the caller passes that round's
+ * actual speech labels via {@link SpeechTimerProps.speeches} (e.g. the flow
+ * sheet's column labels), so a Public-Forum or any non-Policy round shows its
+ * own speeches ("Con Case", "Pro FF", ...) rather than these placeholders.
  */
 export const SPEECH_OPTIONS = ["AC", "NC", "CX", "AR"] as const;
 
 export type SpeechLabel = (typeof SPEECH_OPTIONS)[number];
+
+/** Props for {@link SpeechTimer}. */
+export interface SpeechTimerProps {
+  /**
+   * The ordered speech labels this timer can time - typically the round's own
+   * flow-sheet column labels, so the selector reflects the actual round
+   * structure. Empty or omitted falls back to {@link SPEECH_OPTIONS}, keeping
+   * the widget self-contained (it takes labels as plain data, never a document
+   * handle) and usable standalone.
+   */
+  speeches?: readonly string[];
+}
 
 /**
  * The dynamic speech timer: one editable countdown whose label is the currently
@@ -21,16 +39,25 @@ export type SpeechLabel = (typeof SPEECH_OPTIONS)[number];
  * never touches the countdown - so retiming or switching speeches never
  * interrupts the clock (or, in turn, flowing).
  *
+ * The set of selectable speeches is {@link SpeechTimerProps.speeches} when a
+ * caller supplies one (the round's real speeches) and {@link SPEECH_OPTIONS}
+ * otherwise, so the selector labels stay meaningful for any round format.
+ *
  * The timer's own controls (play/pause, reset) and click-to-edit come from the
  * shared {@link useCountdown} / {@link EditableTime} seams, identical to the
  * prep timers.
  */
-export function SpeechTimer() {
+export function SpeechTimer({ speeches }: SpeechTimerProps = {}) {
   const [selected, setSelected] = useState(0);
   const countdown = useCountdown(DEFAULT_SPEECH_SECONDS);
 
-  const label = SPEECH_OPTIONS[selected];
-  const advance = () => setSelected((index) => (index + 1) % SPEECH_OPTIONS.length);
+  const options = speeches && speeches.length > 0 ? speeches : SPEECH_OPTIONS;
+  // The round's speeches can change (a column added / removed / reordered) while
+  // a selection is held, so clamp the live index into range rather than index
+  // out of bounds.
+  const activeIndex = selected < options.length ? selected : 0;
+  const label = options[activeIndex];
+  const advance = () => setSelected((index) => (index + 1) % options.length);
 
   return (
     <section
@@ -40,7 +67,8 @@ export function SpeechTimer() {
       <div className="flex items-center gap-2">
         <span
           data-testid="speech-label"
-          className="min-w-[2.5rem] rounded bg-shell-bg px-2 py-0.5 text-center text-xs font-semibold uppercase tracking-wide text-shell-text"
+          title={label}
+          className="min-w-[2.5rem] max-w-[8rem] truncate rounded bg-shell-bg px-2 py-0.5 text-center text-xs font-semibold uppercase tracking-wide text-shell-text"
         >
           {label}
         </span>
@@ -55,16 +83,17 @@ export function SpeechTimer() {
       <div
         role="group"
         aria-label="Select speech"
-        className="flex items-center gap-1"
+        className="flex max-w-[16rem] flex-wrap items-center justify-center gap-1"
       >
-        {SPEECH_OPTIONS.map((option, index) => (
+        {options.map((option, index) => (
           <button
-            key={option}
+            key={`${index}-${option}`}
             type="button"
             onClick={() => setSelected(index)}
-            aria-pressed={index === selected}
-            className={`rounded border px-1.5 py-0.5 text-xs font-medium ${
-              index === selected
+            aria-pressed={index === activeIndex}
+            title={option}
+            className={`max-w-[7rem] truncate rounded border px-1.5 py-0.5 text-xs font-medium ${
+              index === activeIndex
                 ? "border-shell-text bg-shell-text text-shell-surface"
                 : "border-shell-border bg-shell-surface text-shell-text hover:bg-shell-bg"
             }`}

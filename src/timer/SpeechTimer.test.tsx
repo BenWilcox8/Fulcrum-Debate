@@ -68,6 +68,49 @@ describe("SpeechTimer", () => {
     );
   });
 
+  it("uses round-supplied speech labels for the selector when given", () => {
+    const speeches = ["Con Case", "Pro Case", "Con Rebuttal", "Pro FF"];
+    render(<SpeechTimer speeches={speeches} />);
+
+    // The default Policy placeholders are gone; the round's own speeches show.
+    expect(speechLabel()).toHaveTextContent("Con Case");
+    const selector = screen.getByRole("group", { name: /select speech/i });
+    for (const name of speeches) {
+      expect(within(selector).getByRole("button", { name })).toBeInTheDocument();
+    }
+    expect(within(selector).queryByRole("button", { name: "AC" })).toBeNull();
+
+    fireEvent.click(within(selector).getByRole("button", { name: "Con Rebuttal" }));
+    expect(speechLabel()).toHaveTextContent("Con Rebuttal");
+
+    const advance = screen.getByRole("button", { name: /advance to next speech/i });
+    fireEvent.click(advance);
+    expect(speechLabel()).toHaveTextContent("Pro FF");
+    fireEvent.click(advance);
+    expect(speechLabel()).toHaveTextContent("Con Case"); // wraps
+  });
+
+  it("falls back to the default labels when the speeches list is empty", () => {
+    render(<SpeechTimer speeches={[]} />);
+    expect(speechLabel()).toHaveTextContent("AC");
+    const selector = screen.getByRole("group", { name: /select speech/i });
+    expect(within(selector).getByRole("button", { name: "NC" })).toBeInTheDocument();
+  });
+
+  it("clamps a held selection when the speeches list shrinks", () => {
+    const { rerender } = render(
+      <SpeechTimer speeches={["Con Case", "Pro Case", "Con Rebuttal", "Pro FF"]} />,
+    );
+    const selector = screen.getByRole("group", { name: /select speech/i });
+    fireEvent.click(within(selector).getByRole("button", { name: "Pro FF" }));
+    expect(speechLabel()).toHaveTextContent("Pro FF");
+
+    // A column removed shrinks the list past the held index - it must clamp, not
+    // index out of bounds.
+    rerender(<SpeechTimer speeches={["Con Case", "Pro Case"]} />);
+    expect(speechLabel()).toHaveTextContent("Con Case");
+  });
+
   it("plays, resets, and edits like the prep timers", () => {
     render(<SpeechTimer />);
 
