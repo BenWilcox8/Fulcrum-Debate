@@ -21,6 +21,17 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# Outbound HTTP for export targets that speak a protocol (SpeechDrop upload).
+# rustls-tls (not the platform's native TLS) keeps the build self-contained and
+# avoids an OpenSSL system dependency on CI. `multipart` for the file upload,
+# `cookies` to carry the CSRF + session cookies from the token-priming GET to the
+# upload POST.
+reqwest = { version = "0.12", default-features = false, features = [
+    "rustls-tls",
+    "multipart",
+    "cookies",
+] }
+base64 = "0.22"
 
 [dev-dependencies]
 tempfile = "3"

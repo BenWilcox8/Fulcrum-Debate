@@ -26,3 +26,19 @@ export {
   EMAIL_TARGET_LABEL,
   type OpenUrl,
 } from "./email-target";
+export {
+  createSpeechDropTarget,
+  SPEECHDROP_TARGET_ID,
+  SPEECHDROP_TARGET_LABEL,
+  SPEECHDROP_UPLOAD_MIME,
+  type SpeechDropUpload,
+  type PromptRoomCode,
+  type SpeechDropTargetOptions,
+} from "./speechdrop-target";
+export { htmlToRtf } from "./rtf";
+export {
+  readLastRoomCode,
+  writeLastRoomCode,
+  SPEECHDROP_ROOM_STORAGE_KEY,
+  type SpeechDropRoomStorage,
+} from "./speechdrop-room-storage";

@@ -10,7 +10,8 @@ pub fn run() {
             commands::window_state::load_window_geometry,
             commands::get_preferences,
             commands::set_preferences,
-            commands::open_external
+            commands::open_external,
+            commands::speechdrop_upload
         ])
         .setup(|app| {
             // Restore the saved window geometry before the window is shown so it

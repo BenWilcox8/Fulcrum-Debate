@@ -109,3 +109,36 @@ export function setPreferences(preferences: Preferences): Promise<Preferences> {
 export function openExternal(url: string): Promise<void> {
   return invoke<void>("open_external", { url });
 }
+
+/**
+ * A file upload to a SpeechDrop room; mirrors the Rust `SpeechDropUploadRequest`
+ * struct. The content is base64-encoded so the seam is binary-safe.
+ */
+export interface SpeechDropUploadRequest {
+  /** The room code the debater entered. */
+  roomCode: string;
+  /** The file name presented to SpeechDrop (e.g. `"Speech.rtf"`). */
+  fileName: string;
+  /** The upload MIME type (must be one SpeechDrop accepts, e.g. `"text/rtf"`). */
+  contentType: string;
+  /** The file bytes, base64-encoded. */
+  contentBase64: string;
+}
+
+/**
+ * Uploads a document to a SpeechDrop room via the Rust `speechdrop_upload`
+ * command.
+ *
+ * This is the outbound *network* boundary the Export feature's SpeechDrop target
+ * uses: the app never speaks SpeechDrop's CSRF-protected upload protocol from the
+ * webview - it hands the room code + file to Rust, which primes the session and
+ * uploads over a fixed, host-locked base URL (the network analogue of
+ * {@link openExternal}'s scheme allowlist). Rejects with the Rust-side message
+ * for every expected failure (bad room code, unreachable host, room not found,
+ * rejected file) so the target can surface it as feedback.
+ */
+export function uploadToSpeechDrop(
+  request: SpeechDropUploadRequest,
+): Promise<void> {
+  return invoke<void>("speechdrop_upload", { request });
+}
