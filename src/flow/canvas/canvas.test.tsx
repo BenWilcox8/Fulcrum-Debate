@@ -138,6 +138,42 @@ describe("FlowCanvas", () => {
     expect(columns[0].className).not.toEqual(columns[1].className);
   });
 
+  it("shows the empty-flow hint when a live handle has zero columns", async () => {
+    const handle = await openFlowSheet();
+    const { getByText } = render(<FlowCanvas handle={handle} />);
+    await waitFor(() =>
+      expect(getByText("No speech columns yet")).toBeInTheDocument(),
+    );
+  });
+
+  it("does not show the empty-flow hint once the flow sheet has at least one column", async () => {
+    const handle = await openFlowSheet();
+    addColumn(handle, { side: "aff", label: "1AC" });
+    const { queryByText } = render(<FlowCanvas handle={handle} />);
+    await waitFor(() =>
+      expect(queryByText("No speech columns yet")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("clears the empty-flow hint when the first column is added", async () => {
+    const handle = await openFlowSheet();
+    const { getByText, queryByText } = render(<FlowCanvas handle={handle} />);
+    await waitFor(() =>
+      expect(getByText("No speech columns yet")).toBeInTheDocument(),
+    );
+    act(() => {
+      addColumn(handle, { side: "aff", label: "1AC" });
+    });
+    await waitFor(() =>
+      expect(queryByText("No speech columns yet")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("does not show the empty-flow hint when the handle is null", () => {
+    const { queryByText } = render(<FlowCanvas handle={null} />);
+    expect(queryByText("No speech columns yet")).not.toBeInTheDocument();
+  });
+
   it("reflects live flow-doc changes in the rendered columns", async () => {
     const handle = await openFlowSheet();
     const first = addColumn(handle, { side: "aff", label: "1AC" });
