@@ -15,10 +15,11 @@ import {
 } from "@testing-library/react";
 
 import { DocumentsProvider } from "./DocumentsProvider";
+import { DocumentsContext } from "./DocumentsContext";
 import { useDocuments } from "./useDocuments";
 import { useDocument } from "./useDocument";
 import { useDocumentService } from "./useDocumentService";
-import type { DocumentService } from "../service";
+import { openDocumentService, type DocumentService } from "../service";
 
 // A fresh IndexedDB backend per test so nothing leaks between tests.
 beforeEach(() => {
@@ -129,6 +130,29 @@ describe("useDocuments", () => {
     await waitFor(() =>
       expect(screen.getByTestId("count")).toHaveTextContent("0"),
     );
+  });
+
+  // Regression: a closed service can transiently sit in context during the
+  // provider's StrictMode/remount service swap. `service.subscribe` throws on a
+  // closed service, so an unguarded effect would crash the whole tree - which is
+  // exactly what a browser reload landing directly on a document screen (e.g. a
+  // round) hit, rendering a blank page. The effect must bail out on a closed
+  // service instead of subscribing.
+  it("does not throw when the service in context is already closed", async () => {
+    const service = openDocumentService();
+    await service.close();
+    expect(service.closed).toBe(true);
+
+    expect(() =>
+      render(
+        <DocumentsContext.Provider value={{ service }}>
+          <ListConsumer />
+        </DocumentsContext.Provider>,
+      ),
+    ).not.toThrow();
+
+    // It stays on its empty default listing rather than crashing.
+    expect(screen.getByTestId("count")).toHaveTextContent("0");
   });
 });
 

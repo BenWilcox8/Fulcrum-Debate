@@ -62,14 +62,14 @@ export default function RoundScreen() {
 
       {/* The flow sheet lives in the primary pane; the Speech Doc editor docks
           beside it (side/bottom, resizable, preference persisted) without
-          touching flowing. The flow keeps its own relative container so the
-          floating timers overlay the flow alone, not the dock. */}
+          touching flowing. The floating timers are handed to the panel as its
+          canvas overlay, so they float over the flow columns alone - clear of
+          the column-controls strip, the RFD region, and the dock. The widget's
+          own wrapper is pointer-events-none outside its card so it never blocks
+          flowing. */}
       <SpeechDockLayout className="overflow-hidden rounded-lg border border-shell-border">
-        <div className="relative h-full min-h-0 min-w-0 overflow-hidden bg-shell-surface">
-          <FlowSheetPanel handle={handle} />
-          {/* Floating timers overlay the flow; the widget's own wrapper is
-              pointer-events-none outside its card so it never blocks flowing. */}
-          <TimerWidget />
+        <div className="h-full min-h-0 min-w-0 overflow-hidden bg-shell-surface">
+          <FlowSheetPanel handle={handle} overlay={<TimerWidget />} />
         </div>
       </SpeechDockLayout>
     </section>
