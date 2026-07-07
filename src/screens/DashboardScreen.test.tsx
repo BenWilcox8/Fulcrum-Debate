@@ -158,4 +158,18 @@ describe("DashboardScreen three-zone shell", () => {
       screen.queryByRole("heading", { level: 2, name: /dashboard/i }),
     ).not.toBeInTheDocument();
   });
+
+  it("navigates from the Library zone to the Speeches screen", () => {
+    renderDashboard();
+
+    const library = screen.getByRole("region", { name: /library/i });
+    fireEvent.click(within(library).getByRole("link", { name: /speeches/i }));
+
+    expect(
+      screen.getByRole("heading", { level: 2, name: /speeches/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: /dashboard/i }),
+    ).not.toBeInTheDocument();
+  });
 });

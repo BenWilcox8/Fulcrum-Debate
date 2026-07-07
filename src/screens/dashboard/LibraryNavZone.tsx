@@ -12,14 +12,19 @@ const LIBRARY_LINKS = [
     label: "Rounds",
     blurb: "Flow live rounds and review past debates.",
   },
+  {
+    to: "/speeches",
+    label: "Speeches",
+    blurb: "Draft and read the speeches you deliver.",
+  },
 ] as const;
 
 /**
  * The Library/Navigation zone - the dashboard's persistent map into the app's
- * standing areas. Unlike the Resume and Start zones (placeholder slots for
- * sibling issues), this zone is complete: it links to the existing Block File
- * and Rounds screens. These are real navigation, distinct from the primary nav
- * chrome, giving the home screen a durable way into the library.
+ * standing areas. It links to every top-level content area a debater keeps work
+ * in: the Block File, Rounds, and Speeches screens. These are real navigation,
+ * distinct from the primary nav chrome, giving the home screen a durable way
+ * into the library.
  */
 export default function LibraryNavZone() {
   return (
