@@ -6,6 +6,7 @@ import {
   type Node,
   type NodeChange,
   type NodeTypes,
+  type Viewport,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -42,10 +43,11 @@ const BASE_NODE_TYPES: NodeTypes = {
 const EMPTY_REGISTRY: FlowNodeRegistry = [];
 
 /**
- * Vertical panning is pinned to 0 so full-height columns always fill the
- * viewport top-to-bottom; only the horizontal axis is free, which is what lets
- * the canvas pan across more columns than fit. A large finite horizontal extent
- * keeps every column reachable without relying on `Infinity`.
+ * Horizontal pan bounds passed to `translateExtent`. A large finite x-range
+ * keeps every column reachable without relying on `Infinity`. The Y values are
+ * `0` for both points so the extent never conflicts with the controlled
+ * `viewport` prop (which already pins vertical position at 0). Vertical pinning
+ * is the `viewport` prop's job, not this constant's.
  */
 const HORIZONTAL_PAN_EXTENT: [[number, number], [number, number]] = [
   [-100_000, 0],
@@ -123,6 +125,17 @@ export function FlowCanvas({
 }: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | undefined>(undefined);
+
+  // The vertical viewport is pinned to 0 (and zoom to 1) so full-height columns
+  // always fill the canvas top-to-bottom; only the horizontal offset is free,
+  // which is what lets the canvas pan across more columns than fit. This is a
+  // *controlled* viewport rather than a `translateExtent` clamp because a
+  // degenerate `[0, 0]` vertical extent lets XYFlow's transform drift on resize
+  // (e.g. when the speech dock collapses), pushing every column down off-canvas.
+  const [viewportX, setViewportX] = useState(0);
+  const onViewportChange = useCallback((next: Viewport) => {
+    setViewportX(next.x);
+  }, []);
 
   // Measure the viewport so columns fill it top-to-bottom. Purely a rendering
   // concern; it never gates when columns appear.
@@ -267,6 +280,10 @@ export function FlowCanvas({
         panOnScrollMode={PanOnScrollMode.Horizontal}
         panOnDrag
         translateExtent={HORIZONTAL_PAN_EXTENT}
+        // Controlled viewport: keep the vertical offset pinned at 0 and the zoom
+        // at 1 while letting horizontal panning update `x`. See {@link viewportX}.
+        viewport={{ x: viewportX, y: 0, zoom: 1 }}
+        onViewportChange={onViewportChange}
         // Lock zoom so column heights stay 1:1 with the viewport.
         zoomOnScroll={false}
         zoomOnPinch={false}
