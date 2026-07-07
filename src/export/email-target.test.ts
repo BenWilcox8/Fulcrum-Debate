@@ -5,7 +5,7 @@
  * reports `ok: true`, and a failed open reports `ok: false` with a readable
  * reason rather than throwing (the PRD's success/failure reporting seam).
  */
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createEmailTarget, mailtoUrl } from "./email-target";
 import type { ExportPayload } from "./target";
@@ -39,6 +39,10 @@ describe("mailtoUrl", () => {
 });
 
 describe("createEmailTarget", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("has the stable id and label", () => {
     const target = createEmailTarget(vi.fn());
     expect(target.id).toBe("email");
@@ -73,7 +77,6 @@ describe("createEmailTarget", () => {
     expect(result.message).not.toContain("no mail app");
     // The raw error is logged for diagnosis instead.
     expect(consoleError).toHaveBeenCalledWith("Email export failed:", error);
-    consoleError.mockRestore();
   });
 
   it("sanitizes the no-Tauri-IPC (plain browser) exception", async () => {
@@ -95,7 +98,6 @@ describe("createEmailTarget", () => {
     // None of the raw TypeError's guts leak to the user.
     expect(result.message).not.toMatch(/invoke|undefined|reading|Cannot read/i);
     expect(consoleError).toHaveBeenCalledWith("Email export failed:", tauriError);
-    consoleError.mockRestore();
   });
 
   it("tolerates a non-Error rejection without leaking it", async () => {
@@ -111,6 +113,5 @@ describe("createEmailTarget", () => {
     expect(result.message).toMatch(/could not open your mail app/i);
     expect(result.message).not.toContain("boom");
     expect(consoleError).toHaveBeenCalledWith("Email export failed:", "boom");
-    consoleError.mockRestore();
   });
 });
