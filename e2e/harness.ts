@@ -28,6 +28,18 @@ export const FLOW_HEIGHT = 1400;
 export const LAPTOP = { width: LAPTOP_WIDTH, height: STANDARD_HEIGHT } as const;
 
 /**
+ * How a captured state is emitted:
+ *  - `"capture"` (default) writes the ordered PNG to {@link SCREENSHOT_DIR} -
+ *    the `round:drive` artifact sequence a human eyeballs.
+ *  - `"vrt"` asserts the state against the committed baseline via Playwright's
+ *    `toHaveScreenshot` - the `round:vrt` visual-regression check.
+ *
+ * The round script is identical in both modes: only the sink differs, so the
+ * harness stays the single source of truth for the journey.
+ */
+export type ShotMode = "capture" | "vrt";
+
+/**
  * Drives Fulcrum's real UI through a complete debate round, capturing an
  * ordered, chronologically-named screenshot sequence.
  *
@@ -49,7 +61,10 @@ export class RoundHarness {
   /** Current laptop-viewport height; the round phase raises it (see FLOW_HEIGHT). */
   private laptopHeight = STANDARD_HEIGHT;
 
-  constructor(readonly page: Page) {}
+  constructor(
+    readonly page: Page,
+    private readonly options: { mode?: ShotMode } = {},
+  ) {}
 
   /**
    * Set the laptop-viewport height for the current phase (e.g. FLOW_HEIGHT for
@@ -76,15 +91,40 @@ export class RoundHarness {
     this.counter += 1;
     const n = String(this.counter).padStart(3, "0");
     await this.settle();
-    await this.page.screenshot({ path: path.join(SCREENSHOT_DIR, `${n}-${slug}-laptop.png`) });
+    await this.capture(`${n}-${slug}-laptop.png`);
     if (opts.narrow) {
       // Narrow keeps the phase height (so the flow stays legible) at the narrow
       // width, isolating the responsive-width change.
       await this.page.setViewportSize({ width: NARROW_WIDTH, height: this.laptopHeight });
       await this.settle();
-      await this.page.screenshot({ path: path.join(SCREENSHOT_DIR, `${n}-${slug}-narrow.png`) });
+      await this.capture(`${n}-${slug}-narrow.png`);
       await this.page.setViewportSize({ width: LAPTOP_WIDTH, height: this.laptopHeight });
       await this.settle();
+    }
+  }
+
+  /**
+   * Emit one captured state under `name`. In `"capture"` mode this writes the
+   * ordered PNG to {@link SCREENSHOT_DIR}; in `"vrt"` mode it asserts the state
+   * against the committed baseline via `toHaveScreenshot`.
+   *
+   * The only genuinely nondeterministic on-screen region is the timer's live
+   * digit readouts (a clock), so `vrt` masks exactly those - every `.tabular-nums`
+   * element, a class used app-wide *only* by the timer's `EditableTime` values.
+   * Masking just the digits (not the whole widget) keeps the widget's position,
+   * chrome, selector row and layout in the comparison - so the draggable-timer
+   * placement and dock/flow proportions are still regression-tested - while a
+   * paused-clock second boundary can never flake the check. This is deliberately
+   * targeted masking rather than a loose global threshold; the small residual
+   * anti-aliasing variance is absorbed by the `expect.toHaveScreenshot` config.
+   */
+  private async capture(name: string): Promise<void> {
+    if (this.options.mode === "vrt") {
+      await expect(this.page).toHaveScreenshot(name, {
+        mask: [this.page.locator(".tabular-nums")],
+      });
+    } else {
+      await this.page.screenshot({ path: path.join(SCREENSHOT_DIR, name) });
     }
   }
 

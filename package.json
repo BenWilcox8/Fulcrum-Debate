@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "tauri": "tauri",
-    "round:drive": "playwright test e2e/round-driver.spec.ts"
+    "round:drive": "playwright test e2e/round-driver.spec.ts",
+    "round:vrt": "ROUND_VRT=1 playwright test e2e/round-driver.spec.ts",
+    "round:vrt:update": "ROUND_VRT=1 playwright test e2e/round-driver.spec.ts --update-snapshots"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
