@@ -185,17 +185,32 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   await h.setPhaseHeight(STANDARD_HEIGHT); // back to the standard laptop height
   await page.goto("/#/blocks");
   await page.waitForTimeout(800);
-  // A heading defines an argument section the ToC can send.
-  const blockEditor = page.locator(".block-file-editor .ProseMirror, .ProseMirror").first();
+  // A heading defines an argument section the ToC can send. Scope the editor
+  // locator to the block-file editor (`.block-file-editor` is the EditorContent
+  // wrapper class); a bare `.ProseMirror` could match the speech dock's editor.
+  const blockEditor = page.locator(".block-file-editor .ProseMirror").first();
   await blockEditor.click();
   await page.keyboard.press("Home");
   await page.keyboard.type("# Freight and logistics");
   await page.keyboard.press("Enter");
-  // Quick-create a card under that section and fill its regions.
+  // Quick-create a card under that section, then fill ALL four regions and
+  // highlight its body via the real Highlight card tool - so the ToC bulk-send
+  // below delivers real spoken card content (Auto Speech emits highlighted body
+  // runs), not just the section heading.
   await page.getByRole("button", { name: /New card/i }).click();
   await page.waitForTimeout(300);
-  await page.keyboard.type(BLOCK_CARD.tag);
+  await page.keyboard.type(BLOCK_CARD.tag); // caret lands in the tag region
+  const card = page.locator("[data-card]").first();
   await expect(page.locator("[data-card]")).toHaveCount(1);
+  await h.fillCardRegion(card, "tagline", BLOCK_CARD.tagline);
+  await h.fillCardRegion(card, "cite", BLOCK_CARD.cite);
+  await h.fillCardRegion(card, "body", BLOCK_CARD.body);
+  // Highlight the whole body through the toolbar Highlight tool (selection must
+  // sit inside the card so the tool is enabled), so the read-aloud run exists.
+  const cardBody = card.locator('[data-card-region="body"]');
+  await cardBody.selectText();
+  await page.getByRole("button", { name: "Highlight", exact: true }).click();
+  await expect(cardBody.locator("mark")).toHaveCount(1);
   await h.shot("blockfile-card", { narrow: true });
 
   // Make our speech the active doc in the block-file dock, tick the section,
@@ -215,6 +230,10 @@ test("drives a full debate round through the real UI", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Speech 1" })).toBeVisible();
   const exportBtn = page.getByRole("button", { name: "Export to Email" });
   await expect(exportBtn).toBeVisible();
+  // SpeechDocScreen disables the export button until the doc handle's async
+  // IndexedDB load resolves (`disabled={!handle || !loaded}`); wait for enabled
+  // so a slow load can't make the click below throw "element is not enabled".
+  await expect(exportBtn).toBeEnabled();
   await h.shot("speech-doc-export-ready", { narrow: true });
   // Exercise the export action: the Email target assembles the payload and hands
   // a mailto: to the OS opener. Under the headless dev server there is no Tauri

@@ -148,9 +148,26 @@ export class RoundHarness {
   }
 
   private subpointIds(): Promise<string[]> {
+    // SubpointNode always renders `data-flow-node-id` (= the subpoint id); there
+    // is no `data-subpoint-id` in the app source, so read only the real
+    // attribute rather than a fallback that would inject empty-string ids.
     return this.page.$$eval("[data-testid=subpoint-node]", (els) =>
-      els.map((e) => e.getAttribute("data-flow-node-id") ?? e.getAttribute("data-subpoint-id") ?? ""),
+      els.map((e) => e.getAttribute("data-flow-node-id") ?? ""),
     );
+  }
+
+  /**
+   * The single id in `after` that was not in `before`, or a loud error. Used
+   * after a create-trigger so a race (the count check passed but the id read
+   * saw a stale set) fails at the source with a clear message instead of
+   * silently returning `undefined` typed as `string` into a later selector.
+   */
+  private newId(before: readonly string[], after: readonly string[], what: string): string {
+    const created = after.find((id) => !before.includes(id));
+    if (!created) {
+      throw new Error(`no new ${what} appeared after the trigger (before=${before.length}, after=${after.length})`);
+    }
+    return created;
   }
 
   /** The argument-text editor for a given contention. */
@@ -175,7 +192,7 @@ export class RoundHarness {
       before.length,
     );
     const after = await this.contentionIds();
-    return after.find((id) => !before.includes(id))!;
+    return this.newId(before, after, "contention node");
   }
 
   /**
@@ -210,8 +227,15 @@ export class RoundHarness {
         await this.page.keyboard.press("Shift+Enter"); // grouped response
         await this.page.keyboard.type(resp);
       }
-      for (const sub of row.subpoints ?? []) {
+      const subpoints = row.subpoints ?? [];
+      for (const sub of subpoints) {
         await this.dropSubpoint(sub, body);
+      }
+      // dropSubpoint leaves focus in the subpoint's editor; if more rows follow,
+      // return focus to the contention body so the next row's Enter/typing goes
+      // to the contention, not the just-created subpoint.
+      if (subpoints.length > 0 && r < contention.rows.length - 1) {
+        await this.focusEditor(body);
       }
     }
     return nodeId;
@@ -228,11 +252,33 @@ export class RoundHarness {
       before.length,
     );
     const after = await this.subpointIds();
-    const subId = after.find((id) => !before.includes(id))!;
+    const subId = this.newId(before, after, "subpoint node");
     const subBody = this.page
       .locator(`[data-testid=subpoint-node][data-flow-node-id="${subId}"] .ProseMirror`)
       .first();
     await this.focusEditor(subBody);
+    await this.page.keyboard.type(text);
+  }
+
+  // --- Block-file card ------------------------------------------------------
+
+  /**
+   * Fill one region of a block-file card by placing the caret in it and typing.
+   * The card's four regions carry `data-card-region="tag|tagline|cite|body"`,
+   * but an EMPTY region collapses to zero width (and the caret cannot be moved
+   * between regions by keyboard), so a normal `.click()` is not actionable.
+   * Instead we click at explicit coordinates - the card's left edge at the
+   * region's vertical centre - which ProseMirror maps to the nearest caret
+   * position inside that region. Then we settle (the same first-keystroke race
+   * as the flow editors) so the text lands in full.
+   */
+  async fillCardRegion(card: Locator, region: string, text: string): Promise<void> {
+    const cardBox = await card.boundingBox();
+    const target = card.locator(`[data-card-region="${region}"]`);
+    const box = await target.boundingBox();
+    if (!cardBox || !box) throw new Error(`card region "${region}" has no box`);
+    await this.page.mouse.click(cardBox.x + 12, box.y + box.height / 2);
+    await this.page.waitForTimeout(140);
     await this.page.keyboard.type(text);
   }
 
