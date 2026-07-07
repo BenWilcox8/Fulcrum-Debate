@@ -128,10 +128,10 @@ function gatherSectionItems(
   for (const pos of sorted) {
     let sectionHadCard = false;
     for (const child of sectionChildrenAt(doc, pos)) {
-      if (child.node.type.name === CARD_NODE) sectionHadCard = true;
       if (seen.has(child.pos)) continue;
       seen.add(child.pos);
       items.push(child.node);
+      if (child.node.type.name === CARD_NODE) sectionHadCard = true;
     }
     if (sectionHadCard) contributingSectionCount += 1;
   }
