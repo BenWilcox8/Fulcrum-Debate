@@ -20,6 +20,3 @@ e2e-*.mjs
 .idea
 .vscode/*
 !.vscode/extensions.json
-
-# E2E test screenshots (tester)
-e2e-screenshots

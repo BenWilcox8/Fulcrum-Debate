@@ -67,7 +67,7 @@ export function SpeechDocEditor({ handle, docId, className }: SpeechDocEditorPro
         handle={handle}
         fragment={SPEECH_DOC_BODY_FRAGMENT}
         preset={SPEECH_DOC_PRESET}
-        className="speech-doc-body min-h-full rounded border border-shell-border bg-shell-surface px-4 py-3 text-shell-text focus-within:border-shell-muted"
+        className="speech-doc-body min-h-full rounded border border-shell-border bg-shell-surface px-4 py-3 text-shell-text focus-within:border-aff-strong focus-within:ring-2 focus-within:ring-aff/40"
       />
     </div>
   );

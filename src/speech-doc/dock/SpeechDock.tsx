@@ -136,7 +136,7 @@ export function SpeechDock({ position, onPositionChange, onClose }: SpeechDockPr
           <SpeechDocEditor
             handle={handle}
             docId={activeId}
-            className="min-h-full"
+            className="h-full"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-4 text-center text-sm text-shell-muted">
