@@ -19,6 +19,7 @@ export {
   type TableOfContentsProps,
 } from "./TableOfContents";
 export { TocRow, type TocRowProps } from "./TocRow";
+export { useTocSelection, type TocSelection } from "./useTocSelection";
 export { useOutlineTree } from "./useOutlineTree";
 export { useActiveHeading } from "./useActiveHeading";
 export {

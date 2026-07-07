@@ -113,3 +113,9 @@ export {
   insertCard,
   cardCreate,
 } from "./card-create";
+export {
+  type SendSectionsResult,
+  sectionSpeechBlocks,
+  appendBlocksToSpeechBody,
+  sendSectionsToSpeechDoc,
+} from "./toc-speech";

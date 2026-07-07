@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import type { Editor } from "@tiptap/core";
 
 import type { OutlineTreeNode } from "../editor/headings";
 import { navigateToHeading } from "./navigateToHeading";
 import { TocRow } from "./TocRow";
+import type { TocSelection } from "./useTocSelection";
 import { useActiveHeading } from "./useActiveHeading";
 import { useOutlineTree } from "./useOutlineTree";
 
@@ -20,6 +22,20 @@ export interface TableOfContentsProps {
    * wrapping scroll region here.
    */
   scrollContainer?: HTMLElement | null;
+  /**
+   * When provided, each heading row grows an "include this section" checkbox
+   * (rendered in {@link TocRow}'s leading-control slot) bound to this selection
+   * controller - the seam the block-file speech pipeline sends from. Omit for a
+   * plain, read-only outline (the default), keeping this component reusable for
+   * any editor with headings.
+   */
+  selection?: TocSelection;
+  /**
+   * Optional content rendered above the heading list (below the "Contents"
+   * title) - the slot a feature fills with a toolbar such as the block-file
+   * "Send to Speech Doc" button. Omitted by default.
+   */
+  toolbar?: ReactNode;
 }
 
 /**
@@ -34,10 +50,12 @@ function TocNodes({
   nodes,
   activePos,
   editor,
+  selection,
 }: {
   nodes: OutlineTreeNode[];
   activePos: number | null;
   editor: Editor | null;
+  selection?: TocSelection;
 }) {
   return (
     <ul className="flex flex-col">
@@ -51,10 +69,26 @@ function TocNodes({
             onActivate={
               editor ? () => navigateToHeading(editor, node.pos) : undefined
             }
+            leadingControl={
+              selection ? (
+                <input
+                  type="checkbox"
+                  checked={selection.isSelected(node.pos)}
+                  onChange={() => selection.toggle(node.pos)}
+                  aria-label={`Include ${node.text} in speech`}
+                  className="h-4 w-4 cursor-pointer accent-aff-strong"
+                />
+              ) : undefined
+            }
           />
           {node.children.length > 0 && (
             <div className="border-l border-shell-border pl-3">
-              <TocNodes nodes={node.children} activePos={activePos} editor={editor} />
+              <TocNodes
+                nodes={node.children}
+                activePos={activePos}
+                editor={editor}
+                selection={selection}
+              />
             </div>
           )}
         </li>
@@ -82,6 +116,8 @@ function TocNodes({
 export function TableOfContents({
   editor,
   scrollContainer = null,
+  selection,
+  toolbar,
 }: TableOfContentsProps) {
   const tree = useOutlineTree(editor);
   const activePos = useActiveHeading(editor, scrollContainer);
@@ -94,10 +130,16 @@ export function TableOfContents({
       <h3 className="text-xs font-semibold uppercase tracking-widest text-shell-muted">
         Contents
       </h3>
+      {toolbar}
       {tree.length === 0 ? (
         <p className="text-sm text-shell-muted">No headings yet</p>
       ) : (
-        <TocNodes nodes={tree} activePos={activePos} editor={editor} />
+        <TocNodes
+          nodes={tree}
+          activePos={activePos}
+          editor={editor}
+          selection={selection}
+        />
       )}
     </nav>
   );

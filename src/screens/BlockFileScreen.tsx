@@ -11,7 +11,7 @@ import {
   insertCard,
 } from "../blockfile";
 import { useBlockFile } from "../blockfile-workspace";
-import { TableOfContents } from "../toc";
+import { BlockFileTocPanel } from "./BlockFileTocPanel";
 import { CardFormattingStyles } from "../formatting/react";
 import { CardToolbar, HighlightStyles, useCardTools } from "../tools/react";
 
@@ -120,7 +120,7 @@ export default function BlockFileScreen() {
       </div>
 
       <div className="flex min-h-0 flex-1 gap-4">
-        <TableOfContents editor={editor} scrollContainer={scrollContainer} />
+        <BlockFileTocPanel editor={editor} scrollContainer={scrollContainer} />
 
         {/* The editor column: the card-cutting toolbar sits at the top of the
             editing surface (right of the ToC, above the scroll region) so it
