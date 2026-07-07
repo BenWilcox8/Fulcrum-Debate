@@ -149,7 +149,7 @@ const HEADING_TAGS = new Set(["h1", "h2", "h3", "h4", "h5", "h6"]);
 function serializeBlock(el: Element): string {
   const tag = el.tagName.toLowerCase();
   const inline = serializeInline(el, BASE_FORMAT);
-  if (inline.trim() === "" && inline === "") return "";
+  if (inline.trim() === "") return "";
   if (HEADING_TAGS.has(tag)) {
     const level = Number(tag.slice(1));
     return `\\pard\\sb120\\fs${headingFontSize(level)}\\b ${inline}\\b0\\par\n`;
