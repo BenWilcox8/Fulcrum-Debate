@@ -15,6 +15,8 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <PreferencesProvider>
+      {/* Mounted outside App so App.offline-boot.test.tsx can render App alone
+          without constructing a DocumentService (which requires IndexedDB). */}
       <DocumentsProvider>
         <ShorthandProvider>
           <App />
