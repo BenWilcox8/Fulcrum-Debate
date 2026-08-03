@@ -114,7 +114,7 @@ Read the relevant doc before working in that area.
 - **Rust toolchain** must be on `PATH`: `source "$HOME/.cargo/env"` if `cargo` is missing.
 - **App icons:** `src-tauri/app-icon.svg` is source of truth. Regenerate with `npm run tauri icon src-tauri/app-icon.svg`.
 - **CSP:** `tauri.conf.json` enforces `default-src 'self'`. Add explicit directives for any future feature needing fonts, external images, or eval.
-- **Playwright E2E gotchas** (flow-canvas click dispatch, editor blur before `C#`/`S#` triggers, export graceful degradation): see `docs/e2e-harness.md`.
+- **Playwright E2E gotchas** (flow-canvas click dispatch, editor blur before `C#`/`S#` triggers, export payload-capture stub): see `docs/e2e-harness.md`; export's plain-browser graceful-degradation guard: `docs/export.md`.
 
 ## Design tokens
 
