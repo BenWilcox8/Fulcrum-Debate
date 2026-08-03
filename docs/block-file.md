@@ -54,6 +54,16 @@ The one-gesture "new card" command layered on the card node model - the fast, no
 - **Tests:** `card-create.test.ts` (unit, `fake-indexeddb`) covers the four-region insert, caret-lands-in-tag (typing flows into the tag), aff-and-neg placement, the explicit-`side` override, field seeding, sibling-after-current-block placement, and the extension registration + shortcut constant. `screens/BlockFileScreen.test.tsx` drives the real routed screen: the *New card* button appears once the editor mounts and one click renders a full card (all four `data-card-region` hooks) in the document.
 
 
+### Long-document responsiveness (measured; no virtualization)
+
+A season's block file is large, so the scaffold was measured against a representatively large document before shipping any optimization.
+**Conclusion: no virtualization or other optimization is warranted now** - revisit only if a real, measured regression appears at realistic sizes.
+
+- **Complexity is the load-bearing evidence, not the clock.** Every query and section op is scoped to *one side's direct children* (`region.node.forEach` in `argument-sections.ts` / `section-ops.ts`) and `sideRegionsFromDoc` touches only the two top-level section nodes, so query and reorder cost is **O(direct children of the side)**. The only inherently document-sized cost is ProseMirror's own parse/render of one large doc on mount - a property of holding the file in a single editor, not of anything this module adds.
+- **Measured (`long-document.perf.test.ts`, jsdom - indicative wall-clock).** At 60 sections/side (past a realistic season): all operations linear-or-better and far below any responsiveness threshold. The test's generous ceilings are **smoke alarms for an accidental O(n²) full-document scan**, not tuned thresholds; the complexity argument above is the real guarantee.
+- The ToC sidebar has a mirrored precedent (`src/toc/long-document.perf.test.tsx`): the ToC layer adds no document-sized cost of its own, so no memoization or virtualization there either.
+
+
 ### Feature closeout e2e (`src/blockfile/card.e2e.test.ts`)
 
 `card.e2e.test.ts` is the whole-stack closeout for the Card Anatomy & Tag System feature - it spans the three card slices above (node model, card-unit API, quick-create) composed the way `BlockFileScreen` ships them, with no mocks. Over the real document service + `ensureBlockFile` singleton and IndexedDB, it drives the debater's full card lifecycle: `insertCard` (quick-create) → type all four regions → apply bold + highlight **together** on one body run → address the card as a unit (`getCardAt`/`selectCard`/`getSelectedCard`/`readCardRegions`/`serializeCard`), then tears the service down and reopens a **fresh** instance over the same backend to prove the whole card (four regions, every field's text, both coexisting body marks) survived and re-addresses it. Positions that drive the card-unit locator come from an independent document walk, never the API under test - same discipline as `card-unit.test.ts`. Follows the `settings.e2e`/`dashboard.e2e`/`toc-sidebar.e2e` closeout precedent.
