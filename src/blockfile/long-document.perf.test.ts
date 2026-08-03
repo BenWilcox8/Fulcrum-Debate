@@ -37,7 +37,7 @@
  *     generous budgets even under jsdom's noise, failing the test. They are not
  *     tuned performance thresholds; they are smoke alarms.
  *
- * The documented conclusion (see `AGENTS.md`, "Long-document responsiveness"):
+ * The documented conclusion (see `docs/block-file.md`, "Long-document responsiveness"):
  * **no virtualization is warranted now.** The measured operations are all
  * linear-or-better in the side's section count and comfortably fast at a size
  * well beyond a real season; ProseMirror node-view virtualization would add
